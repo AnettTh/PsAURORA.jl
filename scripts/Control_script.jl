@@ -23,7 +23,7 @@ output = AuroraOutputManager("")
 # Flickering with flat spectrum and sinusoidal modulation at 5 Hz,
 # with a source set at 3000 km altitude
 flux = InputFlux(FlatSpectrum(1e-2; E_min=100), SinusoidalFlickering(5.0);
-                 beams=1, z_source=3000.0)
+                 beams=1, z_source=3000.0, propagation=:fieldline)
 
 ## Create and run the simulation
 mode = TimeDependent(duration = 0.5,            # (s) total simulation time
