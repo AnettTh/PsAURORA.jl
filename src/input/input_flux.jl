@@ -33,24 +33,33 @@ struct InputFlux{S<:AbstractSpectrum, M<:AbstractModulation}
     modulation::M
     beams::Vector{Int}
     z_source::Float64
+    propagation::Symbol
 end
 
 # Convenience constructor: spectrum only (constant modulation)
-function InputFlux(spectrum::AbstractSpectrum; beams=1, z_source=NaN)
-    InputFlux(spectrum, ConstantModulation(); beams=beams, z_source=z_source)
+function InputFlux(spectrum::AbstractSpectrum; beams=1, z_source=NaN, propagation=:simple)
+    InputFlux(spectrum, ConstantModulation(); beams=beams, z_source=z_source, propagation=propagation)
 end
 
 # Main keyword constructor: spectrum + modulation
 function InputFlux(spectrum::AbstractSpectrum, modulation::AbstractModulation;
-                   beams=1, z_source=NaN)
+                   beams=1, z_source=NaN, propagation=:simple)
     if spectrum isa FileSpectrum && !(modulation isa ConstantModulation)
         error("FileSpectrum does not support temporal modulation. " *
               "The file already contains the complete flux. " *
               "Use ConstantModulation() (the default).")
     end
+
+    if !(propagation in (:simple, :fieldline))
+        error(
+            "Unknown propagation model: $propagation. " *
+            "Use :simple or :fieldline."
+        )
+    end
+
     beams_vec = to_beam_vector(beams)
     InputFlux{typeof(spectrum), typeof(modulation)}(
-        spectrum, modulation, beams_vec, Float64(z_source))
+        spectrum, modulation, beams_vec, Float64(z_source), propagation)
 end
 
 # Internal: convert any beam specification to Vector{Int}
@@ -65,9 +74,10 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", flux::InputFlux)
     println(io, "InputFlux:")
-    println(io, "├── Spectrum:   ", flux.spectrum)
-    println(io, "├── Modulation: ", flux.modulation)
-    println(io, "├── Beams:      ", flux.beams)
+    println(io, "├── Spectrum:    ", flux.spectrum)
+    println(io, "├── Modulation:  ", flux.modulation)
+    println(io, "├── Beams:       ", flux.beams)
+    println(io, "├── Propagation: ", flux.propagation)
     z_str = isnan(flux.z_source) ? "top of ionosphere" : "$(flux.z_source) km"
     print(io,   "└── Source altitude: ", z_str)
 end
@@ -251,9 +261,16 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
     # Evaluate the energy spectrum shape
     Φ_spectrum = evaluate_spectrum(flux.spectrum, model)
 
+    # TODO: Alter to use dipole approx or boris-mover
     # Calculate distance from source to top of ionosphere (m)
-    z_distance = z_source * 1e3 - z[end]
+    if flux.propagation == :simple
+        z_distance = z_source * 1e3 - z[end]
+    elseif flux.propagation == :fieldline
+        print("Correct-block-notification!")
+        z_distance = z_source * 1e3 - z[end]
+    end
 
+    # TODO: Alter to fit the new distance
     # Calculate reference time shift (for highest energy in first beam)
     t_ref = z_distance / (abs(μ_center[flux.beams[1]]) * v_of_E(E_centers[end]))
 
@@ -276,6 +293,7 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
             flux_base = Φ_spectrum[iE] * beam_fraction * ΔE[iE]
 
             # Travel time for electrons of this energy and pitch angle
+            # TODO: Alter to use either dipole approx. or boris-mover
             t_travel = z_distance / (abs(μ_center[i_μ]) * v_of_E(E_centers[iE]))
 
             # Time-shifted grid: subtract travel time difference relative to reference
