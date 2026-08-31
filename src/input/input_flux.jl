@@ -261,16 +261,15 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
     # Evaluate the energy spectrum shape
     Φ_spectrum = evaluate_spectrum(flux.spectrum, model)
 
-    # TODO: Alter to use dipole approx or boris-mover
     # Calculate distance from source to top of ionosphere (m)
     if flux.propagation == :simple
         z_distance = z_source * 1e3 - z[end]
     elseif flux.propagation == :fieldline
-        print("Correct-block-notification!")
+        # TODO: add proper distance along field-line
         z_distance = z_source * 1e3 - z[end]
     end
 
-    # TODO: Alter to fit the new distance
+    # TODO: Check if needed to alter to fit the new distance
     # Calculate reference time shift (for highest energy in first beam)
     t_ref = z_distance / (abs(μ_center[flux.beams[1]]) * v_of_E(E_centers[end]))
 
@@ -293,7 +292,7 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
             flux_base = Φ_spectrum[iE] * beam_fraction * ΔE[iE]
 
             # Travel time for electrons of this energy and pitch angle
-            # TODO: Alter to use either dipole approx. or boris-mover
+            # TODO: Check if needed to alter to fit the new distance
             t_travel = z_distance / (abs(μ_center[i_μ]) * v_of_E(E_centers[iE]))
 
             # Time-shifted grid: subtract travel time difference relative to reference
