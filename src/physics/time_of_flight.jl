@@ -17,17 +17,17 @@ function time_of_flight(
 
     elseif propagation == :fieldline
 
-        # Construct local coordinate system based on magnetic field in initial position
-        B = magnetic_field(r0...)
-        b, e1, e2 = magnetic_basis(B)
-
         # Construct initial velocity with available information
-        # TODO: Look into α_frac here, how do i know it is correct with regards to the rest?
-        v0 = get_v0(dipole_field, r0, E, mₑ)
+        # TODO: Figure out how to find the pitch-angle corresponding to this in the equatorial plane
+        v0 = get_v0_from_μ(magnetic_field, r0, E, mₑ, μ)
 
         result = boris_mover_TOF(magnetic_field, r0, v0, z_end)
 
+        isnothing(result) && error(
+            "Particle did not precipitate, i.e. no TOF available."
+        )
         println("Using field-line propagation")
+
         return result.tof
 
     else

@@ -3,7 +3,7 @@ module AURORA
 include("constants.jl")
 # TODO: remove export when not testing?
 # TODO: Evaluate the handeling of z_ionosphere
-export RE, μ₀, M, z_ionosphere, eV_in_J
+export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ
 
 include("grids/abstract_grid.jl")
 include("grids/altitude_grid.jl")
@@ -47,6 +47,7 @@ export N2Species, O2Species, OSpecies
 include("physics/magnetic_field.jl")
 export dipole_field, magnetic_basis
 include("physics/plasma_values.jl")
+export velocity_from_kinetic_energy, get_v0_from_μ
 include("physics/boris_mover.jl")
 export boris_mover_TOF
 include("physics/time_of_flight.jl")
