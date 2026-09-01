@@ -262,16 +262,17 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
     Φ_spectrum = evaluate_spectrum(flux.spectrum, model)
 
     # Calculate distance from source to top of ionosphere (m)
+    z_distance = z_source * 1e3 - z[end]
+
+    # Calculate reference time depending on propagation mode
     if flux.propagation == :simple
-        z_distance = z_source * 1e3 - z[end]
+        t_ref = time_of_flight(E_centers[end], μ_center[flux.beams[1]], z_distance; propagation=:simple)
+        #z_distance / (abs(μ_center[flux.beams[1]]) * v_of_E(E_centers[end]))
     elseif flux.propagation == :fieldline
         # TODO: add proper distance along field-line
-        z_distance = z_source * 1e3 - z[end]
+        t_ref = time_of_flight(E_centers[end], μ_center[flux.beams[1]], z_distance; propagation=:fieldline, magnetic_field=dipole_field, r0=[z_source * 1e3, 0.0, 0.0], z_end=2RE)
     end
 
-    # TODO: Check if needed to alter to fit the new distance
-    # Calculate reference time shift (for highest energy in first beam)
-    t_ref = z_distance / (abs(μ_center[flux.beams[1]]) * v_of_E(E_centers[end]))
 
     # Field-aligned (vertical) normalization: pin the vertical energy flux to IeE_tot
     beam_norm = field_aligned_beam_norm(flux.beams, μ_center, Ω_beam)
