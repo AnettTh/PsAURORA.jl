@@ -282,7 +282,7 @@ function velocity_from_kinetic_energy(E_eV, m)
 
     E_J = E_eV * eV_in_J
 
-    ratio = E_J / (m * c^2)
+    ratio = E_J / (m * c₀^2)
 
     if ratio ≥ 1
         throw(
