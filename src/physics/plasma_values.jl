@@ -1,5 +1,5 @@
 using AURORA
-using LinearAlgebra: norm
+using LinearAlgebra: norm, dot, cross
 
 """
     gyro_frequency(B, q, m)
@@ -488,4 +488,33 @@ function get_v0(magnetic_field, r0, E_eV, m; α_frac=1)
     v0 = (0.0, vy0, vz0)
 
     return v0
+end
+
+
+function get_v0_from_μ(magnetic_field, r0, E_eV, mₑ, μ; ϕ=0)
+
+    -1 ≤ μ ≤ 1 || throw(
+        ArgumentError("μ must be between -1 and 1")
+    )
+
+    v = velocity_from_kinetic_energy(E_eV, mₑ)
+
+    # Construct the magnetic basis
+    B = magnetic_field(r0...)
+    b, e1, e2, _ = magnetic_basis(B)
+
+    # Determine parallel and perpendicular speeds
+    v_parallel = μ * v
+    v_perp = sqrt(1 - μ^2) * v
+
+    # Initial velocity
+    v0 = v_parallel .* b .+
+         v_perp .* (cos(ϕ) .* e1 .+ sin(ϕ) .* e2)
+
+    return Tuple(v0)
+end
+
+
+function equatorial_pitch_angle()
+    return nothing
 end
