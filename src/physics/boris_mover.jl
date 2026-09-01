@@ -1,5 +1,5 @@
 using AURORA
-using LinearAlgebra: norm
+using LinearAlgebra: norm, cross
 
 function boris_mover_TOF(
     magnetic_field,
