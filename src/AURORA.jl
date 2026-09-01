@@ -1,6 +1,8 @@
 module AURORA
 
 include("constants.jl")
+# TODO: remove export when not testing?
+export RE, μ₀, M
 
 include("grids/abstract_grid.jl")
 include("grids/altitude_grid.jl")
@@ -39,6 +41,15 @@ export clear_cascading_cache!
 include("physics/species.jl")
 export NeutralSpecies, MSISDensity, VectorDensity
 export N2Species, O2Species, OSpecies
+
+# NOTE: Under testing
+include("physics/magnetic_field.jl")
+export dipole_field
+include("physics/plasma_values.jl")
+include("physics/boris_mover.jl")
+export boris_mover_TOF
+include("physics/time_of_flight.jl")
+export time_of_flight
 
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid
