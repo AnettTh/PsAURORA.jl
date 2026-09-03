@@ -6,7 +6,7 @@ function boris_mover_TOF(
     r0,
     v0,
     z_end;
-    n_T::Int=1_000_000,
+    n_T::Int=100_000,
     resolution::Int=10
 )
 
@@ -22,22 +22,26 @@ function boris_mover_TOF(
     vx, vy, vz = v0
 
     # Find initial B-field and gyroperiod
-    B0 = magnetic_field(x, y, z)
+    #B0 = magnetic_field(x, y, z)
+    B0 = magnetic_field(0.0, 0.0, z_end)
     ω_g0 = gyro_frequency(B0, qₑ, mₑ)
     T_g0 = 2π / ω_g0
 
     # Make time-range based on resolution (samples per gyroperiod)
-    dt = T_g0 / resolution
+    dt = - abs(T_g0 / resolution)
 
     # Half electric acceleration
     q_prime = dt * qₑ / (2mₑ)
 
     # Accumulating time-of-flight
     tof = 0.0
+    r = zeros(steps+1, 3)
+    r[1, :] .= (x, y, z)
 
     # Update particle
     for i in 2:(steps + 1)
         Bx, By, Bz = magnetic_field(x, y, z)
+
         #-----------Core Boris-scheme-----------
 
         # Magnetic rotation vector
@@ -65,16 +69,23 @@ function boris_mover_TOF(
         y += vy * dt
         z += vz * dt
 
-        tof += dt
+        tof += abs(dt)
+        r[i, :] .= x, y, z
 
-        if x^2 + y^2 + z^2 ≤ z_end^2
+        if z < 1e3
+            println("Reached equator-ish")
             return (
-                tof = tof,
+                tof,
                 footpoint = (x, y, z),
-                steps = i
-            )
+                r,
+                i)
         end
+
     end
 
-    return println("No precipitation")
+    return (
+        tof,
+        footpoint = (x, y, z),
+        r
+    )
 end

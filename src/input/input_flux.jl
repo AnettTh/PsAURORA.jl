@@ -239,18 +239,28 @@ function compute_flux(flux::InputFlux{<:FileSpectrum}, model::AuroraModel, t)
                             interpolation=spec.interpolation)
 end
 
+
+
+
+############################################################################################
+# --------------------------THIS IS WHERE ANETT IS TO BE WORKING-------------------------- #
+############################################################################################
+
+
+
+
 function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t)
     E_centers = model.energy_grid.E_centers
     ΔE = model.energy_grid.ΔE
     μ_center = model.pitch_angle_grid.μ_center
     Ω_beam = model.scattering.Ω_beam
-    z = model.altitude_grid.h
+    z = model.altitude_grid.h           # [m]
 
     # Resolve z_source: use top of ionosphere if NaN
-    z_source = isnan(flux.z_source) ? z[end] / 1e3 : flux.z_source
+    z_source_km = isnan(flux.z_source) ? z[end] / 1e3 : flux.z_source
 
-    if z_source < z[end] / 1e3
-        error("z_source ($z_source km) is below the top of the simulated ionosphere " *
+    if z_source_km < z[end] / 1e3
+        error("z_source ($z_source_km km) is below the top of the simulated ionosphere " *
               "($(z[end]/1e3) km). It must be above or equal.")
     end
 
@@ -261,11 +271,19 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
     # Evaluate the energy spectrum shape
     Φ_spectrum = evaluate_spectrum(flux.spectrum, model)
 
-    # NOTE: For tesing only??
-    z_distance = z_source * 1e3 - z[end]
-    r_source = [RE + z_source * 1e3, 0.0, 0.0]
-    r0 = [r_source, 0.0, 0.0]
-    z_end = RE + z[end]
+    # Used for the simple approach
+    z_distance = z_source_km * 1e3 - z[end]     # [m]
+
+    # # Used for the field-line tracing
+    # r_source = z_source_km * 1e3
+
+    # Temporarly fix, more accurate version to be implemented later
+    z_end = RE + z[end]     # [m]
+    r0 = [
+        z_end * cosd(69),
+        0.0,
+        z_end * sind(69)
+    ]
 
     t_ref = time_of_flight(
         E_centers[end],
@@ -298,7 +316,16 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
 
             # Travel time for electrons of this energy and pitch angle
             # TODO: Check if needed to alter to fit the new distance
-            t_travel = z_distance / (abs(μ_center[i_μ]) * v_of_E(E_centers[iE]))
+            #t_travel = z_distance / (abs(μ_center[i_μ]) * v_of_E(E_centers[iE]))
+            t_travel = time_of_flight(
+                E_centers[iE],
+                μ_center[i_μ],
+                z_distance;
+                propagation=flux.propagation,
+                magnetic_field=dipole_field,
+                r0 = r0,
+                z_end = z_end
+            )
 
             # Time-shifted grid: subtract travel time difference relative to reference
             t_shifted = t .- (t_travel - t_ref)
@@ -313,6 +340,14 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
 
     return Ie_top
 end
+
+
+
+
+
+
+
+
 
 
 """

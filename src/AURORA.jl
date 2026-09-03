@@ -47,7 +47,7 @@ export N2Species, O2Species, OSpecies
 include("physics/magnetic_field.jl")
 export dipole_field, magnetic_basis
 include("physics/plasma_values.jl")
-export velocity_from_kinetic_energy, get_v0_from_μ
+export velocity_from_kinetic_energy, get_v0_from_Eμ
 include("physics/boris_mover.jl")
 export boris_mover_TOF
 include("physics/time_of_flight.jl")

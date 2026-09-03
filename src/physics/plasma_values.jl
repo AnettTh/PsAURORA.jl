@@ -474,7 +474,7 @@ precipitate.
 
 - `α_frac`: Factor multiplied with the loss cone boundary.
 """
-function get_v0(magnetic_field, r0, E_eV, m; α_frac=1)
+function get_v0(magnetic_field, r0, E_eV; α_frac=1)
 
     α_frac ≥ 0 || throw(ArgumentError("α_frac must be nonnegative"))
 
@@ -483,15 +483,36 @@ function get_v0(magnetic_field, r0, E_eV, m; α_frac=1)
     end
 
     α = losscone_angle(magnetic_field, r0) * α_frac
-    vy0 = sin(α) * velocity_from_kinetic_energy(E_eV, m)
-    vz0 = cos(α) * velocity_from_kinetic_energy(E_eV, m)
+    vy0 = sin(α) * velocity_from_kinetic_energy(E_eV, mₑ)
+    vz0 = cos(α) * velocity_from_kinetic_energy(E_eV, mₑ)
     v0 = (0.0, vy0, vz0)
 
     return v0
 end
 
 
-function get_v0_from_μ(magnetic_field, r0, E_eV, mₑ, μ; ϕ=0)
+"""
+    get_v0_from_μ(magnetic_field, r0, E_eV, μ; ϕ=0.0)
+
+Calculate the electron velocity vector given initial values.
+
+Using the given magnetic field model, initial position, particle energy and pitch-angle to
+find the appropriate initial velocity for the electron. If needed, it is also possible to
+control the phase of the gyration.
+
+# Arguments
+
+- `magnetic_field`: Function describing the magnetic field, taking three positional values
+                    as the argument.
+- `r_0`: The initial position of the particle [m].
+- `E_eV`: Energy of the particle [eV].
+- `μ`: The cosine of the pitch-angle α of the particle, i.e. some value between -1 and 1.
+
+# Keyword Arguments
+
+- `ϕ`: The phase of the gyration, default is 0.0.
+"""
+function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0)
 
     -1 ≤ μ ≤ 1 || throw(
         ArgumentError("μ must be between -1 and 1")
@@ -512,9 +533,4 @@ function get_v0_from_μ(magnetic_field, r0, E_eV, mₑ, μ; ϕ=0)
          v_perp .* (cos(ϕ) .* e1 .+ sin(ϕ) .* e2)
 
     return Tuple(v0)
-end
-
-
-function equatorial_pitch_angle()
-    return nothing
 end

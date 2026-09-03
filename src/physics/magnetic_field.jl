@@ -8,9 +8,10 @@
 
 Make vector containing dipole magnetic field values at given position.
 
-The function takes in Cartesian coordinates and returns a vector giving the magnetic field
-strength corresponding to a modeled dipole field. If the position is outside of the valid
-range for the approximation, returns zero-vector for consistency, with a warning.
+The function takes in Cartesian coordinates (either scalar coordinate or vector) and returns
+a vector giving the magnetic field strength corresponding to a modeled dipole field. If the
+position is outside of the valid range for the approximation, returns zero-vector for
+consistency, with a warning.
 
 # Arguments
 
@@ -24,7 +25,7 @@ range for the approximation, returns zero-vector for consistency, with a warning
 
 # Throws
 
-- `ArgumentError`: If the position is at the origin.
+- `ArgumentError`: If the position is at the origin or if the vector has the wrong length.
 """
 function dipole_field(x, y, z)
 
