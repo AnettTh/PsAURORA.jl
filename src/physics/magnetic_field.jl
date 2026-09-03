@@ -52,6 +52,15 @@ function dipole_field(x, y, z)
 end
 
 
+function dipole_field(r)
+    length(r) == 3 || throw(
+        ArgumentError("Position vector needs to have three cartesian components, whats up?")
+    )
+
+    return dipole_field(r...)
+end
+
+
 # NOTE: Move elsewhere?
 """
     magnetic_basis(B)
