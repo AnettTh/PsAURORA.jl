@@ -34,19 +34,27 @@ function dipole_field(x, y, z)
     iszero(r) && throw(ArgumentError("Dipole field not defined in position origo"))
 
     if r ≤ RE
-        @warn "The position is inside/on the Earth's surface, is this as intended?"
+        throw(
+            ArgumentError(
+                "The position is inside/on the Earth's surface, is this as intended?"
+            )
+        )
     end
 
     C = - (μ₀ / (4π)) * M
 
-    if r ≤ 7 * RE
+    if r ≤ 10 * RE
         Bx = C * ((3 * x * z) / r^5)
         By = C * ((3 * y * z) / r^5)
         Bz = C * (3 * (z^2) - r^2) / (r^5)
         return [Bx, By, Bz]
     else
-        @warn "Position outside of valid range for dipole field approximation, is this as
-        intended? Returning zero."
+        throw(
+            ArgumentError(
+                "Position outside of valid range for dipole field approximation, is this as
+                intended? Returning zero."
+            )
+        )
 
         return [0.0, 0.0, 0.0]
     end

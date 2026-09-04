@@ -248,7 +248,8 @@ end
 
 
 
-
+# TODO: Write/draw all spatial variables, to relate them and potentially rename/simplify
+# and/or add explanations here, because yikes.
 function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t)
     E_centers = model.energy_grid.E_centers
     ΔE = model.energy_grid.ΔE
@@ -274,16 +275,19 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
     # Used for the simple approach
     z_distance = z_source_km * 1e3 - z[end]     # [m]
 
-    # # Used for the field-line tracing
-    # r_source = z_source_km * 1e3
+    # Used for the field-line tracing
+    r_source = z_source_km * 1e3
 
-    # Temporarly fix, more accurate version to be implemented later
-    z_end = RE + z[end]     # [m]
+    # Decide the initial position
+    # TODO: This does not consider the actual location, need to alter this if tsyganenko is
+    # to be used later
+    r_top = RE + z[end]     # [m]
     r0 = [
-        z_end * cosd(69),
+        r_top * cosd(69),
         0.0,
-        z_end * sind(69)
+        r_top * sind(69)
     ]
+
 
     t_ref = time_of_flight(
         E_centers[end],
@@ -292,7 +296,7 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
         propagation=flux.propagation,
         magnetic_field=dipole_field,
         r0=r0,
-        z_end=z_end,
+        z_end=r_source,
     )
 
 
@@ -315,8 +319,6 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
             flux_base = Φ_spectrum[iE] * beam_fraction * ΔE[iE]
 
             # Travel time for electrons of this energy and pitch angle
-            # TODO: Check if needed to alter to fit the new distance
-            #t_travel = z_distance / (abs(μ_center[i_μ]) * v_of_E(E_centers[iE]))
             t_travel = time_of_flight(
                 E_centers[iE],
                 μ_center[i_μ],
@@ -324,7 +326,7 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
                 propagation=flux.propagation,
                 magnetic_field=dipole_field,
                 r0 = r0,
-                z_end = z_end
+                z_end = r_source
             )
 
             # Time-shifted grid: subtract travel time difference relative to reference

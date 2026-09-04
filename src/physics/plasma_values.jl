@@ -1,6 +1,7 @@
 using AURORA
 using LinearAlgebra: norm, dot, cross
 
+# TODO: Remove/archive functions that are not in use
 """
     gyro_frequency(B, q, m)
 

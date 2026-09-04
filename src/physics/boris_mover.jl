@@ -1,6 +1,7 @@
 using AURORA
 using LinearAlgebra: norm, cross
 
+# TODO: Look into making this run faster
 function boris_mover_TOF(
     magnetic_field,
     r0,
@@ -22,13 +23,13 @@ function boris_mover_TOF(
     vx, vy, vz = v0
 
     # Find initial B-field and gyroperiod
-    #B0 = magnetic_field(x, y, z)
+    # TODO: This might need to be altered when using the specific position
     B0 = magnetic_field(0.0, 0.0, z_end)
     ω_g0 = gyro_frequency(B0, qₑ, mₑ)
     T_g0 = 2π / ω_g0
 
     # Make time-range based on resolution (samples per gyroperiod)
-    dt = - abs(T_g0 / resolution)
+    dt = abs(T_g0 / resolution)
 
     # Half electric acceleration
     q_prime = dt * qₑ / (2mₑ)
@@ -73,7 +74,6 @@ function boris_mover_TOF(
         r[i, :] .= x, y, z
 
         if z < 1e3
-            println("Reached equator-ish")
             return (
                 tof,
                 footpoint = (x, y, z),

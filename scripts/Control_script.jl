@@ -20,15 +20,16 @@ model = AuroraModel(altitude_lims, θ_lims, E_max, msis_file, iri_file, B_angle_
 output = AuroraOutputManager("data/boris_test"; overwrite=false)
 
 ## Define input flux
-flux = InputFlux(FlatSpectrum(1e-2; E_min=14500);
-                 beams=1, z_source=4*RE / 1e3, propagation=:simple)
+flux = InputFlux(FlatSpectrum(1e-2; E_min=14500), SinusoidalFlickering(5.0);
+                 beams=1, z_source=4*RE / 1e3, propagation=:fieldline)
+
 
 ## Create and run the simulation
-mode = TimeDependent(duration = 0.05,           # (s) total simulation time
+mode = TimeDependent(duration = 5,           # (s) total simulation time
                      dt = 0.005,                # (s) time step for saving data
                      CFL_number = 128,
                      #n_loop = 2,             # (optional) define manually the number of loops to run
-                     max_memory_gb = 2.0,     # (optional) or determine n_loop based on limit memory usage
+                     #max_memory_gb = 2.0,     # (optional) or determine n_loop based on limit memory usage
                      )
 
 sim = AuroraSimulation(model, flux, output; mode)
