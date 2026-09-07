@@ -22,18 +22,6 @@ function boris_mover_TOF(
     x, y, z = r0
     vx, vy, vz = v0
 
-    # Find initial B-field and gyroperiod
-    # TODO: This might need to be altered when using the specific position
-    B0 = magnetic_field(0.0, 0.0, z_end)
-    ω_g0 = gyro_frequency(B0, qₑ, mₑ)
-    T_g0 = 2π / ω_g0
-
-    # Make time-range based on resolution (samples per gyroperiod)
-    dt = abs(T_g0 / resolution)
-
-    # Half electric acceleration
-    q_prime = dt * qₑ / (2mₑ)
-
     # Accumulating time-of-flight
     tof = 0.0
     r = zeros(steps+1, 3)
@@ -42,6 +30,14 @@ function boris_mover_TOF(
     # Update particle
     for i in 2:(steps + 1)
         Bx, By, Bz = magnetic_field(x, y, z)
+
+        # Find desired resolution for current step
+        ω_g = gyro_frequency([Bx, By, Bz], qₑ, mₑ)
+        T_g = 2π / ω_g
+        dt = abs(T_g / resolution)
+
+        # Half electric acceleration
+        q_prime = dt * qₑ / (2mₑ)
 
         #-----------Core Boris-scheme-----------
 
@@ -73,6 +69,7 @@ function boris_mover_TOF(
         tof += abs(dt)
         r[i, :] .= x, y, z
 
+        # TODO: Add correct check of z_end here
         if z < 1e3
             return (
                 tof,
