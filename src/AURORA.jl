@@ -48,6 +48,12 @@ include("physics/magnetic_field.jl")
 export dipole_field, magnetic_basis
 include("physics/plasma_values.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
+export gyro_frequency, larmor_radius, gyrocenter
+export losscone_angle
+export quarter_bounceperiod, average_driftvelocity, total_drift
+export parallel_velocity, perpendicular_velocity
+export parallel_speed, perpendicular_speed
+
 include("physics/boris_mover.jl")
 export boris_mover_TOF
 include("physics/time_of_flight.jl")
