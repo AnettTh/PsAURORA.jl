@@ -23,6 +23,7 @@ function time_of_flight(
 
         result = boris_mover_TOF(magnetic_field, r0, v0, z_end)
 
+
         isnothing(result) && error(
             "Particle did not precipitate, i.e. no TOF available."
         )

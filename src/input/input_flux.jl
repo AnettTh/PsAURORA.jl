@@ -299,7 +299,6 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
         z_end=r_source,
     )
 
-
     # Field-aligned (vertical) normalization: pin the vertical energy flux to IeE_tot
     beam_norm = field_aligned_beam_norm(flux.beams, μ_center, Ω_beam)
 

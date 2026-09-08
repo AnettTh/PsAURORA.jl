@@ -1,5 +1,6 @@
 #using Dates
 #using TsyganenkoModels
+using StaticArrays
 
 # TODO: Add tsyganenko-option
 
@@ -29,35 +30,32 @@ consistency, with a warning.
 """
 function dipole_field(x, y, z)
 
-    r = sqrt(x^2 + y^2 + z^2)       #[m]
+    r2 = x^2 + y^2 + z^2       #[m]
+    r = sqrt(r2)
+    r5 = r2^2 * r
 
     iszero(r) && throw(ArgumentError("Dipole field not defined in position origo"))
 
-    if r ≤ RE
-        throw(
-            ArgumentError(
-                "The position is inside/on the Earth's surface, is this as intended?"
-            )
+    r ≤ RE && throw(
+        ArgumentError(
+            "The position is inside/on the Earth's surface, is this as intended?"
         )
-    end
+    )
+
+    r > 10 * RE && throw(
+        ArgumentError(
+            "Position outside of valid range for dipole field approximation, is this as
+            intended?"
+        )
+    )
 
     C = - (μ₀ / (4π)) * M
 
-    if r ≤ 10 * RE
-        Bx = C * ((3 * x * z) / r^5)
-        By = C * ((3 * y * z) / r^5)
-        Bz = C * (3 * (z^2) - r^2) / (r^5)
-        return [Bx, By, Bz]
-    else
-        throw(
-            ArgumentError(
-                "Position outside of valid range for dipole field approximation, is this as
-                intended? Returning zero."
-            )
-        )
+    Bx = C * ((3 * x * z) / r5)
+    By = C * ((3 * y * z) / r5)
+    Bz = C * (3 * (z^2) - r2) / (r5)
 
-        return [0.0, 0.0, 0.0]
-    end
+    return SVector(Bx, By, Bz)
 end
 
 

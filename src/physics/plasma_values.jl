@@ -21,14 +21,14 @@ Calculate the gyro-frequency of a test particle in a magnetic field.
 
 - `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
 """
-function gyro_frequency(B, q, m)
-    B_mag = norm(B)
-
-    iszero(B_mag) && throw(ArgumentError("Must have nonzero B"))
-
-    return abs(q) * B_mag / m
+function gyro_frequency(B::AbstractVector, q, m)
+    return gyro_frequency(norm(B), q, m)
 end
 
+function gyro_frequency(B_mag::Real, q, m)
+    iszero(B_mag) && throw(ArgumentError("Must have nonzero B"))
+    return abs(q) * B_mag / m
+end
 
 """
     parallel_velocity(v, B)
