@@ -326,8 +326,10 @@ end
 Calculate the electron velocity vector given initial values.
 
 Using the given magnetic field model, initial position, particle energy and pitch-angle to
-find the appropriate initial velocity for the electron. If needed, it is also possible to
-control the phase of the gyration.
+find the appropriate initial velocity for the electron. To choose the direction of the
+resulting velocity (i.e. away from or towards the Earth), specify `flip`, `false` being
+towards the Earth, `true` being away from. If needed, it is also possible to control the
+phase of the gyration.
 
 # Arguments
 
@@ -341,7 +343,7 @@ control the phase of the gyration.
 
 - `ϕ`: The phase of the gyration, default is 0.0.
 """
-function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0)
+function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, flip::Bool=true)
 
     -1 ≤ μ ≤ 1 || throw(
         ArgumentError("μ must be between -1 and 1")
@@ -351,7 +353,7 @@ function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0)
 
     # Construct the magnetic basis
     B = magnetic_field(r0...)
-    b, e1, e2, _ = magnetic_basis(B)
+    b, e1, e2, _ = magnetic_basis(B; flip=flip)
 
     # Determine parallel and perpendicular speeds
     v_parallel = μ * v

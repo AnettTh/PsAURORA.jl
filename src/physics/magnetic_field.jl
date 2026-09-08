@@ -69,6 +69,7 @@ end
 
 
 # NOTE: Move elsewhere?
+# TODO: Is flip the best way to go, or orientation-vector with dot?
 """
     magnetic_basis(B)
 
@@ -94,13 +95,18 @@ A tuple `(b̂, e1, e2, B_mag)` containing:
 
 - `ArgumentError`: If the magnetic-field magnitude is zero.
 """
-function magnetic_basis(B)
+function magnetic_basis(B; flip::Bool=false)
     B = collect(B)
 
     B_mag = norm(B)
     B_mag > eps() || throw(ArgumentError("Magnetic-field magnitude must be non-zero"))
 
     b̂ = B ./ B_mag
+
+    # TODO: Add something here to make sure the basis points in the right direction
+    if flip
+        b̂ = -b̂
+    end
 
     # Use x-direction as one vector if b̂ is not too close, else use y-direction
     if abs(b̂[1]) < 0.9
