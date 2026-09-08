@@ -30,96 +30,6 @@ function gyro_frequency(B_mag::Real, q, m)
     return abs(q) * B_mag / m
 end
 
-"""
-    parallel_velocity(v, B)
-
-Calculate the component of the velocity parallel to the magnetic field.
-
-# Arguments
-
-- `v`: Velocity vector.
-- `B`: Magnetic-field vector.
-
-# Returns
-
-- The velocity vector parallel to `B`.
-
-# Throws
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function parallel_velocity(v, B)
-    B_mag2 = dot(B, B)
-
-    iszero(B_mag2) && throw(ArgumentError("Must have nonzero B"))
-
-    return (dot(v, B) / B_mag2) * B
-end
-
-
-"""
-    perpendicular_velocity(v, B)
-
-Calculate the component of the velocity perpendicular to the magnetic field.
-
-# Arguments
-
-- `v`: Velocity vector.
-- `B`: Magnetic-field vector.
-
-# Returns
-
-- The velocity vector perpendicular to `B`.
-
-# Throws
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function perpendicular_velocity(v, B)
-    return v - parallel_velocity(v, B)
-end
-
-
-"""
-    parallel_speed(v, B)
-
-Calculate the magnitude of the velocity component parallel to the magnetic field.
-
-# Arguments
-
-- `v`: Velocity vector.
-- `B`: Magnetic-field vector.
-
-# Returns
-
-- The magnitude of the velocity parallel to `B`.
-
-# Throws
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function parallel_speed(v, B)
-    return norm(parallel_velocity(v, B))
-end
-
-
-"""
-    perpendicular_speed(v, B)
-
-Calculate the magnitude of the velocity component perpendicular to the magnetic field.
-
-# Arguments
-
-- `v`: Velocity vector.
-- `B`: Magnetic-field vector.
-
-# Returns
-
-- The magnitude of the velocity perpendicular to `B`.
-
-# Throws
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function perpendicular_speed(v, B)
-    return norm(perpendicular_velocity(v, B))
-end
 
 
 """
@@ -256,98 +166,6 @@ end
 
 
 """
-    velocity_from_kinetic_energy(E_eV, m)
-
-Calculate magnitude of velocity vector from kinetic energy.
-
-Takes in kinetic energy given as electron volts and mass of some particle, converts the
-energy to Joules and then finds the magnitude of the velocity of the given particle.
-
-# Arguments
-
-- `E_eV`: Kinetic energy of the particle [eV].
-- `m`: Mass of the particle [kg].
-
-# Returns
-
-- Magnitude of the velocity of the particle [m/s].
-
-# Throws
-
-- `ArgumentError`: If the given mass is zero or if the particles speed is faster than the
-                   speed of light.
-"""
-function velocity_from_kinetic_energy(E_eV, m)
-
-    iszero(m) && throw(ArgumentError("Mass must be nonzero"))
-
-    E_J = E_eV * eV_in_J
-
-    ratio = E_J / (m * c₀^2)
-
-    if ratio ≥ 1
-        throw(
-            ArgumentError(
-                "Kinetic energy is too large for non-relaticistic velocity approximation"
-            )
-        )
-    elseif ratio ≥ 0.1
-        @warn "Relativistic corrections might be significant"
-    end
-
-    m > 0 || throw(ArgumentError("Mass must be positive"))
-    E_eV ≥ 0 || throw(ArgumentError("Kinetic energy must be nonnegative"))
-
-    v = sqrt(2E_J / m)
-
-    return v
-end
-
-
-"""
-    pitchangle(v, B)
-
-Calculate the pitch angle for a particle.
-
-Given the velocity vector and the magnetic field vector of a particle, the function
-calculates the pitch angle.
-
-# Arguments
-
-- `v`: Velocity vector of the test particle `[vx, vy, vz]` [m/s].
-- `B`: Magnetic field vector `[Bx, By, Bz]` [T].
-
-# Keyword Arguments
-
-- `degrees::Bool`: Decide on which unit to return the angle in, degrees or radians. (default
-                   is radians).
-
-# Returns
-
-- Pitch angle of the particle, either in radians (default) or degrees.
-"""
-function pitchangle(v, B; degrees::Bool=false)
-    v = collect(v)
-    B = collect(B)
-
-    v_mag = norm(v)
-    B_mag = norm(B)
-
-    if v_mag ≤ eps(v_mag) || B_mag ≤ eps(B_mag)
-        return 0.0
-    end
-
-    cross_vB = cross(v, B)
-    cross_vB_mag = norm(cross_vB)
-    dot_vB = dot(v, B)
-
-    α = atan(cross_vB_mag, dot_vB)
-
-    return degrees ? rad2deg(α) : α
-end
-
-
-"""
     quarter_bounceperiod(L, E_eV, m, θ; degrees::Bool=false)
 
 Calculate the quarter bounce period for a particle in a dipole magnetic field.
@@ -453,42 +271,52 @@ function total_drift(L, E_eV, q, m, θ; degrees::Bool=false)
 end
 
 
-
 """
-    get_v0(magnetic_field, r0, E_eV, m; α_frac=1)
+    velocity_from_kinetic_energy(E_eV, m)
 
-Calculate the velocity vector for a particle in a magnetic field with some pitch angle.
+Calculate magnitude of velocity vector from kinetic energy.
 
-A function that takes in a magnetic field model, a initial position, energy and mass, to
-calculate an initial velocity that is within the loss cone, meaning that the particle will
-precipitate.
+Takes in kinetic energy given as electron volts and mass of some particle, converts the
+energy to Joules and then finds the magnitude of the velocity of the given particle.
 
 # Arguments
 
-- `magnetic_field`: Function describing the magnetic field, taking three positional values
-                    as the argument.
-- `r_0`: The initial position of the particle [m].
-- `E_eV`: Energy of the particle [eV].
+- `E_eV`: Kinetic energy of the particle [eV].
 - `m`: Mass of the particle [kg].
 
-# Keyword Arguments
+# Returns
 
-- `α_frac`: Factor multiplied with the loss cone boundary.
+- Magnitude of the velocity of the particle [m/s].
+
+# Throws
+
+- `ArgumentError`: If the given mass is zero or if the particles speed is faster than the
+                   speed of light.
 """
-function get_v0(magnetic_field, r0, E_eV; α_frac=1)
+function velocity_from_kinetic_energy(E_eV, m)
 
-    α_frac ≥ 0 || throw(ArgumentError("α_frac must be nonnegative"))
+    iszero(m) && throw(ArgumentError("Mass must be nonzero"))
 
-    if α_frac > 1
-        @warn("The particle is now outside the loss cone.")
+    E_J = E_eV * eV_in_J
+
+    ratio = E_J / (m * c₀^2)
+
+    if ratio ≥ 1
+        throw(
+            ArgumentError(
+                "Kinetic energy is too large for non-relaticistic velocity approximation"
+            )
+        )
+    elseif ratio ≥ 0.1
+        @warn "Relativistic corrections might be significant"
     end
 
-    α = losscone_angle(magnetic_field, r0) * α_frac
-    vy0 = sin(α) * velocity_from_kinetic_energy(E_eV, mₑ)
-    vz0 = cos(α) * velocity_from_kinetic_energy(E_eV, mₑ)
-    v0 = (0.0, vy0, vz0)
+    m > 0 || throw(ArgumentError("Mass must be positive"))
+    E_eV ≥ 0 || throw(ArgumentError("Kinetic energy must be nonnegative"))
 
-    return v0
+    v = sqrt(2E_J / m)
+
+    return v
 end
 
 
