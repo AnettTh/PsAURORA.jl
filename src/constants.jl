@@ -9,3 +9,4 @@ const M  = 8.05e22            # Earths magnetic moment  [A m²]
 
 const z_ionosphere = 700e3              # Height of the ionosphere [m]
 const eV_in_J      = 1.602176634e-19    # Electron volt in Joules [J]
+const BE           = 3.11e-5
