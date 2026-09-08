@@ -30,6 +30,96 @@ function gyro_frequency(B_mag::Real, q, m)
     return abs(q) * B_mag / m
 end
 
+"""
+    parallel_velocity(v, B)
+
+Calculate the component of the velocity parallel to the magnetic field.
+
+# Arguments
+
+- `v`: Velocity vector.
+- `B`: Magnetic-field vector.
+
+# Returns
+
+- The velocity vector parallel to `B`.
+
+# Throws
+- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
+"""
+function parallel_velocity(v, B)
+    B_mag2 = dot(B, B)
+
+    iszero(B_mag2) && throw(ArgumentError("Must have nonzero B"))
+
+    return (dot(v, B) / B_mag2) * B
+end
+
+
+"""
+    perpendicular_velocity(v, B)
+
+Calculate the component of the velocity perpendicular to the magnetic field.
+
+# Arguments
+
+- `v`: Velocity vector.
+- `B`: Magnetic-field vector.
+
+# Returns
+
+- The velocity vector perpendicular to `B`.
+
+# Throws
+- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
+"""
+function perpendicular_velocity(v, B)
+    return v - parallel_velocity(v, B)
+end
+
+
+"""
+    parallel_speed(v, B)
+
+Calculate the magnitude of the velocity component parallel to the magnetic field.
+
+# Arguments
+
+- `v`: Velocity vector.
+- `B`: Magnetic-field vector.
+
+# Returns
+
+- The magnitude of the velocity parallel to `B`.
+
+# Throws
+- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
+"""
+function parallel_speed(v, B)
+    return norm(parallel_velocity(v, B))
+end
+
+
+"""
+    perpendicular_speed(v, B)
+
+Calculate the magnitude of the velocity component perpendicular to the magnetic field.
+
+# Arguments
+
+- `v`: Velocity vector.
+- `B`: Magnetic-field vector.
+
+# Returns
+
+- The magnitude of the velocity perpendicular to `B`.
+
+# Throws
+- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
+"""
+function perpendicular_speed(v, B)
+    return norm(perpendicular_velocity(v, B))
+end
 
 
 """

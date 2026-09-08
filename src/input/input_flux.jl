@@ -216,8 +216,11 @@ end
 Compute the full 3D electron flux array for a **time-dependent** simulation.
 
 Evaluates the energy spectrum, distributes it over beams, and applies temporal
-modulation (including energy- and angle-dependent electron travel-time delays if a
-`z_source` was specified in the InputFlux).
+modulation, including energy- and angle-dependent electron travel-time delays if a
+`z_source` was specified in the InputFlux. Depending on the chosen propagation mode, being
+`:simple` or `:fieldline`, the travel-time delay (time-of-flight) is either approximated by
+a straight line (`:simple`) or found running a boris-mover, tracing the InputFlux to the
+specified source.
 
 The spectrum is spread over the selected downward-going beams proportionally to their
 solid angle, and normalized so that the **field-aligned (vertical) energy flux**
@@ -276,19 +279,20 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
     z_distance = z_source_km * 1e3 - z[end]     # [m]
 
     # Used for the field-line tracing
-    r_source = z_source_km * 1e3
+    r_source = RE + z_source_km * 1e3
 
     # Decide the initial position
     # TODO: This does not consider the actual location, need to alter this if tsyganenko is
     # to be used later
     r_top = RE + z[end]     # [m]
+
     r0 = [
         r_top * cosd(69),
         0.0,
         r_top * sind(69)
     ]
 
-
+    # NOTE: negated the pitch-angle!!
     t_ref = time_of_flight(
         E_centers[end],
         μ_center[flux.beams[1]],
@@ -324,8 +328,8 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
                 z_distance;
                 propagation=flux.propagation,
                 magnetic_field=dipole_field,
-                r0 = r0,
-                z_end = r_source
+                r0=r0,
+                z_end=r_source
             )
 
             # Time-shifted grid: subtract travel time difference relative to reference

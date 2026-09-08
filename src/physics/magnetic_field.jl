@@ -6,33 +6,35 @@ using StaticArrays
 
 """
     dipole_field(x, y, z)
+    dipole_field(r)
 
-Make vector containing dipole magnetic field values at given position.
+Compute the dipole magnetic field vector at given Cartesian position.
 
-The function takes in Cartesian coordinates (either scalar coordinate or vector) and returns
-a vector giving the magnetic field strength corresponding to a modeled dipole field. If the
-position is outside of the valid range for the approximation, returns zero-vector for
-consistency, with a warning.
+Returns the magnetic field components `[Bx, By, Bz]` in tesla, modeled as a magnetic
+dipole field. The field is only valid within 10 Earth radii from the center of the Earth.
 
 # Arguments
 
-- `x`: Position in x-direction, given in meters.
-- `y`: Position in y-direction, given in meters.
-- `z`: Position in z-direction, given in meters.
+- `x`: Position in x-direction (m).
+- `y`: Position in y-direction (m).
+- `z`: Position in z-direction (m).
+- `r`: Three-element vector `[x, y, z]` of Cartesian coordinates (m).
 
 # Returns
 
-- A three-element vector `[Bx, By, Bz]` containing magnetic-field components in tesla.
+- `SVector{3, Float64}`: Magnetic field components `[Bx, By, Bz]` (T).
 
 # Throws
 
-- `ArgumentError`: If the position is at the origin or if the vector has the wrong length.
+- `ArgumentError`: If the position is at the origin.
+- `ArgumentError`: If the position is inside or on the Earth's surface (`r ≤ RE`).
+- `ArgumentError`: If the position is outside the valid range (`r > 10 RE`).
+- `ArgumentError`: If the input vector `r` does not have exactly three elements.
 """
 function dipole_field(x, y, z)
 
     r2 = x^2 + y^2 + z^2       #[m]
     r = sqrt(r2)
-    r5 = r2^2 * r
 
     iszero(r) && throw(ArgumentError("Dipole field not defined in position origo"))
 
@@ -48,6 +50,8 @@ function dipole_field(x, y, z)
             intended?"
         )
     )
+
+    r5 = r2^2 * r
 
     C = - (μ₀ / (4π)) * M
 
@@ -69,9 +73,8 @@ end
 
 
 # NOTE: Move elsewhere?
-# TODO: Is flip the best way to go, or orientation-vector with dot?
 """
-    magnetic_basis(B)
+    magnetic_basis(B; flip::Bool=false)
 
 Construct an orthonormal magnetic-field basis from a magnetic-field vector.
 
@@ -81,6 +84,11 @@ the plane perpendicular to the magnetic field.
 # Arguments
 
 - `B`: Magnetic-field vector in Cartesian coordinates.
+
+# Keyword Arguments
+
+TODO: might want to do this in another way!
+- `flip`: Option to flip the direction of the magnetic field
 
 # Returns
 
@@ -103,7 +111,7 @@ function magnetic_basis(B; flip::Bool=false)
 
     b̂ = B ./ B_mag
 
-    # TODO: Add something here to make sure the basis points in the right direction
+    # TODO: Change this simple fix into something a bit more robust, for example an orientation vector?
     if flip
         b̂ = -b̂
     end

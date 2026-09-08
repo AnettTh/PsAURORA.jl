@@ -19,7 +19,7 @@ function time_of_flight(
     elseif propagation == :fieldline
 
         # Construct initial velocity with available information
-        v0 = get_v0_from_Eμ(magnetic_field, r0, E_eV, μ)
+        v0 = get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; flip=true)
 
         result = boris_mover_TOF(magnetic_field, r0, v0, z_end)
 

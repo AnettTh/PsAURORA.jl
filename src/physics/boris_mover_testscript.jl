@@ -31,7 +31,8 @@ result = boris_mover_TOF(
     v0,
     r_source;
     n_T=100_000,
-    resolution=10
+    resolution=10,
+    store_trajectory=true
 )
 
 
