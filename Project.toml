@@ -32,6 +32,8 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StyledStrings = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
+TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 
 [weakdeps]
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
@@ -69,6 +71,8 @@ StaticArrays = "1.9.20"
 Statistics = "1.10"
 StyledStrings = "1"
 TOML = "1"
+TestItemRunner = "1.3.2"
+TestItems = "1.1.0"
 julia = "1.10"
 
 [extras]

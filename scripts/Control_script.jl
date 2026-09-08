@@ -37,6 +37,9 @@ sim = AuroraSimulation(model, flux, output; mode)
 
 ## Run this to get flame-graph!
 initialize!(model)
+
+##
+t = 0:0.05:1
 _ = compute_flux(flux, model, t)
 @profview compute_flux(flux, model, t)
 ##
