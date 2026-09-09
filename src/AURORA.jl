@@ -3,6 +3,7 @@ module AURORA
 include("constants.jl")
 # TODO: remove export when not testing?
 # TODO: Evaluate the handeling of z_ionosphere
+# TODO: Go over units, check consistency and use square brackets!
 export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ
 
 include("grids/abstract_grid.jl")

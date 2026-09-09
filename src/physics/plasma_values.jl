@@ -207,13 +207,13 @@ for it to precipitate into the ionosphere.
 # Arguments
 
 - `dipole_field`: Function describing the magnetic field, taking three positional values
-                    as the argument.
+  as the argument.
 - `r_eq`: The position in the equatorial plane for where to find the loss cone [m].
 
 # Keyword Arguments
 
 - `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
-                   passing `true` will allow for input in degrees.
+  passing `true` will allow for input in degrees.
 
 # Returns
 
@@ -276,7 +276,7 @@ takes for the particle to travel along a dipolar magnetic field and to the mirro
 # Keyword Arguments
 
 - `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
-                   passing `true` will allow for input in degrees.
+  passing `true` will allow for input in degrees.
 """
 function quarter_bounceperiod(L, E_eV, m, θ; degrees::Bool=false)
 
@@ -312,7 +312,7 @@ particle.
 # Keyword Arguments
 
 - `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
-                   passing `true` will allow for input in degrees.
+  passing `true` will allow for input in degrees.
 """
 function average_driftvelocity(L, E_eV, q, θ; degrees::Bool=false)
 
@@ -349,7 +349,7 @@ pitch angle, and returns an approximation for the total drift of the particle.
 # Keyword Arguments
 
 - `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
-                   passing `true` will allow for input in degrees.
+  passing `true` will allow for input in degrees.
 
 """
 function total_drift(L, E_eV, q, m, θ; degrees::Bool=false)
@@ -381,7 +381,7 @@ energy to Joules and then finds the magnitude of the velocity of the given parti
 # Throws
 
 - `ArgumentError`: If the given mass is zero or if the particles speed is faster than the
-                   speed of light.
+  speed of light.
 """
 function velocity_from_kinetic_energy(E_eV, m)
 
@@ -424,7 +424,7 @@ phase of the gyration.
 # Arguments
 
 - `magnetic_field`: Function describing the magnetic field, taking three positional values
-                    as the argument.
+  as the argument.
 - `r_0`: The initial position of the particle [m].
 - `E_eV`: Energy of the particle [eV].
 - `μ`: The cosine of the pitch-angle α of the particle, i.e. some value between -1 and 1.

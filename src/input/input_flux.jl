@@ -300,7 +300,7 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
         propagation=flux.propagation,
         magnetic_field=dipole_field,
         r0=r0,
-        z_end=r_source,
+        r_source=r_source,
     )
 
     # Field-aligned (vertical) normalization: pin the vertical energy flux to IeE_tot
@@ -329,7 +329,7 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
                 propagation=flux.propagation,
                 magnetic_field=dipole_field,
                 r0=r0,
-                z_end=r_source
+                r_source=r_source
             )
 
             # Time-shifted grid: subtract travel time difference relative to reference

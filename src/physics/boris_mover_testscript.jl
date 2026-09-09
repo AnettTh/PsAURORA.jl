@@ -1,5 +1,5 @@
 using AURORA
-using CairoMakie
+using WGLMakie
 using LinearAlgebra: norm, dot
 
 ##
@@ -42,18 +42,21 @@ pos = result.r
 
 ##
 fig = Figure()
-ax = Axis(fig[1, 1])
+ax = Axis(
+    fig[1, 1],
+    xlabel="X [RE]",
+    ylabel="Z [RE]")
 
 lines!(
     ax,
-    pos[2:end, 1] ./ RE,
-    pos[2:end, 3] ./ RE,
+    pos[end-30:end, 1] ./ RE,
+    pos[end-30:end, 3] ./ RE,
 )
 
-scatter!(
-    ax,
-    [pos[2, 1] / RE],
-    [pos[2, 3] / RE],
-)
+#scatter!(
+#    ax,
+#    [pos[2, 1] / RE],
+#    [pos[2, 3] / RE],
+#)
 
 fig
