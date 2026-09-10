@@ -433,7 +433,7 @@ phase of the gyration.
 
 - `ϕ`: The phase of the gyration, default is 0.0.
 """
-function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, flip::Bool=true)
+function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator=true) #, flip::Bool=true)
 
     -1 ≤ μ ≤ 1 || throw(
         ArgumentError("μ must be between -1 and 1")
@@ -443,7 +443,8 @@ function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, flip::Bool=true)
 
     # Construct the magnetic basis
     B = magnetic_field(r0...)
-    b, e1, e2, _ = magnetic_basis(B; flip=flip)
+
+    b, e1, e2, _ = magnetic_basis(B; towards_equator=towards_equator)#; flip=flip)
 
     # Determine parallel and perpendicular speeds
     v_parallel = μ * v

@@ -6,6 +6,11 @@ altitude_lims = [100, 600];     # (km) altitude limits of the ionosphere
 E_max = 15000;                  # (eV) upper limit to the energy grid
 B_angle_to_zenith = 13;         # (°) angle between the B-field line and the zenith
 
+# Calculate source for given L-shell (z is altitude, r is with center of the Earth as origo)
+# RE is again added to the calculation internally, but for consistency, using altitude here.
+L = 6.5
+z_source = (L*RE - RE) * 1e-3
+
 msis_file = find_msis_file(
     year=2005, month=10, day=8, hour=22, minute=0, lat=70, lon=19, height=85:1:700
     );
@@ -21,7 +26,7 @@ output = AuroraOutputManager("data/boris_test"; overwrite=false)
 
 ## Define input flux
 flux = InputFlux(MaxwellianSpectrum(1e-2, 14e3), SmoothOnset(0.02, 0.12);
-                 beams=1, z_source=6.5*RE / 1e3, propagation=:fieldline)
+                 beams=1, z_source=z_source, propagation=:fieldline)
 
 
 ## Create and run the simulation

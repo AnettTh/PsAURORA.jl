@@ -251,8 +251,6 @@ end
 
 
 
-# TODO: Write/draw all spatial variables, to relate them and potentially rename/simplify
-# and/or add explanations here, because yikes.
 function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t)
     E_centers = model.energy_grid.E_centers
     ΔE = model.energy_grid.ΔE
@@ -278,12 +276,11 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
     # Used for the simple approach
     z_distance = z_source_km * 1e3 - z[end]     # [m]
 
-    # Used for the field-line tracing
-    r_source = RE + z_source_km * 1e3
+    # Used for the field-line tracing, taking the source from altitude [km] to radial distance [m]
+    r_source = z_source_km * 1e3 + RE       # [m]
 
     # Decide the initial position
-    # TODO: This does not consider the actual location, need to alter this if tsyganenko is
-    # to be used later
+    # TODO: Figure out how to do this using the actual defined location, does AuroraModel contain the needed parameters?
     r_top = RE + z[end]     # [m]
 
     r0 = [
@@ -292,7 +289,6 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
         r_top * sind(69)
     ]
 
-    # NOTE: negated the pitch-angle!!
     t_ref = time_of_flight(
         E_centers[end],
         μ_center[flux.beams[1]],
@@ -304,6 +300,7 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
     )
 
     # Field-aligned (vertical) normalization: pin the vertical energy flux to IeE_tot
+    # TODO: Ask Etienne if this is still valid in my approximation
     beam_norm = field_aligned_beam_norm(flux.beams, μ_center, Ω_beam)
 
     ## ==================== Main loop ==================== ##
