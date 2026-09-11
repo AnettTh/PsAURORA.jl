@@ -62,6 +62,7 @@ function boris_mover_TOF(
     resolution > 0 || throw(ArgumentError("Resolution must be positive"))
 
     # Find total number of steps reqired
+    # TODO: Look into if defining n_T like this is necessary
     steps = Int(n_T * resolution)
 
     # Initial position, velocity and TOF
@@ -124,8 +125,8 @@ function boris_mover_TOF(
             r[i, :] .= x, y, z
         end
 
-        # TODO: Add correct check of r_source here
-        if z < 1e3
+        r_current = sqrt(x^2 + y^2 + z^2)
+        if r_current ≥ r_source
             result = (tof=tof, footpoint = (x, y, z))
             return store_trajectory ? (result..., r=r[1:i,:]) : result
         end

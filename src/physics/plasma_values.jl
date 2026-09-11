@@ -1,7 +1,8 @@
 using AURORA
 using LinearAlgebra: norm, dot, cross
+using StaticArrays
 
-# TODO: Remove/archive functions that are not in use
+
 """
     gyro_frequency(B, q, m)
 
@@ -153,7 +154,6 @@ function larmor_radius(m, q, v, B)
 end
 
 
-# IDEA: Can be made more efficient by staticarrays.jl
 """
     gyrocenter(r, v, B, q, m)
 
@@ -169,7 +169,7 @@ Calculate the position of the gyrocenter of a test particle in a magnetic field.
 
 # Returns
 
-- Gyrocenter position vector `[x, y, z]` [m].
+- Gyrocenter position vector `SVector{3}` [m].
 
 # Throws
 
@@ -177,22 +177,22 @@ Calculate the position of the gyrocenter of a test particle in a magnetic field.
 """
 function gyrocenter(r, v, B, q, m)
 
-    # If tuples, convert to arrays to allow for linear algebra
-    r = collect(r)
-    v = collect(v)
-    B = collect(B)
-
-    B_mag = norm(B)
-
-    iszero(B_mag) && throw(ArgumentError("Must have nonzero B"))
     iszero(q) && throw(ArgumentError("Particle charge must be nonzero"))
 
-    b_hat = B / B_mag
-    v_perp = v - dot(v, b_hat) * b_hat
+    r_s = SVector{3}(r)
+    v_s = SVector{3}(v)
+    B_s = SVector{3}(B)
+
+    B_mag = norm(B_s)
+    iszero(B_mag) && throw(ArgumentError("Must have nonzero B"))
+
+    b_hat = B_s / B_mag
+    v_perp = v_s - dot(v_s, b_hat) * b_hat
     ρ = (m / (q * B_mag)) * cross(v_perp, b_hat)
 
-    return r - ρ
+    return r_s - ρ
 end
+
 
 # TODO: Change input to L-shell?
 """
@@ -411,7 +411,7 @@ end
 
 
 """
-    get_v0_from_μ(magnetic_field, r0, E_eV, μ; ϕ=0.0)
+    get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator::Bool=true)
 
 Calculate the electron velocity vector given initial values.
 
@@ -427,28 +427,37 @@ phase of the gyration.
   as the argument.
 - `r_0`: The initial position of the particle [m].
 - `E_eV`: Energy of the particle [eV].
-- `μ`: The cosine of the pitch-angle α of the particle, i.e. some value between -1 and 1.
+- `μ`: The cosine of the pitch-angle `α` of the particle, i.e. some value between -1 and 1.
 
 # Keyword Arguments
 
 - `ϕ`: The phase of the gyration, default is 0.0.
+- `towards_equator`: Decides if the valocity is parallel or anti-parallel with the magnetic
+  field, parallel being towards the equator IF in the northern hemisphere. The default is
+  `true`.
 """
-function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator=true) #, flip::Bool=true)
+function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator::Bool=true)
 
-    -1 ≤ μ ≤ 1 || throw(
-        ArgumentError("μ must be between -1 and 1")
-    )
+    -1 ≤ μ ≤ 1 || throw(ArgumentError("μ must be between -1 and 1"))
 
-    v = velocity_from_kinetic_energy(E_eV, mₑ)
+    v_mag = velocity_from_kinetic_energy(E_eV, mₑ)
 
     # Construct the magnetic basis
     B = magnetic_field(r0...)
 
-    b, e1, e2, _ = magnetic_basis(B; towards_equator=towards_equator)#; flip=flip)
+    b, e1, e2, _ = magnetic_basis(B)
+
+    # Adjust direction based on which hemisphere `r0` is in, meaning that if we are in the
+    # northern hemisphere, towards equator means μ > 0
+    if towards_equator
+        μ_corrected = r0[3] > 0 ? -abs(μ) : abs(μ)
+    else
+        μ_corrected = r0[3] > 0 ? abs(μ) : -abs(μ)
+    end
 
     # Determine parallel and perpendicular speeds
-    v_parallel = μ * v
-    v_perp = sqrt(1 - μ^2) * v
+    v_parallel = μ_corrected * v_mag
+    v_perp = sqrt(1 - μ_corrected^2) * v_mag
 
     # Initial velocity
     v0 = v_parallel .* b .+

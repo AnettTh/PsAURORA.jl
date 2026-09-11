@@ -72,24 +72,16 @@ function dipole_field(r)
 end
 
 
-# NOTE: Move elsewhere?
-# TODO: Fix this, broke it before going home
 """
-    magnetic_basis(B; flip::Bool=false)
+    magnetic_basis(B)
 
 Construct an orthonormal magnetic-field basis from a magnetic-field vector.
 
 The first basis vector, `̂b`, is parallel to the magnetic field, while `e1` and `e2` spans
 the plane perpendicular to the magnetic field.
-
 # Arguments
 
 - `B`: Magnetic-field vector in Cartesian coordinates.
-
-# Keyword Arguments
-
-TODO: might want to do this in another way!
-- `flip`: Option to flip the direction of the magnetic field
 
 # Returns
 
@@ -104,21 +96,13 @@ A tuple `(b̂, e1, e2, B_mag)` containing:
 
 - `ArgumentError`: If the magnetic-field magnitude is zero.
 """
-function magnetic_basis(B; towards_equator=false)# this should be true when function is correctly implemented
+function magnetic_basis(B)
     B = collect(B)
 
     B_mag = norm(B)
     B_mag > eps() || throw(ArgumentError("Magnetic-field magnitude must be non-zero"))
 
     b̂ = B ./ B_mag
-
-    if towards_equator
-        # Assuming well-behaved vectors, such that the directionality is not messed up
-        # TODO: Add r0 to check if we're actually north
-        if b̂[3] > 0
-            b̂ = -b̂
-        end
-    end
 
     # Use x-direction as one vector if b̂ is not too close, else use y-direction
     if abs(b̂[1]) < 0.9
