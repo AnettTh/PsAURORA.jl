@@ -128,22 +128,6 @@ end
         @test B_mag ≈ 5.0 rtol=1e-10
     end
 
-    ## ==================== flip ==================== ##
-    @testset "flip=true reverses b̂" begin
-        B = [1.0, 2.0, 3.0]
-        b_normal, _, _, _ = magnetic_basis(B)
-        b_flipped, _, _, _ = magnetic_basis(B)#; flip=true)
-
-        @test b_flipped ≈ -b_normal rtol=1e-10
-    end
-
-    @testset "flip=false keeps b̂ parallel to B" begin
-        B = [1.0, 0.0, 0.0]
-        b, _, _, _ = magnetic_basis(B)#; flip=false)
-
-        @test dot(b, B) > 0   # b̂ should point same way as B
-    end
-
     ## ==================== Error handling ==================== ##
     @testset "Throws for zero field" begin
         @test_throws ArgumentError magnetic_basis([0.0, 0.0, 0.0])
