@@ -62,6 +62,7 @@ include("physics/boris_mover.jl")
 export boris_mover_TOF
 include("physics/time_of_flight.jl")
 export time_of_flight, t_whistler_transit, t_electron_transit, t_WPI_electron_precipitation
+export dispersion_relation_whistler_branch
 
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid

@@ -1,7 +1,9 @@
 using AURORA
-using AURORA; mₑ, eV_in_J, c
+using AURORA; mₑ, eV_in_J, c₀
 using QuadGK
 using LinearAlgebra
+
+#===================================Saito-Miyoshi method===================================#
 
 # IDEA: If these are slow, would it help to make them the same function but with multiple dispatch?
 # NOTE: Verify that returning the absolute value is numerically allowed
@@ -33,6 +35,7 @@ function t_whistler_transit(θ_resonance, v_g, R0)
 end
 
 
+# TODO: Docstring
 function t_electron_transit(θ_resonance, v_parallel_lc, R0)
 
     function t(θ)
@@ -45,6 +48,7 @@ function t_electron_transit(θ_resonance, v_parallel_lc, R0)
 end
 
 
+# TODO: Finish docstring
 """
     t_WPI_electron_precipitation(θ_resonance, v_g, v_parallel_lc, R0, t_l, E_eV, α_lc)
 
@@ -63,24 +67,10 @@ function t_WPI_electron_precipitation(θ_resonance, v_g, v_parallel_lc, R0, t_l,
 end
 
 
-function electron_cyclotron_frequency(r; magnetic_field::Function=dipole_field)
 
-    B = magnetic_field(r...)
+#====================================Chen/Hsieh method====================================#
 
-    return norm(eV_in_J * B / mₑ)
-end
-
-
-function group_velocity_whistler_wave(ω, r; ω_pe=1)
-
-    Ω_e = abs(electron_cyclotron_frequency(r))
-
-    a = (2 * c) / (ω_pe / Ω_e)
-    b = (1 - (ω / Ω_e))
-end
-
-
-function resonance_energy(z, ω)
+function chorus_angular_frequency_timer(ω)
 
 end
 
@@ -92,6 +82,7 @@ end
 
 
 
+#===================================Run preferred method===================================#
 # IDEA: Make this into 'AbstractPropagation'
 # TODO: z_distance only used if simple, is there a better way? Change to kwarg with added errors?
 # TODO: Add TOF including also whistler wave influence

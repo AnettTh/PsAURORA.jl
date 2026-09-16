@@ -4,6 +4,7 @@ version = "0.8.0"
 authors = ["Etienne <etienne.gavazzi@uit.no>"]
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 CondaPkg = "992eb4ea-22a4-4c89-a5bb-47a3300528ab"
 DataInterpolations = "82cc6244-b520-54b8-b5a6-8a565e85f1d0"
@@ -42,6 +43,7 @@ WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 AURORA_viz = "Makie"
 
 [compat]
+BenchmarkTools = "1.8.0"
 CairoMakie = "0.15.13"
 CondaPkg = "0.2"
 DataInterpolations = "8.8, 9.0"
