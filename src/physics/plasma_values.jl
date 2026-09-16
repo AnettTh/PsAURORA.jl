@@ -27,7 +27,7 @@ function gyro_frequency(B::AbstractVector, q, m)
 end
 
 function gyro_frequency(B_mag::Real, q, m)
-    iszero(B_mag) && throw(ArgumentError("Must have nonzero B"))
+    B_mag > 0 || throw(ArgumentError("Must have nonzero B"))
     return abs(q) * B_mag / m
 end
 
@@ -465,3 +465,7 @@ function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator::
 
     return Tuple(v0)
 end
+
+# TODO: Add and test whistler wave number with option for relativistic energies
+# TODO: Add and test whistler wave dispersion relation with option for relativistic energies
+# TODO: Add and test resonance condition with option for relativistic energies

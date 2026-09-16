@@ -1,7 +1,100 @@
 using AURORA
+using AURORA; mₑ, eV_in_J, c
+using QuadGK
+using LinearAlgebra
+
+# IDEA: If these are slow, would it help to make them the same function but with multiple dispatch?
+# NOTE: Verify that returning the absolute value is numerically allowed
+"""
+    t_whistler_transit(θ_resonance, v_g, R0)
+
+Calculate transit time for whistler waves.
+
+For some given group velocity of parallel propagating whistler waves, `v_g`, the time of
+travel from the equatorial plane (`θ = π/2°`) to the resonance region `θ_resonance`, where θ
+is the colatitude, is calculated.
+
+# Arguments
+
+- `θ_resonance`: Colatitude of the resonance region [rad].
+- `v_g`: Group velocity of whistler waves [m/s].
+- `R0`: Radius at the equatorial plane [m].
+
+"""
+function t_whistler_transit(θ_resonance, v_g, R0)
+
+    function t(θ)
+        return (R0 * sqrt(1 + 3*(cos(θ))^2) * sin(θ)) / v_g
+    end
+
+    t_w = quadgk(t, π/2, θ_resonance)
+
+    return abs(t_w[1])
+end
+
+
+function t_electron_transit(θ_resonance, v_parallel_lc, R0)
+
+    function t(θ)
+        return (R0 * sqrt(1 + 3*(cos(θ))^2) * sin(θ)) / abs(v_parallel_lc)
+    end
+
+    t_e = quadgk(t, θ_resonance, π/2)
+
+    return abs(t_e[1])
+end
+
+
+"""
+    t_WPI_electron_precipitation(θ_resonance, v_g, v_parallel_lc, R0, t_l, E_eV, α_lc)
+
+Calculate the total time-of-flight for a
+Using the method of Saito-Miyoshi, as described in Saito 2012.
+"""
+function t_WPI_electron_precipitation(θ_resonance, v_g, v_parallel_lc, R0, t_l, E_eV, α_lc)
+
+    t_w = t_whistler_transit(θ_resonance, v_g, R0)
+    t_e = t_electron_transit(θ_resonance, v_parallel_lc, R0)
+    t_b = quarter_bounceperiod(R0/RE, E_eV, mₑ, α_lc)
+
+    t_precipitation = t_w + t_e + t_b + t_l
+
+    return t_precipitation
+end
+
+
+function electron_cyclotron_frequency(r; magnetic_field::Function=dipole_field)
+
+    B = magnetic_field(r...)
+
+    return norm(eV_in_J * B / mₑ)
+end
+
+
+function group_velocity_whistler_wave(ω, r; ω_pe=1)
+
+    Ω_e = abs(electron_cyclotron_frequency(r))
+
+    a = (2 * c) / (ω_pe / Ω_e)
+    b = (1 - (ω / Ω_e))
+end
+
+
+function resonance_energy(z, ω)
+
+end
+
+
+function t_WPI_adiabatic()
+
+end
+
+
+
 
 # IDEA: Make this into 'AbstractPropagation'
 # TODO: z_distance only used if simple, is there a better way? Change to kwarg with added errors?
+# TODO: Add TOF including also whistler wave influence
 """
     time_of_flight(
     E_eV,
@@ -73,7 +166,7 @@ function time_of_flight(
         end
 
         # Construct initial velocity with available information
-        v0 = get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; towards_equator=true)#; flip=true)
+        v0 = get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; towards_equator=true)
 
         result = boris_mover_TOF(magnetic_field, r0, v0, r_source)
 

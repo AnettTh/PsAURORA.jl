@@ -1,5 +1,6 @@
 module AURORA
 
+# TODO: Evaluate whether L or R0 should be used throughout the entire code, now it is a mess!
 include("constants.jl")
 # TODO: remove export when not testing?
 # TODO: Evaluate the handeling of z_ionosphere
@@ -55,10 +56,12 @@ export quarter_bounceperiod, average_driftvelocity, total_drift
 export parallel_velocity, perpendicular_velocity
 export parallel_speed, perpendicular_speed
 
+include("physics/particle_state.jl")
+export ParticleState
 include("physics/boris_mover.jl")
 export boris_mover_TOF
 include("physics/time_of_flight.jl")
-export time_of_flight
+export time_of_flight, t_whistler_transit, t_electron_transit, t_WPI_electron_precipitation
 
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid
