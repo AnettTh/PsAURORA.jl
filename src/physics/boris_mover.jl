@@ -1,6 +1,9 @@
 using AURORA
 using LinearAlgebra: norm, cross
 
+# TODO: Add option for perturbed B- and E-field, which are needed for WPI-version.
+# TODO: Re-introduce E-field
+# TODO: Relativistic corrections
 """
     boris_mover_TOF(
     magnetic_field,

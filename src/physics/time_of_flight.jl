@@ -6,7 +6,8 @@ using LinearAlgebra
 #===================================Saito-Miyoshi method===================================#
 
 # IDEA: If these are slow, would it help to make them the same function but with multiple dispatch?
-# NOTE: Verify that returning the absolute value is numerically allowed
+# TODO: Verify that returning the absolute value is numerically allowed
+# TODO: Make some plot to verify that this is correct also
 """
     t_whistler_transit(θ_resonance, v_g, R0)
 
@@ -70,16 +71,87 @@ end
 
 #====================================Chen/Hsieh method====================================#
 
-function chorus_angular_frequency_timer(ω)
+# To find the group velocity
+"""
+    group_velocity_whistler_wave(
+    ω::AbstractArray;
+    Ω_e::Float64=9.48e3,
+    ω_pe::Float64=37.9e3)
 
+Calculates the group velocity `v_g` for the whistler mode chorus wave as a function of
+chorus angular frequency `ω`.
+
+This is valid assuming chorus frequencies `ω` ≫ ion gyro-frequencies (Chen 2020).
+
+# Arguments
+
+- `ω`: Chorus angular frequency, often a linearly rising tone [rad/s].
+
+# Keyword Arguments
+
+- `Ω_e`: Electron gyrofrequency at a specific location λ [rad/s], default is 9.48 kHz (from
+  Hsieh et al. 2022).
+- `ω_pe`: Electron plasma frequency at a specific location λ [rad/s], default is
+  `4×Ω_e`=37.9 kHz (from Hsieh et al. 2022).
+
+# Returns
+
+- The group velocity for the set of parameters chosen.
+
+# Throws
+
+- `ArgumentError`: If the frequencies does not match that of the whistler-branch.
+- `ArgumentError`: If the plasma parameters are outside of the expected domain, might not be
+  non-realistic, but for now it indicates an error.
+"""
+function group_velocity_whistler_wave(
+    ω::AbstractArray;
+    Ω_e::Float64=9.48e3,
+    ω_pe::Float64=37.9e3)
+
+    any(ω .> Ω_e) && throw(ArgumentError("Not on whistler branch, check your frequencies!"))
+    ω_pe < Ω_e && throw(ArgumentError("Plasma parameters not valid, reality-check needed!"))
+
+    a = @. (2 * c₀) / (ω_pe / Ω_e)
+    b = @. (1 - (ω / Ω_e))^(3/2)
+    c = @. (ω / Ω_e)^(1/2)
+
+    return @. a*b*c
 end
 
 
-function t_WPI_adiabatic()
-
+#To find the parallel velocity
+# TODO: Make this into a look-up table in some clever way??
+function B_of_λ(λ, magnetic_field)
+    return nothing
 end
 
 
+function parallel_velocity(particle::ParticleState, λ_grid::AbstractVector)
+    B_eq_mag = norm(particle.B_eq)
+    v_parallel = zeros(length(λ_grid))
+
+    for (i, λ) in enumerate(λ_grid)
+        B_λ = particle.magnetic_field(particle.L, λ)
+        B_λ_mag = norm(B_λ)
+
+        α_λ = pitch_angle_at_z(particle.α_eq, B_eq_mag, B_λ_mag)
+        v_parallel[i] = particle.v * cos(α_λ)
+    end
+
+    return v_parallel
+end
+
+
+
+# To find the point of resonance (eq. 6)
+function kz_of_z(z)
+    return nothing
+end
+
+function z_resonance()
+    return "The position z at which the specific wave resonates"
+end
 
 
 #===================================Run preferred method===================================#
@@ -120,8 +192,6 @@ flight.
 # Returns
 
 - The time of flight using the chosen propagation method.
-
-# Throws
 
 # Throws
 

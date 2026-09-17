@@ -2,7 +2,7 @@ using AURORA
 using LinearAlgebra: norm, dot, cross
 using StaticArrays
 
-
+# TODO: fix the 'old' functions to be multiple dispatch for struct, λ_grid
 """
     gyro_frequency(B, q, m)
 
@@ -48,7 +48,7 @@ Calculate the component of the velocity parallel to the magnetic field.
 # Throws
 - `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
 """
-function parallel_velocity(v, B)
+function old_parallel_velocity(v, B)
     B_mag2 = dot(B, B)
 
     iszero(B_mag2) && throw(ArgumentError("Must have nonzero B"))
@@ -74,7 +74,7 @@ Calculate the component of the velocity perpendicular to the magnetic field.
 # Throws
 - `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
 """
-function perpendicular_velocity(v, B)
+function old_perpendicular_velocity(v, B)
     return v - parallel_velocity(v, B)
 end
 
@@ -96,7 +96,7 @@ Calculate the magnitude of the velocity component parallel to the magnetic field
 # Throws
 - `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
 """
-function parallel_speed(v, B)
+function old_parallel_speed(v, B)
     return norm(parallel_velocity(v, B))
 end
 
@@ -118,7 +118,7 @@ Calculate the magnitude of the velocity component perpendicular to the magnetic 
 # Throws
 - `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
 """
-function perpendicular_speed(v, B)
+function old_perpendicular_speed(v, B)
     return norm(perpendicular_velocity(v, B))
 end
 
@@ -253,6 +253,16 @@ function losscone_angle(dipole_field, r_eq; degrees::Bool=false)
     return α
 end
 
+
+# TODO: Docstring!
+# TODO: Add throws!
+function pitch_angle_at_z(α_known, B_known, B_z)
+
+    sin2_α = sin(α_known)^2 * B_z / B_known
+    α = asin(sqrt(sin2_α))
+
+    return α
+end
 
 
 """

@@ -120,6 +120,24 @@ function magnetic_basis(B)
     return b̂, e1, e2, B_mag
 end
 
+# TODO: Add also this to the doc-string, with some throws/warnings?
+function dipole_field(L::Real, λ::Real)
+    r = L * RE * cos(λ)^2
+    x = r * cos(λ)
+    z = r * sin(λ)
+
+    return dipole_field(x, 0.0, z)
+end
+
+
+# TODO: Doc-string, throws, multiple dispatch
+function r_to_λL(r)
+    r_mag = norm(r)
+    λ = asin(r[3] / r_mag)
+    L = r_mag / (RE * cos(λ)^2)
+    return λ, L
+end
+
 
 #"""
 #    tsyganenko_field(

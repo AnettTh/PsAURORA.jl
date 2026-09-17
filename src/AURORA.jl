@@ -47,22 +47,26 @@ export N2Species, O2Species, OSpecies
 
 # NOTE: Under testing
 include("physics/magnetic_field.jl")
-export dipole_field, magnetic_basis
-include("physics/plasma_values.jl")
+export dipole_field, magnetic_basis, r_to_λL
+include("physics/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
-export losscone_angle
+export losscone_angle, pitch_angle_at_z
 export quarter_bounceperiod, average_driftvelocity, total_drift
-export parallel_velocity, perpendicular_velocity
-export parallel_speed, perpendicular_speed
+#export parallel_velocity, perpendicular_velocity
+#export parallel_speed, perpendicular_speed
 
+include("physics/plasma/plasma_parameters.jl")
+export Ωe_at_λ, PlasmaParameters
 include("physics/particle_state.jl")
 export ParticleState
 include("physics/boris_mover.jl")
 export boris_mover_TOF
 include("physics/time_of_flight.jl")
 export time_of_flight, t_whistler_transit, t_electron_transit, t_WPI_electron_precipitation
-export dispersion_relation_whistler_branch
+include("physics/plasma/WPI_dynamics.jl")
+export group_velocity_whistler_wave
+
 
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid

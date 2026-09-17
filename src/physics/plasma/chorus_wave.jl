@@ -1,3 +1,6 @@
+
+# TODO: Figure out what is needed for this
+
 struct ChorusWave
     B_w0    :: Float64    # peak wave amplitude [T]
     ω       :: Float64    # wave frequency [rad/s]
