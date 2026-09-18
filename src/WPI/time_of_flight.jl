@@ -30,9 +30,9 @@ function t_whistler_transit(θ_resonance, v_g, R0)
         return (R0 * sqrt(1 + 3*(cos(θ))^2) * sin(θ)) / v_g
     end
 
-    t_w = quadgk(t, π/2, θ_resonance)
+    t_w, _ = quadgk(t, π/2, θ_resonance)
 
-    return abs(t_w[1])
+    return abs(t_w)
 end
 
 
@@ -43,9 +43,9 @@ function t_electron_transit(θ_resonance, v_parallel_lc, R0)
         return (R0 * sqrt(1 + 3*(cos(θ))^2) * sin(θ)) / abs(v_parallel_lc)
     end
 
-    t_e = quadgk(t, θ_resonance, π/2)
+    t_e, _ = quadgk(t, θ_resonance, π/2)
 
-    return abs(t_e[1])
+    return abs(t_e)
 end
 
 
@@ -56,15 +56,15 @@ end
 Calculate the total time-of-flight for a
 Using the method of Saito-Miyoshi, as described in Saito 2012.
 """
-function t_WPI_electron_precipitation(θ_resonance, v_g, v_parallel_lc, R0, t_l, E_eV, α_lc)
+function WPI_TOF(θ_resonance, v_g, v_parallel_lc, R0, t_l, E_eV, α_lc)
 
     t_w = t_whistler_transit(θ_resonance, v_g, R0)
     t_e = t_electron_transit(θ_resonance, v_parallel_lc, R0)
     t_b = quarter_bounceperiod(R0/RE, E_eV, mₑ, α_lc)
 
-    t_precipitation = t_w + t_e + t_b + t_l
+    tof = t_w + t_e + t_b + t_l
 
-    return t_precipitation
+    return tof
 end
 
 
@@ -105,12 +105,12 @@ This is valid assuming chorus frequencies `ω` ≫ ion gyro-frequencies (Chen 20
   non-realistic, but for now it indicates an error.
 """
 function group_velocity_whistler_wave(
-    ω::AbstractArray;
-    Ω_e::Float64=9.48e3,
-    ω_pe::Float64=37.9e3)
+    ω::Union{Real, AbstractArray};
+    Ω_e::Union{Float64, AbstractVector}=9.48e3,
+    ω_pe::Union{Float64, AbstractVector}=37.9e3)
 
-    any(ω .> Ω_e) && throw(ArgumentError("Not on whistler branch, check your frequencies!"))
-    ω_pe < Ω_e && throw(ArgumentError("Plasma parameters not valid, reality-check needed!"))
+    any(@. ω > Ω_e) && throw(ArgumentError("Not on whistler branch, check your frequencies!"))
+    #any(ω_pe .< Ω_e) && throw(ArgumentError("Plasma parameters not valid, reality-check needed!"))
 
     a = @. (2 * c₀) / (ω_pe / Ω_e)
     b = @. (1 - (ω / Ω_e))^(3/2)
@@ -121,8 +121,6 @@ end
 
 
 #To find the parallel velocity
-
-
 function parallel_velocity(particle::ParticleState, λ_grid::AbstractVector)
 
     v_parallel = zeros(length(λ_grid))
@@ -131,7 +129,7 @@ function parallel_velocity(particle::ParticleState, λ_grid::AbstractVector)
         B_λ = particle.magnetic_field(particle.L, λ)
         B_λ_mag = norm(B_λ)
 
-        α_λ = pitch_angle_at_z(particle.α_eq, particle.B_eq, B_λ_mag)
+        α_λ = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_λ_mag)
         v_parallel[i] = particle.v * cos(α_λ)
     end
 
@@ -139,16 +137,126 @@ function parallel_velocity(particle::ParticleState, λ_grid::AbstractVector)
 end
 
 
-
 # To find the point of resonance (eq. 6)
-function k_parallel_of_z(z)
-    return nothing
+# TODO: Figure out if θ is correct
+# TODO: Add γ as a kwarg instead
+function parallel_wavenumber(ω_pe, Ω_e, ω)
+
+    frac = @. ω_pe^2 / (ω*(abs(Ω_e) - ω))
+    k_parallel = @. (ω / c₀) * sqrt(1 + frac)
+
+    return k_parallel
 end
 
-function z_resonance()
-    return "The position z at which the specific wave resonates"
+
+# TODO: Add model for reaching the desired frequency (linear rising tone?)
+function t0(ω)
+    return 0
 end
 
+
+# TODO: Compute this once, and remove in-function calculations in the other functions, as there should be a yes/no option for relativistic particles for comparison
+function γ(E_eV)
+    return 1
+end
+
+
+
+function resonance_latitude(ω, k_parallel, v_parallel, Ω_e, λ, particle; γ::Float64=1.0)
+
+    return deg2rad(20)
+
+end
+
+function wave_transit(ω, λ_resonance, particle, plasma)
+
+    function f(λ)
+        Ω_e   = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
+        ω_pe  = sqrt(plasma.n_e[1] * qₑ^2 / (mₑ * ε₀))
+        v_g   = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=ω_pe)
+        ds_dλ = particle.L * RE * sqrt(1 + 3sin(λ)^2) * cos(λ)
+        return ds_dλ / v_g
+    end
+
+    t_w, _ = quadgk(f, 0.0, λ_resonance)
+    return t_w
+end
+
+
+function electron_transit(particle, λ_resonance)
+
+    function f(λ)
+        B_λ   = particle.magnetic_field(particle.L, λ)
+        α_λ   = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
+        vz    = particle.v * cos(α_λ)
+        ds_dλ = particle.L * RE * sqrt(1 + 3sin(λ)^2) * cos(λ)
+        return ds_dλ / vz
+    end
+
+    t_e, _ = quadgk(f, 0.0, λ_resonance)
+    return t_e
+end
+
+
+#function wave_transit(ω, λ_resonance, L, Ω_e_grid, ω_pe_grid)
+#
+#    function f(λ)
+#        v_g = group_velocity_whistler_wave(ω; Ω_e=Ω_e_grid, ω_pe=ω_pe_grid)
+#        return (L*RE * sqrt(1 + 3*(cos(λ))^2) * sin(λ)) / v_g
+#    end
+#
+#    t_w, _ = quadgk(f, 0.0, λ_resonance)
+#    @show size(t_w)
+#    return t_w
+#end
+#
+#
+#function electron_transit(particle, λ_grid, λ_resonance)
+#
+#    function f(λ)
+#        v_parallel = parallel_velocity(particle, λ_grid)
+#        return (particle.L*RE * sqrt(1 + 3*(cos(λ))^2) * sin(λ)) / v_parallel
+#    end
+#
+#    t_e, _ = quadgk(f, 0.0, λ_resonance)
+#    @show size(t_e)
+#    return t_e
+#end
+
+# For each ω, integrated over λ. THIS IS THE WRAPPER, none of the others should take functions like this
+# TODO: Look into naming, as parallel is misleading but z might also be? Parallel to the magnetic field if ducted but oblique if non-ducted
+function WPI_TOF_field_dependent(
+    ω_grid,
+    plasma::PlasmaParameters,
+    particle::ParticleState,
+    t0::F;
+    θ::Float64=1.0) where F<:Function
+
+
+    λ_grid = plasma.λ           # [n_λ]
+    Ω_e_grid = plasma.Ω_e       # [n_λ]
+    ω_pe_grid = plasma.ω_pe     # [n_λ]
+
+    vz_grid = parallel_velocity(particle, λ_grid)   # [n_λ]
+    tof = zeros(length(ω_grid))               # [n_ω]
+
+    for (i, ω) in enumerate(ω_grid)
+        k_grid = parallel_wavenumber(ω_pe_grid, Ω_e_grid, ω) * cos(θ)   # [n_λ]
+        #vg_grid = group_velocity_whistler_wave(ω; Ω_e=Ω_e_grid, ω_pe=ω_pe_grid)  # [m_λ]
+
+        λ_resonance = resonance_latitude(ω, k_grid, vz_grid, Ω_e_grid, λ_grid, particle)
+
+
+        # Perform the integrations
+        t_w = wave_transit(ω, λ_resonance, particle, plasma)
+        t_e = electron_transit(particle, λ_resonance)
+
+
+        tof[i] = t0(ω) + t_w + t_e
+    end
+
+    return tof
+end
 
 #===================================Run preferred method===================================#
 # IDEA: Make this into 'AbstractPropagation'

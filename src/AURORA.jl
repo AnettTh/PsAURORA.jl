@@ -5,7 +5,7 @@ include("constants.jl")
 # TODO: remove export when not testing?
 # TODO: Evaluate the handeling of z_ionosphere
 # TODO: Go over units, check consistency and use square brackets!
-export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ
+export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀
 
 include("grids/abstract_grid.jl")
 include("grids/altitude_grid.jl")
@@ -51,18 +51,20 @@ export dipole_field, magnetic_basis, r_to_λL
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
-export losscone_angle, pitch_angle_at_z
+export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
 
-include("WPI/plasma/plasma_parameters.jl")
+include("WPI/plasma_state.jl")
 export Ωe_at_λ, PlasmaParameters
 include("WPI/particle_state.jl")
 export ParticleState
 include("WPI/boris_mover.jl")
 export boris_mover_TOF
 include("WPI/time_of_flight.jl")
-export time_of_flight, t_whistler_transit, t_electron_transit, t_WPI_electron_precipitation
-include("WPI/plasma/WPI_dynamics.jl")
+export time_of_flight, t_whistler_transit, t_electron_transit, WPI_TOF
+export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
+export wave_transit, electron_transit
+include("WPI/WPI_dynamics.jl")
 export group_velocity_whistler_wave
 
 

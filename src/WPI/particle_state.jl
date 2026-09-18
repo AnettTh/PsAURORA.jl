@@ -4,7 +4,7 @@ struct ParticleState{F<:Function}
     E_eV::Float64               # Energy [eV]
     v::Float64                  # Speed [m/s]
     μ::Float64                  # Pitch-angle cosine
-    α0::Float64                  # Pitch-angle [rad]
+    α0::Float64                 # Pitch-angle [rad]
     r0::SVector{3, Float64}     # Initial position [m]
     B0::SVector{3, Float64}     # Magnetic field at initial position [T]
     b̂::SVector{3, Float64}      # Field unit-vector
@@ -27,7 +27,7 @@ function ParticleState(E_eV, μ, r0, magnetic_field)
     α_lc = losscone_angle(magnetic_field, r0)
     α0 = acos(μ)
     B_eq = BE / L^3
-    α_eq = pitch_angle_at_z(α0, norm(B0), B_eq)
+    α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq)
 
     return ParticleState(
         E_eV,

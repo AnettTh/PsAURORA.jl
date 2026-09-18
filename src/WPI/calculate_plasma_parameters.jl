@@ -256,9 +256,12 @@ end
 
 # TODO: Docstring!
 # TODO: Add throws!
-function pitch_angle_at_z(α_known, B_known, B_z)
+function pitch_angle_at_λ(α_known, B_known, B_λ)
 
-    sin2_α = sin(α_known)^2 * B_z / B_known
+    sin2_α = sin(α_known)^2 * B_λ / B_known
+
+    sin2_α > 1 && throw(ArgumentError("Too high latitude."))
+
     α = asin(sqrt(sin2_α))
 
     return α
@@ -393,6 +396,7 @@ energy to Joules and then finds the magnitude of the velocity of the given parti
 - `ArgumentError`: If the given mass is zero or if the particles speed is faster than the
   speed of light.
 """
+# NOTE: removed the relativistic warning for now, should be implimented later
 function velocity_from_kinetic_energy(E_eV, m)
 
     iszero(m) && throw(ArgumentError("Mass must be nonzero"))
@@ -401,15 +405,15 @@ function velocity_from_kinetic_energy(E_eV, m)
 
     ratio = E_J / (m * c₀^2)
 
-    if ratio ≥ 1
-        throw(
-            ArgumentError(
-                "Kinetic energy is too large for non-relaticistic velocity approximation"
-            )
-        )
-    elseif ratio ≥ 0.1
-        @warn "Relativistic corrections might be significant"
-    end
+    #if ratio ≥ 1
+    #    throw(
+    #        ArgumentError(
+    #            "Kinetic energy is too large for non-relaticistic velocity approximation"
+    #        )
+    #    )
+    #elseif ratio ≥ 0.1
+    #    @warn "Relativistic corrections might be significant"
+    #end
 
     m > 0 || throw(ArgumentError("Mass must be positive"))
     E_eV ≥ 0 || throw(ArgumentError("Kinetic energy must be nonnegative"))
