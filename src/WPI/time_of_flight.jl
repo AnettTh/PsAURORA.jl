@@ -2,12 +2,9 @@ using AURORA
 using AURORA; mₑ, eV_in_J, c₀
 using QuadGK
 using LinearAlgebra
+using Roots
 
 #===================================Saito-Miyoshi method===================================#
-
-# IDEA: If these are slow, would it help to make them the same function but with multiple dispatch?
-# TODO: Verify that returning the absolute value is numerically allowed
-# TODO: Make some plot to verify that this is correct also
 """
     t_whistler_transit(θ_resonance, v_g, R0)
 
@@ -23,6 +20,9 @@ is the colatitude, is calculated.
 - `v_g`: Group velocity of whistler waves [m/s].
 - `R0`: Radius at the equatorial plane [m].
 
+# Returns
+
+- The transit time for the wave
 """
 function t_whistler_transit(θ_resonance, v_g, R0)
 
@@ -34,6 +34,21 @@ function t_whistler_transit(θ_resonance, v_g, R0)
 
     return abs(t_w)
 end
+
+function wave_transit(ω, λ_resonance, particle, plasma)
+
+    function f(λ)
+        Ω_e   = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
+        ω_pe  = sqrt(plasma.n_e[1] * qₑ^2 / (mₑ * ε₀))
+        v_g   = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=ω_pe)
+        ds_dλ = particle.L * RE * sqrt(1 + 3sin(λ)^2) * cos(λ)
+        return ds_dλ / v_g
+    end
+
+    t_w, _ = quadgk(f, 0.0, λ_resonance)
+    return t_w
+end
+
 
 
 # TODO: Docstring
@@ -48,6 +63,20 @@ function t_electron_transit(θ_resonance, v_parallel_lc, R0)
     return abs(t_e)
 end
 
+
+function electron_transit(particle, λ_resonance)
+
+    function f(λ)
+        B_λ   = particle.magnetic_field(particle.L, λ)
+        α_λ   = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
+        vz    = particle.v * cos(α_λ)
+        ds_dλ = particle.L * RE * sqrt(1 + 3sin(λ)^2) * cos(λ)
+        return ds_dλ / vz
+    end
+
+    t_e, _ = quadgk(f, 0.0, λ_resonance)
+    return t_e
+end
 
 # TODO: Finish docstring
 """
@@ -161,40 +190,30 @@ function γ(E_eV)
 end
 
 
+# TODO: Add γ back in
+function resonance_latitude(ω, particle, plasma; γ::Float64=1.0, θ::Float64=1.0)
 
-function resonance_latitude(ω, k_parallel, v_parallel, Ω_e, λ, particle; γ::Float64=1.0)
+    ω_pe = plasma.ω_pe[1]  # constant
 
-    return deg2rad(20)
-
-end
-
-function wave_transit(ω, λ_resonance, particle, plasma)
-
-    function f(λ)
-        Ω_e   = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
-        ω_pe  = sqrt(plasma.n_e[1] * qₑ^2 / (mₑ * ε₀))
-        v_g   = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=ω_pe)
-        ds_dλ = particle.L * RE * sqrt(1 + 3sin(λ)^2) * cos(λ)
-        return ds_dλ / v_g
+    function resonance_condition(λ)
+        Ω_e  = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
+        kz   = parallel_wavenumber(ω_pe, Ω_e, ω) * θ
+        vz   = particle.v * cos(pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(particle.magnetic_field(particle.L, λ))))
+        return ω - kz * vz + Ω_e
     end
 
-    t_w, _ = quadgk(f, 0.0, λ_resonance)
-    return t_w
-end
+    # Find sign change in λ_grid
+    λ_grid = plasma.λ
+    f_vals = resonance_condition.(λ_grid)
 
+    # Find where sign changes
+    idx = findfirst(i -> f_vals[i] * f_vals[i+1] < 0, 1:length(f_vals)-1)
 
-function electron_transit(particle, λ_resonance)
+    isnothing(idx) && return nothing  # no resonance found
 
-    function f(λ)
-        B_λ   = particle.magnetic_field(particle.L, λ)
-        α_λ   = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
-        vz    = particle.v * cos(α_λ)
-        ds_dλ = particle.L * RE * sqrt(1 + 3sin(λ)^2) * cos(λ)
-        return ds_dλ / vz
-    end
+    λ_resonance = find_zero(resonance_condition, (λ_grid[idx], λ_grid[idx+1]))
 
-    t_e, _ = quadgk(f, 0.0, λ_resonance)
-    return t_e
+    return λ_resonance
 end
 
 
@@ -228,7 +247,7 @@ end
 function WPI_TOF_field_dependent(
     ω_grid,
     plasma::PlasmaParameters,
-    particle::ParticleState,
+    particle::ParticleState{<:Function},
     t0::F;
     θ::Float64=1.0) where F<:Function
 
@@ -242,10 +261,14 @@ function WPI_TOF_field_dependent(
 
     for (i, ω) in enumerate(ω_grid)
         k_grid = parallel_wavenumber(ω_pe_grid, Ω_e_grid, ω) * cos(θ)   # [n_λ]
-        #vg_grid = group_velocity_whistler_wave(ω; Ω_e=Ω_e_grid, ω_pe=ω_pe_grid)  # [m_λ]
+        #vg_grid = group_velocity_whistler_wave(ω; Ω_e=Ω_e_grid, ω_pe=ω_pe_grid)  # [n_λ]
 
-        λ_resonance = resonance_latitude(ω, k_grid, vz_grid, Ω_e_grid, λ_grid, particle)
+        λ_resonance = resonance_latitude(ω, particle, plasma)
 
+        if isnothing(λ_resonance)
+            tof[i] = NaN   # no resonance for this ω/particle combination
+            continue
+        end
 
         # Perform the integrations
         t_w = wave_transit(ω, λ_resonance, particle, plasma)

@@ -1,5 +1,4 @@
 using AURORA
-using AURORA; c₀
 
 # NOTE: For several energies
 ## Define the particles
