@@ -4,50 +4,57 @@ using QuadGK
 using LinearAlgebra
 using Roots
 
-#===================================Saito-Miyoshi method===================================#
+
 """
-    t_whistler_transit(θ_resonance, v_g, R0)
+    wave_transit(
+    ω,
+    λ_resonance,
+    particle::ParticleState,
+    plasma::PlasmaParameters;
+    field_dependent::Bool=true)
 
-Calculate transit time for whistler waves.
+Calculates the transit time of the whistler wave from the equator to the resonance latitude.
 
-For some given group velocity of parallel propagating whistler waves, `v_g`, the time of
-travel from the equatorial plane (`θ = π/2°`) to the resonance region `θ_resonance`, where θ
-is the colatitude, is calculated.
+By either using a field-independent model (Miyoshi and Saito, 2012) or a field-dependent
+model (Hsieh et al. 2022), where the latter is default. The function calculates the time it
+takes for the wave specified by the frequency `ω`, the particle- and plasma state, traveling '
+from the source region (equator) to the resonance latitude `λ_resonance`.
 
 # Arguments
 
-- `θ_resonance`: Colatitude of the resonance region [rad].
-- `v_g`: Group velocity of whistler waves [m/s].
-- `R0`: Radius at the equatorial plane [m].
+- `ω`: Wave angular frequency of the whistler wave [rad/s]. # TODO: check if it is in Hz somewhere, and update docs!!!
+- `λ_resonance`: The latitude of the resonance region (0.0 is equator) [rad].
+- `particle`: Structure holding the particle state.
+- `plasma`: Structure holding plasma parameters.
 
-# Returns
+# Keyword Arguments
 
-- The transit time for the wave
+- `field_dependent`: Decides which model to use, default is the field-dependent one.
 """
-function t_whistler_transit(θ_resonance, v_g, R0)
+function wave_transit(
+    ω,
+    λ_resonance,
+    particle::ParticleState,
+    plasma::PlasmaParameters;
+    field_dependent::Bool=true)
 
-    function t(θ)
-        return (R0 * sqrt(1 + 3*(cos(θ))^2) * sin(θ)) / v_g
-    end
-
-    t_w, _ = quadgk(t, π/2, θ_resonance)
-
-    return abs(t_w)
-end
-
-function wave_transit(ω, λ_resonance, particle, plasma)
+    R0 = particle.L * RE
 
     function f(λ)
-        Ω_e   = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
-        ω_pe  = sqrt(plasma.n_e[1] * qₑ^2 / (mₑ * ε₀))
-        v_g   = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=ω_pe)
-        ds_dλ = particle.L * RE * sqrt(1 + 3sin(λ)^2) * cos(λ)
+        # If field-dependent, choose based on position, else use equatorial Ω_e
+        Ω_e = field_dependent ?
+            Ωe_at_λ(λ, particle.L, particle.magnetic_field) :
+            plasma.Ω_e[1]
+
+        v_g = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=plasma.ω_pe[1])
+        ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
         return ds_dλ / v_g
     end
 
     t_w, _ = quadgk(f, 0.0, λ_resonance)
     return t_w
 end
+
 
 
 

@@ -5,6 +5,7 @@ include("constants.jl")
 # TODO: remove export when not testing?
 # TODO: Evaluate the handeling of z_ionosphere
 # TODO: Go over units, check consistency and use square brackets!
+# TODO: Check all files for radians/degrees-consistency!!!
 export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀
 
 include("grids/abstract_grid.jl")

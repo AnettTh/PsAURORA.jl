@@ -3,7 +3,7 @@ using AURORA; mₑ, qₑ, ε₀
 using LinearAlgebra
 
 # TODO: Document, document, document!
-
+# Change name to PlasmaState for consistency?
 struct PlasmaParameters
     λ    :: Vector{Float64}     # Magnetic latitude grid [rad]
     n_e  :: Vector{Float64}     # Cold electron density [m⁻³]
