@@ -1,4 +1,5 @@
 using AURORA
+using AURORA; z_ionosphere, mₑ, RE, BE
 
 struct ParticleState{F<:Function}
     E_eV::Float64               # Energy [eV]
@@ -12,6 +13,7 @@ struct ParticleState{F<:Function}
     B_eq::Float64               # Magnetic field at equator [T]
     α_eq::Float64               # Pitch-angle at equator
     α_lc::Float64               # Loss-cone angle based on initial position [rad]
+    λ_ionosphere::Float64       # Latitude of the ionosphere for this L-shell [rad]
     magnetic_field::F           # Magnetic field model
 end
 
@@ -25,9 +27,10 @@ function ParticleState(E_eV, μ, r0, magnetic_field)
     λ0 = asin(r0[3] / r_mag)
     L = r_mag / (RE * cos(λ0)^2)
     α_lc = losscone_angle(magnetic_field, r0)
-    α0 = acos(μ)
+    α0 = acos(abs(μ))
     B_eq = BE / L^3
     α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq)
+    λ_ionosphere = acos(sqrt((RE + z_ionosphere) / (L * RE)))
 
     return ParticleState(
         E_eV,
@@ -41,6 +44,7 @@ function ParticleState(E_eV, μ, r0, magnetic_field)
         B_eq,
         α_eq,
         α_lc,
+        λ_ionosphere,
         magnetic_field
     )
 end

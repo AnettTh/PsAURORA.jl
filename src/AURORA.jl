@@ -6,7 +6,7 @@ include("constants.jl")
 # TODO: Evaluate the handeling of z_ionosphere
 # TODO: Go over units, check consistency and use square brackets!
 # TODO: Check all files for radians/degrees-consistency!!!
-export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀
+export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀, BE
 
 include("grids/abstract_grid.jl")
 include("grids/altitude_grid.jl")
@@ -62,7 +62,7 @@ export ParticleState
 include("WPI/boris_mover.jl")
 export boris_mover_TOF
 include("WPI/time_of_flight.jl")
-export time_of_flight, t_whistler_transit, t_electron_transit, WPI_TOF
+export time_of_flight, wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit
 include("WPI/WPI_dynamics.jl")

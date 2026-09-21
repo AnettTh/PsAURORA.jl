@@ -6,109 +6,6 @@ using Roots
 
 
 """
-    wave_transit(
-    ω,
-    λ_resonance,
-    particle::ParticleState,
-    plasma::PlasmaParameters;
-    field_dependent::Bool=true)
-
-Calculates the transit time of the whistler wave from the equator to the resonance latitude.
-
-By either using a field-independent model (Miyoshi and Saito, 2012) or a field-dependent
-model (Hsieh et al. 2022), where the latter is default. The function calculates the time it
-takes for the wave specified by the frequency `ω`, the particle- and plasma state, traveling '
-from the source region (equator) to the resonance latitude `λ_resonance`.
-
-# Arguments
-
-- `ω`: Wave angular frequency of the whistler wave [rad/s]. # TODO: check if it is in Hz somewhere, and update docs!!!
-- `λ_resonance`: The latitude of the resonance region (0.0 is equator) [rad].
-- `particle`: Structure holding the particle state.
-- `plasma`: Structure holding plasma parameters.
-
-# Keyword Arguments
-
-- `field_dependent`: Decides which model to use, default is the field-dependent one.
-"""
-function wave_transit(
-    ω,
-    λ_resonance,
-    particle::ParticleState,
-    plasma::PlasmaParameters;
-    field_dependent::Bool=true)
-
-    R0 = particle.L * RE
-
-    function f(λ)
-        # If field-dependent, choose based on position, else use equatorial Ω_e
-        Ω_e = field_dependent ?
-            Ωe_at_λ(λ, particle.L, particle.magnetic_field) :
-            plasma.Ω_e[1]
-
-        v_g = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=plasma.ω_pe[1])
-        ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
-        return ds_dλ / v_g
-    end
-
-    t_w, _ = quadgk(f, 0.0, λ_resonance)
-    return t_w
-end
-
-
-
-
-# TODO: Docstring
-function t_electron_transit(θ_resonance, v_parallel_lc, R0)
-
-    function t(θ)
-        return (R0 * sqrt(1 + 3*(cos(θ))^2) * sin(θ)) / abs(v_parallel_lc)
-    end
-
-    t_e, _ = quadgk(t, θ_resonance, π/2)
-
-    return abs(t_e)
-end
-
-
-function electron_transit(particle, λ_resonance)
-
-    function f(λ)
-        B_λ   = particle.magnetic_field(particle.L, λ)
-        α_λ   = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
-        vz    = particle.v * cos(α_λ)
-        ds_dλ = particle.L * RE * sqrt(1 + 3sin(λ)^2) * cos(λ)
-        return ds_dλ / vz
-    end
-
-    t_e, _ = quadgk(f, 0.0, λ_resonance)
-    return t_e
-end
-
-# TODO: Finish docstring
-"""
-    t_WPI_electron_precipitation(θ_resonance, v_g, v_parallel_lc, R0, t_l, E_eV, α_lc)
-
-Calculate the total time-of-flight for a
-Using the method of Saito-Miyoshi, as described in Saito 2012.
-"""
-function WPI_TOF(θ_resonance, v_g, v_parallel_lc, R0, t_l, E_eV, α_lc)
-
-    t_w = t_whistler_transit(θ_resonance, v_g, R0)
-    t_e = t_electron_transit(θ_resonance, v_parallel_lc, R0)
-    t_b = quarter_bounceperiod(R0/RE, E_eV, mₑ, α_lc)
-
-    tof = t_w + t_e + t_b + t_l
-
-    return tof
-end
-
-
-
-#====================================Chen/Hsieh method====================================#
-
-# To find the group velocity
-"""
     group_velocity_whistler_wave(
     ω::AbstractArray;
     Ω_e::Float64=9.48e3,
@@ -156,6 +53,123 @@ function group_velocity_whistler_wave(
 end
 
 
+"""
+    wave_transit(
+    ω,
+    λ_resonance,
+    particle::ParticleState,
+    plasma::PlasmaParameters;
+    field_dependent::Bool=true)
+
+Calculates the transit time of the whistler wave from the equator to the resonance latitude.
+
+By either using a field-independent model (Miyoshi and Saito, 2012) or a field-dependent
+model (Hsieh et al. 2022), where the latter is default. The function calculates the time it
+takes for the wave specified by the frequency `ω`, the particle- and plasma state, traveling '
+from the source region (equator) to the resonance latitude `λ_resonance`.
+
+# Arguments
+
+- `ω`: Wave angular frequency of the whistler wave [rad/s]. # TODO: check if it is in Hz somewhere, and update docs!!!
+- `λ_resonance`: The latitude of the resonance region (0.0 is equator) [rad].
+- `particle`: Structure holding the particle state.
+- `plasma`: Structure holding plasma parameters.
+
+# Keyword Arguments
+
+- `field_dependent`: Decides which model to use, default is the field-dependent one.
+
+# Returns
+
+- Wave transit time for each frequency ω [s].
+"""
+function wave_transit(
+    ω,
+    λ_resonance,
+    particle::ParticleState,
+    plasma::PlasmaParameters;
+    field_dependent::Bool=true)
+
+    R0 = particle.L * RE
+
+    function f(λ)
+        # If field-dependent, choose based on position, else use equatorial Ω_e
+        Ω_e = field_dependent ?
+            Ωe_at_λ(λ, particle.L, particle.magnetic_field) :
+            plasma.Ω_e[1]
+
+        # NOTE: This currently assumes nₑ constant along the field-line. Look for model?
+        v_g = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=plasma.ω_pe[1])
+        ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
+        return ds_dλ / v_g
+    end
+
+    t_w, _ = quadgk(f, 0.0, λ_resonance)
+    return abs.(t_w)
+end
+
+
+"""
+    particle_transit(
+    particle,
+    λ_resonance;
+    z_ionosphere::Float64=600e3
+    )
+
+Calculates the transit time of the particle from the resonance latitude to the ionosphere.
+
+By either using a field-independent model (Miyoshi and Saito, 2012) or a field-dependent
+model (Hsieh et al. 2022), where the latter is default. The function calculates the time it
+takes for the particle in the defined state to travel from the resonance region
+`λ_resonance` to the defined ionospheric latitude, `λ_ionosphere`, as defined in the
+particle state (600 km altitude).
+
+# Arguments
+
+- `particle`: Structure holding the particle state.
+- `λ_resonance`: The latitude of the resonance region (0.0 is equator) [rad].
+
+# Keyword Arguments
+
+- `field_dependent`: Decides which model to use, default is the field-dependent one.
+
+# Returns
+
+- Particle transit time for each frequency ω [s].
+"""
+function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
+
+    R0 = particle.L * RE
+
+    function f(λ)
+        if field_dependent
+            B_λ = particle.magnetic_field(particle.L, λ)
+            α_λ = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
+            isnothing(α_λ) && return 0.0
+            vz = particle.v * cos(α_λ)
+            iszero(vz) && return 0.0
+        else
+            vz = abs(particle.v * cos(particle.α_lc))
+        end
+
+        ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
+        return ds_dλ / vz
+    end
+
+    # NOTE: will not run if the particle is outside the loss-cone, as the limits here is invalid, but that might be fine?
+    t_e, _ = quadgk(f, λ_resonance, particle.λ_ionosphere)
+
+
+    return abs.(t_e)
+end
+
+
+# TODO: Add model for reaching the desired frequency (linear rising tone?)
+function wave_launch_time(ω)
+    return 0
+end
+
+
 #To find the parallel velocity
 function parallel_velocity(particle::ParticleState, λ_grid::AbstractVector)
 
@@ -184,11 +198,6 @@ function parallel_wavenumber(ω_pe, Ω_e, ω)
     return k_parallel
 end
 
-
-# TODO: Add model for reaching the desired frequency (linear rising tone?)
-function t0(ω)
-    return 0
-end
 
 
 # TODO: Compute this once, and remove in-function calculations in the other functions, as there should be a yes/no option for relativistic particles for comparison
@@ -224,69 +233,62 @@ function resonance_latitude(ω, particle, plasma; γ::Float64=1.0, θ::Float64=1
 end
 
 
-#function wave_transit(ω, λ_resonance, L, Ω_e_grid, ω_pe_grid)
-#
-#    function f(λ)
-#        v_g = group_velocity_whistler_wave(ω; Ω_e=Ω_e_grid, ω_pe=ω_pe_grid)
-#        return (L*RE * sqrt(1 + 3*(cos(λ))^2) * sin(λ)) / v_g
-#    end
-#
-#    t_w, _ = quadgk(f, 0.0, λ_resonance)
-#    @show size(t_w)
-#    return t_w
-#end
-#
-#
-#function electron_transit(particle, λ_grid, λ_resonance)
-#
-#    function f(λ)
-#        v_parallel = parallel_velocity(particle, λ_grid)
-#        return (particle.L*RE * sqrt(1 + 3*(cos(λ))^2) * sin(λ)) / v_parallel
-#    end
-#
-#    t_e, _ = quadgk(f, 0.0, λ_resonance)
-#    @show size(t_e)
-#    return t_e
-#end
+# TODO: Finish docstring
+"""
+    WPI_TOF(
+    ω,
+    λ_resonance,
+    particle,
+    plasma;
+    wave_launch_time=nothing,
+    field_dependent::Bool=true
+)
 
-# For each ω, integrated over λ. THIS IS THE WRAPPER, none of the others should take functions like this
-# TODO: Look into naming, as parallel is misleading but z might also be? Parallel to the magnetic field if ducted but oblique if non-ducted
-function WPI_TOF_field_dependent(
+
+"""
+function WPI_TOF(
     ω_grid,
-    plasma::PlasmaParameters,
-    particle::ParticleState{<:Function},
-    t0::F;
-    θ::Float64=1.0) where F<:Function
+    particle,
+    plasma;
+    wave_launch_time=nothing,
+    field_dependent::Bool=true,
+    θ::Float64=1.0
+)
 
+    # Is either a scalar (Saito-Miyoshi) or a functon of frequency (Chen)
+    # TODO: Add this as a possible funciton of ω at the same time as a possible scalar
+    t_l = isnothing(wave_launch_time) ? 0.0 : wave_launch_time
 
-    λ_grid = plasma.λ           # [n_λ]
-    Ω_e_grid = plasma.Ω_e       # [n_λ]
-    ω_pe_grid = plasma.ω_pe     # [n_λ]
+    tof = zeros(length(ω_grid))
 
-    vz_grid = parallel_velocity(particle, λ_grid)   # [n_λ]
-    tof = zeros(length(ω_grid))               # [n_ω]
-
+    # Loop over all frequencies as they have different resonance regions
     for (i, ω) in enumerate(ω_grid)
-        k_grid = parallel_wavenumber(ω_pe_grid, Ω_e_grid, ω) * cos(θ)   # [n_λ]
-        #vg_grid = group_velocity_whistler_wave(ω; Ω_e=Ω_e_grid, ω_pe=ω_pe_grid)  # [n_λ]
+        λ_res = resonance_latitude(ω, particle, plasma, θ=θ)
 
-        λ_resonance = resonance_latitude(ω, particle, plasma)
-
-        if isnothing(λ_resonance)
-            tof[i] = NaN   # no resonance for this ω/particle combination
+        if isnothing(λ_res)
+            tof[i] = NaN
             continue
         end
 
-        # Perform the integrations
-        t_w = wave_transit(ω, λ_resonance, particle, plasma)
-        t_e = electron_transit(particle, λ_resonance)
+        t_w = wave_transit(
+            ω,
+            λ_res,
+            particle,
+            plasma;
+            field_dependent=field_dependent
+        )
+        t_e = particle_transit(
+            particle,
+            λ_res;
+            field_dependent=field_dependent
+        )
 
+        tof[i] = t_w + t_e + t_l
 
-        tof[i] = t0(ω) + t_w + t_e
     end
-
     return tof
 end
+
 
 #===================================Run preferred method===================================#
 # IDEA: Make this into 'AbstractPropagation'

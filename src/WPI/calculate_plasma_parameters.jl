@@ -75,7 +75,7 @@ Calculate the component of the velocity perpendicular to the magnetic field.
 - `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
 """
 function old_perpendicular_velocity(v, B)
-    return v - parallel_velocity(v, B)
+    return v - old_parallel_velocity(v, B)
 end
 
 
@@ -97,7 +97,7 @@ Calculate the magnitude of the velocity component parallel to the magnetic field
 - `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
 """
 function old_parallel_speed(v, B)
-    return norm(parallel_velocity(v, B))
+    return norm(old_parallel_velocity(v, B))
 end
 
 
@@ -119,7 +119,7 @@ Calculate the magnitude of the velocity component perpendicular to the magnetic 
 - `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
 """
 function old_perpendicular_speed(v, B)
-    return norm(perpendicular_velocity(v, B))
+    return norm(old_perpendicular_velocity(v, B))
 end
 
 
@@ -260,7 +260,7 @@ function pitch_angle_at_λ(α_known, B_known, B_λ)
 
     sin2_α = sin(α_known)^2 * B_λ / B_known
 
-    sin2_α > 1 && throw(ArgumentError("Too high latitude."))
+    sin2_α > 1 && return nothing    # Particle mirrors here
 
     α = asin(sqrt(sin2_α))
 
