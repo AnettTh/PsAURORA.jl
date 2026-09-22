@@ -7,22 +7,27 @@ using StaticArrays
 """
     dipole_field(x, y, z)
     dipole_field(r)
+    dipole_field(L, λ)
 
-Compute the dipole magnetic field vector at given Cartesian position.
+Compute the dipole magnetic field vector at given position.
 
 Returns the magnetic field components `[Bx, By, Bz]` in tesla, modeled as a magnetic
-dipole field. The field is only valid within 10 Earth radii from the center of the Earth.
+dipole field. The function can take either three Cartesian coordinates, an array of
+Cartesian coordinates, or two components specifying the L-shell and  magnetic latitude of
+the position. The field is only valid within 10 Earth radii from the center of the Earth.
 
 # Arguments
 
-- `x`: Position in x-direction (m).
-- `y`: Position in y-direction (m).
-- `z`: Position in z-direction (m).
-- `r`: Three-element vector `[x, y, z]` of Cartesian coordinates (m).
+- `x`: Position in x-direction [m].
+- `y`: Position in y-direction [m].
+- `z`: Position in z-direction [m].
+- `r`: Three-element vector `[x, y, z]` of Cartesian coordinates [m].
+- `L`: L-shell of the position [RE].
+- `λ`: Magnetic latitude of the position [rad].
 
 # Returns
 
-- `SVector{3, Float64}`: Magnetic field components `[Bx, By, Bz]` (T).
+- `SVector{3, Float64}`: Magnetic field components `(Bx, By, Bz)` [T].
 
 # Throws
 
@@ -71,6 +76,14 @@ function dipole_field(r)
     return dipole_field(r...)
 end
 
+# TODO: Some throws/warnings?
+function dipole_field(L::Real, λ::Real)
+    r = L * RE * cos(λ)^2
+    x = r * cos(λ)
+    z = r * sin(λ)
+
+    return dipole_field(x, 0.0, z)
+end
 
 """
     magnetic_basis(B)
@@ -120,19 +133,39 @@ function magnetic_basis(B)
     return b̂, e1, e2, B_mag
 end
 
-# TODO: Add also this to the doc-string, with some throws/warnings?
-function dipole_field(L::Real, λ::Real)
-    r = L * RE * cos(λ)^2
-    x = r * cos(λ)
-    z = r * sin(λ)
-
-    return dipole_field(x, 0.0, z)
-end
-
 
 # TODO: Doc-string, throws, multiple dispatch
+"""
+    r_to_λL(r)
+
+Converts a position in a dipolar field from cartesian coordinates to magnetic latitude and
+L-shell.
+
+# Arguments
+
+- `r`: Cartesian position [m].
+
+# Returns
+
+- `λ`: Position magnetic latitude [rad].
+- `L`: Position L-shell.
+
+# Throws
+
+- `ArgumentError`: If `r` don't have exactly three components.
+- `ArgumentError`: If `r` isn't in the x-z-plane. # TODO: Fix this??
+- `ArgumentError`: If `r` has zero magnitude.
+- `ArgumentError`: If `r` is inside Earth.
+"""
 function r_to_λL(r)
+    length(r) == 3 || throw(ArgumentError("r must have three components (Chartesian)."))
+    iszero(r[2]) || throw(ArgumentError("Assumes x-z-plane, your y is invalid. Check it!"))
+
     r_mag = norm(r)
+
+    iszero(r_mag) && throw(ArgumentError("r must be nonzero"))
+
+    r_mag ≤ RE && throw(ArgumentError("r is inside Earth"))
     λ = asin(r[3] / r_mag)
     L = r_mag / (RE * cos(λ)^2)
     return λ, L

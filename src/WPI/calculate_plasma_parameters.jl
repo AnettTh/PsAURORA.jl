@@ -31,97 +31,6 @@ function gyro_frequency(B_mag::Real, q, m)
     return abs(q) * B_mag / m
 end
 
-"""
-    parallel_velocity(v, B)
-
-Calculate the component of the velocity parallel to the magnetic field.
-
-# Arguments
-
-- `v`: Velocity vector.
-- `B`: Magnetic-field vector.
-
-# Returns
-
-- The velocity vector parallel to `B`.
-
-# Throws
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function old_parallel_velocity(v, B)
-    B_mag2 = dot(B, B)
-
-    iszero(B_mag2) && throw(ArgumentError("Must have nonzero B"))
-
-    return (dot(v, B) / B_mag2) * B
-end
-
-
-"""
-    perpendicular_velocity(v, B)
-
-Calculate the component of the velocity perpendicular to the magnetic field.
-
-# Arguments
-
-- `v`: Velocity vector.
-- `B`: Magnetic-field vector.
-
-# Returns
-
-- The velocity vector perpendicular to `B`.
-
-# Throws
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function old_perpendicular_velocity(v, B)
-    return v - old_parallel_velocity(v, B)
-end
-
-
-"""
-    parallel_speed(v, B)
-
-Calculate the magnitude of the velocity component parallel to the magnetic field.
-
-# Arguments
-
-- `v`: Velocity vector.
-- `B`: Magnetic-field vector.
-
-# Returns
-
-- The magnitude of the velocity parallel to `B`.
-
-# Throws
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function old_parallel_speed(v, B)
-    return norm(old_parallel_velocity(v, B))
-end
-
-
-"""
-    perpendicular_speed(v, B)
-
-Calculate the magnitude of the velocity component perpendicular to the magnetic field.
-
-# Arguments
-
-- `v`: Velocity vector.
-- `B`: Magnetic-field vector.
-
-# Returns
-
-- The magnitude of the velocity perpendicular to `B`.
-
-# Throws
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function old_perpendicular_speed(v, B)
-    return norm(old_perpendicular_velocity(v, B))
-end
-
 
 """
     larmor_radius(m, q, v, B)
@@ -254,123 +163,40 @@ function losscone_angle(dipole_field, r_eq; degrees::Bool=false)
 end
 
 
-# TODO: Docstring!
 # TODO: Add throws!
+"""
+    pitch_angle_at_λ(α_known, B_known, B_λ)
+
+Calculate pitch angle for some magnetic field strength.
+
+Given known pitch angle and magnetic field at some common location, the function calculates
+the pitch angle corresponding to some magnetic field strength assuming the second adiabatic
+invariant is conserved. If the particle mirrors, i.e. `sin²(α)` becomes larger than one,
+`nothing` is returned.
+
+# Arguments
+
+- `α_known`: Known pitch angle at some location [rad].
+- `B_known`: Known magnetic field strength at the same location as the pitch angle [T].
+- `B_λ`: Magnetic field strength at latitude `λ` [T].
+
+# Returns
+
+- Pitch angle at latitude `λ` [rad].
+"""
 function pitch_angle_at_λ(α_known, B_known, B_λ)
+
+    iszero(B_known) && throw(ArgumentError("B_known must be nonzero"))
+    abs(α_known) ≥ 2π && throw(ArgumentError("α_known must be between ±2π"))
 
     sin2_α = sin(α_known)^2 * B_λ / B_known
 
-    sin2_α > 1 && return nothing    # Particle mirrors here
+    # Check for mirroring
+    sin2_α > 1 && return nothing
 
     α = asin(sqrt(sin2_α))
 
     return α
-end
-
-
-"""
-    quarter_bounceperiod(L, E_eV, m, θ; degrees::Bool=false)
-
-Calculate the quarter bounce period for a particle in a dipole magnetic field.
-
-Using an approximation for the change in arclength with respect to change in latitude for a
-mirroring particle, the quarter of one full bounce period can be calculated. The function
-takes in the equatorial position, i.e. the L-shell, as well as the energy of the particle,
-the mass of the particle and the pitch angle, and returns an approximation for how long it
-takes for the particle to travel along a dipolar magnetic field and to the mirror-point.
-
-# Arguments
-
-- `L`: Initial distance of the particle, given as the L-shell number.
-- `E_eV`: Energy of the particle [eV].
-- `m`: Mass of the particle [kg].
-- `θ`: Pitch-angle of the particle, either in radians or degrees.
-
-# Keyword Arguments
-
-- `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
-  passing `true` will allow for input in degrees.
-"""
-function quarter_bounceperiod(L, E_eV, m, θ; degrees::Bool=false)
-
-    θ_rad = degrees ? deg2rad(θ) : θ
-
-    v = velocity_from_kinetic_energy(E_eV, m)
-
-    # Gamma-function used as an approximation to a unsolvable integral
-    Γ = 1.30 - 0.56 * sin(θ_rad)
-
-    return ((L * RE) / v) * Γ
-end
-
-
-"""
-    average_driftvelocity(L, E_eV, q, θ)
-
-Calculate the average drift velocity for a particle in a dipole magnetic field.
-
-Using an approximation for the change in angular velocity, integrated over a quarter of
-a bounce period allows us to find the average drift velocity. The function takes in the
-equatorial position, i.e. the L-shell, as well as the energy of the particle, the charge of
-the particle and the pitch angle, and returns an approximation for the drift velocity of the
-particle.
-
-# Arguments
-
-- `L`: Initial distance of the particle, given as the L-shell number.
-- `E_eV`: Energy of the particle [eV].
-- `q`: Charge of the particle [C].
-- `θ`: Pitch-angle of the particle, either in radians or degrees.
-
-# Keyword Arguments
-
-- `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
-  passing `true` will allow for input in degrees.
-"""
-function average_driftvelocity(L, E_eV, q, θ; degrees::Bool=false)
-
-    θ_rad = degrees ? deg2rad(θ) : θ
-
-    E_J = E_eV * eV_in_J
-
-    # Gamma-function used as an approximation to a unsolvable integral
-    Γ = 0.35 - 0.15 * sin(θ_rad)
-
-    return (3 * L^2 * E_J * Γ) / (2 * q * BE * RE)
-end
-
-
-"""
-    total_drift(L, E_eV, q, m, θ; degrees::Bool=false)
-
-Calculate total drift based on bounce period and average drift velocity.
-
-Using an approximation for change in arclength with respect to change in latitude and the
-change in angular velocity, integrated over a quarter of a bounce period allows us to find
-the total drift of a particla. The function takes in the equatorial position, i.e. the
-L-shell, as well as the energy of the particle, the mass and charge of the particle and the
-pitch angle, and returns an approximation for the total drift of the particle.
-
-# Arguments
-
-- `L`: Initial distance of the particle, given as the L-shell number.
-- `E_eV`: Energy of the particle [eV].
-- `q`: Charge of the particle [C].
-- `m`: Mass of the particle [kg].
-- `θ`: Pitch-angle of the particle, either in radians or degrees.
-
-# Keyword Arguments
-
-- `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
-  passing `true` will allow for input in degrees.
-
-"""
-function total_drift(L, E_eV, q, m, θ; degrees::Bool=false)
-
-    τ = quarter_bounceperiod(L, E_eV, m, θ; degrees=degrees)
-    v_d = average_driftvelocity(L, E_eV, q, θ; degrees=degrees)
-
-    return τ * v_d
 end
 
 
@@ -396,7 +222,7 @@ energy to Joules and then finds the magnitude of the velocity of the given parti
 - `ArgumentError`: If the given mass is zero or if the particles speed is faster than the
   speed of light.
 """
-# NOTE: removed the relativistic warning for now, should be implimented later
+# TODO: Add relativistic option
 function velocity_from_kinetic_energy(E_eV, m)
 
     iszero(m) && throw(ArgumentError("Mass must be nonzero"))

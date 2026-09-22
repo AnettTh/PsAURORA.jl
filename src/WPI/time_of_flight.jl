@@ -58,7 +58,7 @@ end
     ω,
     λ_resonance,
     particle::ParticleState,
-    plasma::PlasmaParameters;
+    plasma::PlasmaState;
     field_dependent::Bool=true)
 
 Calculates the transit time of the whistler wave from the equator to the resonance latitude.
@@ -73,7 +73,7 @@ from the source region (equator) to the resonance latitude `λ_resonance`.
 - `ω`: Wave angular frequency of the whistler wave [rad/s]. # TODO: check if it is in Hz somewhere, and update docs!!!
 - `λ_resonance`: The latitude of the resonance region (0.0 is equator) [rad].
 - `particle`: Structure holding the particle state.
-- `plasma`: Structure holding plasma parameters.
+- `plasma`: Structure holding the state of the plasma on a latitude grid.
 
 # Keyword Arguments
 
@@ -87,7 +87,7 @@ function wave_transit(
     ω,
     λ_resonance,
     particle::ParticleState,
-    plasma::PlasmaParameters;
+    plasma::PlasmaState;
     field_dependent::Bool=true)
 
     R0 = particle.L * RE
@@ -165,31 +165,20 @@ end
 
 
 # TODO: Add model for reaching the desired frequency (linear rising tone?)
-function wave_launch_time(ω)
-    return 0
-end
-
-
-#To find the parallel velocity
-function parallel_velocity(particle::ParticleState, λ_grid::AbstractVector)
-
-    v_parallel = zeros(length(λ_grid))
-
-    for (i, λ) in enumerate(λ_grid)
-        B_λ = particle.magnetic_field(particle.L, λ)
-        B_λ_mag = norm(B_λ)
-
-        α_λ = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_λ_mag)
-        v_parallel[i] = particle.v * cos(α_λ)
-    end
-
-    return v_parallel
+function wave_launch_time(ω; ω0=2π*600, ω1=2π*1350, t=0.2)
+    chirp_rate = (ω0 - ω1) / t
+    return (ω .- ω0) ./ chirp_rate
 end
 
 
 # To find the point of resonance (eq. 6)
-# TODO: Figure out if θ is correct
-# TODO: Add γ as a kwarg instead
+# TODO: Add γ and θ as kwarg???
+# TODO: Replace this with the full dispersion-relation
+"""
+    parallel_wavenumber(ω_pe, Ω_e, ω)
+
+Calculate the parallel wave number that satisfies the dispersion relation.
+"""
 function parallel_wavenumber(ω_pe, Ω_e, ω)
 
     frac = @. ω_pe^2 / (ω*(abs(Ω_e) - ω))
@@ -206,30 +195,70 @@ function γ(E_eV)
 end
 
 
-# TODO: Add γ back in
-function resonance_latitude(ω, particle, plasma; γ::Float64=1.0, θ::Float64=1.0)
+# TODO: Add γ and θ as optional parameters!
+"""
+    resonance_latitude(ω, particle, plasma; γ=nothing, θ=nothing, n::Int=1)
 
+Calculate the resonance latitude for the defined particle with a whistler mode wave.
+
+Depending on the frequency of the wave, the state of the particle and the state of the
+plasma, the resonance latitude in a magnetic field is found. `n` denotes the harmonic, `1`
+being the default value.
+
+# Arguments
+
+- `ω`: The frequency of the wave [rad].
+- `particle`: Structure holding the state of the particle.
+- `plasma`: Structure holding the state of the plasma on a latitude grid.
+
+# Keyword Arguments
+
+- `γ`
+- `θ`
+- `n`: Resonance number, default is `1` (cyclotron resonance).
+
+# Returns
+
+- The latitude of resonance for the given frequency, particle and plasma [rad].
+"""
+function resonance_latitude(ω, particle, plasma; γ=nothing, θ=nothing, n::Int=1)
+
+    # TODO: Change this to work also for ω_pe as a function of position
     ω_pe = plasma.ω_pe[1]  # constant
 
-    function resonance_condition(λ)
-        Ω_e  = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
-        kz   = parallel_wavenumber(ω_pe, Ω_e, ω) * θ
-        vz   = particle.v * cos(pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(particle.magnetic_field(particle.L, λ))))
-        return ω - kz * vz + Ω_e
+    # Define the resonance condition (equation that should equal zero)
+    function resonance_condition(λ; n=n)
+        # NOTE: This already exist in plasma???
+        Ω_e = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
+
+        k = parallel_wavenumber(ω_pe, Ω_e, ω)
+
+        B = norm(particle.magnetic_field(particle.L, λ))
+        α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B)
+
+        v = particle.v * cos(α)
+
+        return ω - k * v + n*Ω_e
     end
 
-    # Find sign change in λ_grid
+    # Find which λ causes the resonance condition-function to change sign
     λ_grid = plasma.λ
-    f_vals = resonance_condition.(λ_grid)
+    f_possible = resonance_condition.(λ_grid)
 
-    # Find where sign changes
-    idx = findfirst(i -> f_vals[i] * f_vals[i+1] < 0, 1:length(f_vals)-1)
+    idx = findfirst(i -> f_possible[i] * f_possible[i+1] < 0, 1:length(f_possible)-1)
 
-    isnothing(idx) && return nothing  # no resonance found
+    # Return nothing if there is no resonance
+    isnothing(idx) && return nothing
 
+    # Figure out the latitude where the funciton changed sign
     λ_resonance = find_zero(resonance_condition, (λ_grid[idx], λ_grid[idx+1]))
 
     return λ_resonance
+end
+
+
+function resonance_latitude(ω_grid::AbstractVector, particle, plasma; γ=nothing, θ=nothing, n::Int=1)
+    return [resonance_latitude(ω, particle, plasma; γ=γ, θ=θ, n=n) for ω in ω_grid]
 end
 
 
@@ -241,10 +270,36 @@ end
     particle,
     plasma;
     wave_launch_time=nothing,
-    field_dependent::Bool=true
+    field_dependent::Bool=true,
+    θ::Float64=1.0
 )
 
+Calculates the time-of-flight of a particle resonating with a whistler mode chorus wave,
+then precipitating into the ionosphere.
 
+The funciton uses a defined frequency-grid for the wave, particle state and plasma state to
+calculate the resonance latitude. The wave launch time can be given as a function in the
+keyword arguments, else, it is assumed instant at all frequencies.
+
+# Arguments
+
+- `ω_grid`: The frequency grid of the wave [rad/s].
+- `λ_resonance`: The latitude of resonance [rad].
+- `particle`: Structure holding the state of the particle.
+- `plasma`: Structure holding the state of the plasma on a latitude grid.
+
+# Keyword Arguments
+
+- `wave_launch_time`: The time at which the frequencies in the frequency grid is launched
+  from the source region (equator). If everything is launched at once, this is set to
+  `nothing` (default), or it can be a defined function that takes frequencies `ω`.
+- `field_dependent`: Decides which model to use, default is the field-dependent one.
+- `θ`: Wave-normal angle of the wave, default is `1.0` (field-aligned).
+
+# Returns
+
+- The time of flight for the particle in the plasma-state under the influence of the wave
+  [s].
 """
 function WPI_TOF(
     ω_grid,
@@ -256,8 +311,7 @@ function WPI_TOF(
 )
 
     # Is either a scalar (Saito-Miyoshi) or a functon of frequency (Chen)
-    # TODO: Add this as a possible funciton of ω at the same time as a possible scalar
-    t_l = isnothing(wave_launch_time) ? 0.0 : wave_launch_time
+    t_l = isnothing(wave_launch_time) ? 0.0 : wave_launch_time(ω_grid)
 
     tof = zeros(length(ω_grid))
 
@@ -265,11 +319,13 @@ function WPI_TOF(
     for (i, ω) in enumerate(ω_grid)
         λ_res = resonance_latitude(ω, particle, plasma, θ=θ)
 
+        # For conbinations that don't resonate
         if isnothing(λ_res)
             tof[i] = NaN
             continue
         end
 
+        # Calculate the components for the given ω and sum them
         t_w = wave_transit(
             ω,
             λ_res,
@@ -283,7 +339,7 @@ function WPI_TOF(
             field_dependent=field_dependent
         )
 
-        tof[i] = t_w + t_e + t_l
+        tof[i] = t_w + t_e + t_l[i]
 
     end
     return tof

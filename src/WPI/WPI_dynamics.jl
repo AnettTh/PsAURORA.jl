@@ -1,5 +1,6 @@
 using AURORA
 
+# TODO: Use this for TOF? Test for arrays of Ω_e and ω_pe
 """
     dispersion_relation_whistler_branch(ω, θ; ω_pe=37.9e3, Ω_e=9.48e3)
 

@@ -9,15 +9,15 @@ L = 6.0
 r0 = [L*RE, 0.0, 0.0]
 
 E = 3e4
-particle2 = ParticleState(E, μ, r0, dipole_field)
+particle = ParticleState(E, μ, r0, dipole_field)
 
 ##
-# TODO: λ_grid here should be found by using L--integrate this into PlasmaParameters!
+# TODO: λ_grid here should be found by using L--integrate this into PlasmaState!
 # Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
 n_e0 = 1.8e7        # 18/cc, from Hsieh 2022
 
-plasma = PlasmaParameters(λ_grid, n_e0, dipole_field, L)
+plasma = PlasmaState(λ_grid, n_e0, dipole_field, L)
 
 
 ## Get group velocity

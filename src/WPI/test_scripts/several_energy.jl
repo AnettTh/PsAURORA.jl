@@ -14,11 +14,11 @@ particles = [ParticleState(E, μ, r0, dipole_field) for E in E_grid]
 λ_grid = range(0.0, deg2rad(50), length=500)
 n_e0 = 1.8e7        # 18/cc, from Hsieh 2022
 
-plasma = PlasmaParameters(λ_grid, n_e0, dipole_field, L)
+plasma = PlasmaState(λ_grid, n_e0, dipole_field, L)
 
 
 # Define the wave
-ωs = range(plasma.Ω_e[1]*0.2, plasma.Ω_e[1]*0.4, length=5)
+ωs = range(plasma.Ω_e[1]*0.1, plasma.Ω_e[1]*0.4, length=5)
 
 
 ## Calculate TOF
@@ -28,8 +28,8 @@ TOF_simple = zeros(length(E_grid), length(ωs))
 
 # TODO: Figure out why only >100 keV precipitates??
 for (i, p) in enumerate(particles)
-    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=true)
-    TOF_simple[i, :]  = WPI_TOF(ωs, p, plasma; field_dependent=false)
+    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=true, wave_launch_time=wave_launch_time)
+    TOF_simple[i, :]  = WPI_TOF(ωs, p, plasma; field_dependent=false, wave_launch_time=wave_launch_time)
 end
 
 
@@ -62,7 +62,7 @@ lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,   label="Field-independe
 axislegend(ax, position=:rb)
 
 ##
-xlims!(ax, 0.8, 1.0)
+#xlims!(ax, 0.8, 1.0)
 #ylims!(ax, 100, 1000)
 
-save("src/WPI/test_scripts/several_energies_$(round(rad2deg(acos(abs(μ))))).png", fig)
+#save("src/WPI/test_scripts/several_energies_$(round(rad2deg(acos(abs(μ))))).png", fig)
