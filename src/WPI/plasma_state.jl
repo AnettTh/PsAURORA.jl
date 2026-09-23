@@ -2,7 +2,7 @@ using AURORA
 using AURORA; mₑ, qₑ, ε₀
 using LinearAlgebra
 
-# TODO: Document, document, document!
+# TODO: Figure out how to define λ_grid from the plasma state itself?
 """
     PlasmaState
 
@@ -39,7 +39,7 @@ Calculate the electron gyrofreequency `Ω_e` as a function of magnetic latitude 
 
 # Returns
 
-- The gyrofrequency as a fuction of magnetic latitude.
+- The gyrofrequency as a fuction of magnetic latitude [rad/s].
 """
 function Ωe_at_λ(λ, L, magnetic_field)
 
@@ -68,7 +68,7 @@ of Ω_e.
 # Arguments
 
 - `λ_grid`: Magnetic latitude grid [rad].
-- `n_e0`: Cold electron number density, assumed constant along the field line [m⁻³]. # NOTE: Figure out if this is to be changed
+- `n_e0`: Cold electron number density, assumed constant along the field line [m⁻³].
 - `magnetic_field`: Magnetic field function `f(L, λ)`.
 - `L`: L-shell number [RE].
 

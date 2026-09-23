@@ -62,12 +62,14 @@ export ParticleState
 include("WPI/boris_mover.jl")
 export boris_mover_TOF
 include("WPI/time_of_flight.jl")
-export time_of_flight, wave_transit, particle_transit, WPI_TOF
-export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
-export wave_transit, electron_transit, parallel_wavenumber, wave_launch_time
+export time_of_flight
 include("WPI/WPI_dynamics.jl")
-export group_velocity_whistler_wave
+export dispersion_relation_whistler_branch, wave_transit, particle_transit, WPI_TOF
+export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
+export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
 
+include("WPI/test_scripts/L/compare_Lshell.jl")
+export make_configs
 
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid

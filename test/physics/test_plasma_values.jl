@@ -1,5 +1,6 @@
 # TODO: make.
 # TODO: remember tests for velocity decomposition also
+# TODO: This needs to be updated, as we now also have relativistic option!
 @testitem "velocity_from_kinetic_energy" begin
     using AURORA
     using AURORA: mₑ, c₀, eV_in_J

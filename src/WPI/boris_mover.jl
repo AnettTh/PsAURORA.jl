@@ -4,6 +4,7 @@ using LinearAlgebra: norm, cross
 # TODO: Add option for perturbed B- and E-field, which are needed for WPI-version.
 # TODO: Re-introduce E-field
 # TODO: Relativistic corrections
+# TODO: Magnetic field in L, λ instead? Try to avoid gyro_frequency
 """
     boris_mover_TOF(
     magnetic_field,

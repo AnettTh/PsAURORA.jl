@@ -1,14 +1,13 @@
 using AURORA
 using CairoMakie
 
-# NOTE: For several energies
 ## Define the particles
 μ = -cos(deg2rad(0))       # Almost field-aligned
 L = 6.0
 r0 = [L*RE, 0.0, 0.0]
 
-E_grid = range(1e3, 10000e3, length=100)
-particles = [ParticleState(E, μ, r0, dipole_field) for E in E_grid]
+E_grid = range(1e3, 40e3, length=100)
+particles = [ParticleState(E, μ, r0, dipole_field; relativistic=true) for E in E_grid]
 
 # Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
@@ -26,19 +25,18 @@ TOF_matrix = zeros(length(E_grid), length(ωs))  # [n_E × n_ω]
 TOF_simple = zeros(length(E_grid), length(ωs))
 
 
-# TODO: Figure out why only >100 keV precipitates??
 for (i, p) in enumerate(particles)
-    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=true, wave_launch_time=wave_launch_time)
-    TOF_simple[i, :]  = WPI_TOF(ωs, p, plasma; field_dependent=false, wave_launch_time=wave_launch_time)
+    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=true, wave_launch_time=wave_chirp)
+    TOF_simple[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=false, wave_launch_time=wave_chirp)
 end
 
 
 ## Make Figure
-fig = Figure()
-ax = Axis(fig[1,1], xlabel="time-of-flight [s]", ylabel="E [keV]", yscale=log10, title="Pitch-angle $(round(rad2deg(acos(abs(μ)))))")
+fig = Figure(size=(900,500))
+ax = Axis(fig[1,1], xlabel="time-of-flight [s]", ylabel="E [keV]", title="Pitch-angle $(round(rad2deg(acos(abs(μ)))))")#, yscale=log10)
 
-ax.yticks = [1, 10, 100, 1000]
-ax.ytickformat = values -> ["$(Int(v))" for v in values]
+#ax.yticks = [1, 10, 100, 1000]
+#ax.ytickformat = values -> ["$(Int(v))" for v in values]
 
 ω_norm = (ωs .- minimum(ωs)) ./ (maximum(ωs) - minimum(ωs))
 
@@ -49,7 +47,7 @@ for (i, ω) in enumerate(ωs)
     lines!(ax, TOF_matrix[:, i], E_grid ./ 1e3;
         color=colors[i],
         linestyle=:solid,
-        label="ω = $(round(ω/1e3, digits=1)) kHz"
+        label="ω = $(round(ω * 2π/1e3, digits=1)) kHz"
     )
     lines!(ax, TOF_simple[:, i], E_grid ./ 1e3;
         color=colors[i],
@@ -59,10 +57,10 @@ end
 lines!(ax, [NaN], [NaN]; color=:black, linestyle=:solid,  label="Field-dependent")
 lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,   label="Field-independent")
 
-axislegend(ax, position=:rb)
+Legend(fig[1,2], ax)
 
 ##
 #xlims!(ax, 0.8, 1.0)
 #ylims!(ax, 100, 1000)
 
-#save("src/WPI/test_scripts/several_energies_$(round(rad2deg(acos(abs(μ))))).png", fig)
+save("src/WPI/test_scripts/energies/several_energies_$(round(rad2deg(acos(abs(μ))))).png", fig)

@@ -40,18 +40,18 @@ struct ParticleState{F<:Function}
     α_lc           :: Float64
     λ_ionosphere   :: Float64
     magnetic_field :: F
+    γ              :: Float64
 end
 
-
-# TODO: Figure out how to better solve r0 and L, such that r0 can be anywhere and L is used for anything related to equator
+# TODO: Test this for non-equatorial r0
 """
-    ParticleState(E_eV, μ, r0, magnetic_field)
+    ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
 
 Construct a `ParticleState` from initial conditions.
 
 Computes all derived quantities from the given energy, pitch angle cosine, initial position
-and magnetic field model. The initial position `r0` is used to determine the L-shell and
-all latitude-dependent quantities.
+and magnetic field model, either with or without relativistic corrections. The initial
+position `r0` is used to determine the L-shell and all latitude-dependent quantities.
 
 # Arguments
 
@@ -60,23 +60,54 @@ all latitude-dependent quantities.
 - `r0`: Initial position vector in Cartesian coordinates [m].
 - `magnetic_field`: Magnetic field function `f(x, y, z)`.
 
+# Keyword Arguments
+
+- `relativistic`: Option to correct for relativistic effects, default is false.
+
 # Returns
 
 - A fully initialized `ParticleState`.
 """
-function ParticleState(E_eV, μ, r0, magnetic_field)
+function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
 
-    v = velocity_from_kinetic_energy(E_eV, mₑ)
+    # Check validity of initial position
+    r_mag = norm(r0)
+    r_mag ≤ RE && throw(ArgumentError("r0 must be outside the Earth's surface."))
+
+    # Get velocity and relativistic constant
+    v, γ = velocity_from_kinetic_energy(
+        E_eV,
+        mₑ;
+        relativistic=relativistic,
+        return_gamma=true
+    )
+
+    # Specify magnetic field
     B0 = magnetic_field(r0)
     b̂, _, _, _ = magnetic_basis(B0)
-    r_mag = norm(r0)
+
+    # Latitude of initial position and L-shell
     λ0 = asin(r0[3] / r_mag)
     L = r_mag / (RE * cos(λ0)^2)
-    α_lc = losscone_angle(magnetic_field, r0)
+
+    # Loss-cone angle at the equator, IF the field is dipolar
+    # (with throw to help remember limitation)
+    if magnetic_field==dipole_field
+        α_lc = losscone_angle(L)
+    else
+        raise(ArgumentError(
+            "Remember that several values in ParticleState is invalid for non-dipole!!
+            Revisit ParticleState"
+            ))
+    end
+
+    # Current position pitch-angle and equatorial pitch-angle
     α0 = acos(abs(μ))
     B_eq = BE / L^3
     α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq)
-    λ_ionosphere = acos(sqrt((RE + z_ionosphere) / (L * RE))) # TODO: add throw
+
+    # Latitude of the ionosphere based on the L-shell
+    λ_ionosphere = acos(sqrt((RE + z_ionosphere) / (L * RE)))
 
     return ParticleState(
         E_eV,
@@ -91,6 +122,7 @@ function ParticleState(E_eV, μ, r0, magnetic_field)
         α_eq,
         α_lc,
         λ_ionosphere,
-        magnetic_field
+        magnetic_field,
+        γ
     )
 end

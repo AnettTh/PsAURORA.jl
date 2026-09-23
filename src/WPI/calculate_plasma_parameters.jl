@@ -1,8 +1,7 @@
-using AURORA
+using AURORA; dipole_field
 using LinearAlgebra: norm, dot, cross
 using StaticArrays
 
-# TODO: fix the 'old' functions to be multiple dispatch for struct, λ_grid
 """
     gyro_frequency(B, q, m)
 
@@ -22,6 +21,7 @@ Calculate the gyro-frequency of a test particle in a magnetic field.
 
 - `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
 """
+# NOTE: This can be archived if the boris-mover in a simple way can use L, λ for B
 function gyro_frequency(B::AbstractVector, q, m)
     return gyro_frequency(norm(B), q, m)
 end
@@ -33,79 +33,7 @@ end
 
 
 """
-    larmor_radius(m, q, v, B)
-
-Calculate the larmor radius of a test particle in a magnetic field.
-
-# Arguments
-
-- `m`: The mass of the test particle [kg].
-- `q`: The charge of the test particle [C].
-- `v`: Velocity vector of the test particle `[vx, vy, vz]` [m/s].
-- `B`: Magnetic field vector `[Bx, By, Bz]` [T].
-
-# Returns
-
-- Larmor radius of the test particle [m]
-
-# Throws
-
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function larmor_radius(m, q, v, B)
-    B_mag = norm(B)
-    B_mag ≤ eps(B_mag) && throw(ArgumentError("Must have nonzero B"))
-    iszero(q) && throw(ArgumentError("Particle charge must be nonzero"))
-
-    v_perp = perpendicular_speed(v, B)
-
-    return (m * v_perp) / (abs(q) * B_mag)
-end
-
-
-"""
-    gyrocenter(r, v, B, q, m)
-
-Calculate the position of the gyrocenter of a test particle in a magnetic field.
-
-# Arguments
-
-- `r`: Position vector of the test particle `[x, y, z]` [m].
-- `v`: Velocity vector of the test particle `[vx, vy, vz]` [m/s].
-- `B`: Magnetic field vector `[Bx, By, Bz]` [T].
-- `q`: The charge of the test particle [C].
-- `m`: The mass of the test particle [kg].
-
-# Returns
-
-- Gyrocenter position vector `SVector{3}` [m].
-
-# Throws
-
-- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
-"""
-function gyrocenter(r, v, B, q, m)
-
-    iszero(q) && throw(ArgumentError("Particle charge must be nonzero"))
-
-    r_s = SVector{3}(r)
-    v_s = SVector{3}(v)
-    B_s = SVector{3}(B)
-
-    B_mag = norm(B_s)
-    iszero(B_mag) && throw(ArgumentError("Must have nonzero B"))
-
-    b_hat = B_s / B_mag
-    v_perp = v_s - dot(v_s, b_hat) * b_hat
-    ρ = (m / (q * B_mag)) * cross(v_perp, b_hat)
-
-    return r_s - ρ
-end
-
-
-# TODO: Change input to L-shell?
-"""
-    losscone_angle(dipole_field, r_eq; degree::Bool=false)
+    losscone_angle(L; degree::Bool=false)
 
 Calculate the equatorial pitch angle for the loss cone.
 
@@ -117,12 +45,12 @@ for it to precipitate into the ionosphere.
 
 - `dipole_field`: Function describing the magnetic field, taking three positional values
   as the argument.
-- `r_eq`: The position in the equatorial plane for where to find the loss cone [m].
+- `L`: L-shell for where to find the loss cone.
 
 # Keyword Arguments
 
-- `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
-  passing `true` will allow for input in degrees.
+- `degrees::Bool`: Choose units for the losscone angle, default is `false` (i.e. radians)
+  and passing `true` will return output in degrees.
 
 # Returns
 
@@ -132,9 +60,9 @@ for it to precipitate into the ionosphere.
 
 - `ArgumentError`: If the equatorial distance is defined wrong.
 """
-function losscone_angle(dipole_field, r_eq; degrees::Bool=false)
+function losscone_angle(L; degrees::Bool=false)
     r_mirror = RE + z_ionosphere
-    r_eq_mag = norm(r_eq)
+    r_eq_mag = L * RE
 
     iszero(r_eq_mag) && throw(ArgumentError("Equatorial distance `r_eq` must be nonzero"))
 
@@ -146,7 +74,7 @@ function losscone_angle(dipole_field, r_eq; degrees::Bool=false)
     y_mirror = 0.0
     z_mirror = r_mirror * sin(λ_mirror)
 
-    B_eq = norm(dipole_field(r_eq...))
+    B_eq = norm(dipole_field(r_eq_mag, 0.0, 0.0))
     B_mirror = norm(dipole_field(x_mirror, y_mirror, z_mirror))
 
     B_ratio = B_eq / B_mirror
@@ -163,7 +91,6 @@ function losscone_angle(dipole_field, r_eq; degrees::Bool=false)
 end
 
 
-# TODO: Add throws!
 """
     pitch_angle_at_λ(α_known, B_known, B_λ)
 
@@ -201,17 +128,28 @@ end
 
 
 """
-    velocity_from_kinetic_energy(E_eV, m)
+    velocity_from_kinetic_energy(
+    E_eV,
+    m;
+    relativistic::Bool=false,
+    return_gamma::Bool=false
+    )
 
 Calculate magnitude of velocity vector from kinetic energy.
 
 Takes in kinetic energy given as electron volts and mass of some particle, converts the
-energy to Joules and then finds the magnitude of the velocity of the given particle.
+energy to Joules and then finds the magnitude of the velocity of the given particle, either
+with or without relativistic corrections.
 
 # Arguments
 
 - `E_eV`: Kinetic energy of the particle [eV].
 - `m`: Mass of the particle [kg].
+
+# Keyword Arguments
+
+- `relativistic`: Option to correct for relativistic effects, default is `false`.
+- `return_gamma`: Option to also return the relativistic factor `γ`, default is `false`.
 
 # Returns
 
@@ -222,31 +160,38 @@ energy to Joules and then finds the magnitude of the velocity of the given parti
 - `ArgumentError`: If the given mass is zero or if the particles speed is faster than the
   speed of light.
 """
-# TODO: Add relativistic option
-function velocity_from_kinetic_energy(E_eV, m)
-
-    iszero(m) && throw(ArgumentError("Mass must be nonzero"))
-
-    E_J = E_eV * eV_in_J
-
-    ratio = E_J / (m * c₀^2)
-
-    #if ratio ≥ 1
-    #    throw(
-    #        ArgumentError(
-    #            "Kinetic energy is too large for non-relaticistic velocity approximation"
-    #        )
-    #    )
-    #elseif ratio ≥ 0.1
-    #    @warn "Relativistic corrections might be significant"
-    #end
+function velocity_from_kinetic_energy(
+    E_eV,
+    m;
+    relativistic::Bool=false,
+    return_gamma::Bool=false
+    )
 
     m > 0 || throw(ArgumentError("Mass must be positive"))
     E_eV ≥ 0 || throw(ArgumentError("Kinetic energy must be nonnegative"))
 
-    v = sqrt(2E_J / m)
+    E_J = E_eV * eV_in_J
 
-    return v
+    if relativistic
+        γ = E_J / (m * c₀^2) + 1
+        v = c₀ * sqrt(1 - 1/γ^2)
+    else
+        # NOTE: Add this to the code later? For testing, it's fine to leave it out
+        #ratio = E_J / (m * c₀^2)
+        #ratio ≥ 1 && throw(ArgumentError(
+        #    "Kinetic energy too large for non-relativistic approximation"
+        #))
+        #ratio ≥ 0.1 && @warn "Relativistic corrections might be significant"
+
+        v = sqrt(2E_J / m)
+        γ = 1.0
+    end
+
+    if return_gamma
+        return v, γ
+    else
+        return v
+    end
 end
 
 
@@ -275,12 +220,13 @@ phase of the gyration.
 - `towards_equator`: Decides if the valocity is parallel or anti-parallel with the magnetic
   field, parallel being towards the equator IF in the northern hemisphere. The default is
   `true`.
+- `relativistic`: Option to correct for relativistic effects, default is false.
 """
-function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator::Bool=true)
+function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator::Bool=true, relativistic::Bool=false)
 
     -1 ≤ μ ≤ 1 || throw(ArgumentError("μ must be between -1 and 1"))
 
-    v_mag = velocity_from_kinetic_energy(E_eV, mₑ)
+    v_mag = velocity_from_kinetic_energy(E_eV, mₑ; relativistic=relativistic)
 
     # Construct the magnetic basis
     B = magnetic_field(r0...)
@@ -305,7 +251,3 @@ function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator::
 
     return Tuple(v0)
 end
-
-# TODO: Add and test whistler wave number with option for relativistic energies
-# TODO: Add and test whistler wave dispersion relation with option for relativistic energies
-# TODO: Add and test resonance condition with option for relativistic energies

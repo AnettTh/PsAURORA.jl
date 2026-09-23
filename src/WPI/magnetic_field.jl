@@ -76,8 +76,9 @@ function dipole_field(r)
     return dipole_field(r...)
 end
 
-# TODO: Some throws/warnings?
+
 function dipole_field(L::Real, λ::Real)
+
     r = L * RE * cos(λ)^2
     x = r * cos(λ)
     z = r * sin(λ)
