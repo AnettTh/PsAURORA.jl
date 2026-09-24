@@ -40,9 +40,10 @@ function dispersion_relation_whistler_branch(ω, θ; ω_pe=37.9e3*2π, Ω_e=9.48
 
     abs(θ) > 1 && throw(ArgumentError("Are you sure you are using radians for the WNA?"))
 
-    ω > abs(0.5 * Ω_e) && throw(ArgumentError(
-        "You are not in the LBC-range, sure this is right?"
-        ))
+    # NOTE: Removed for testing purposed, reintroduce later?
+    #ω > abs(0.5 * Ω_e) && throw(ArgumentError(
+    #    "You are not in the LBC-range, sure this is right?"
+    #    ))
 
     # TODO: Add cold-plasma check, I think that involves Ω_e and ω_pe??
 

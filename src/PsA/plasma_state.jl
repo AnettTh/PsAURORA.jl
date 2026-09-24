@@ -49,8 +49,14 @@ function Ωe_at_λ(λ, L, magnetic_field)
 end
 
 
+# TODO: Make this compatible with the new call-method
+function ne_constant(L, λ; n_e0=5e6)
+    return fill(n_e0, length(λ))
+end
+
 # TODO: Figure out if n_e can be constant (as here), or if some model is to be used
 # NOTE: Demekhov 1994 (p. 5833) uses nₑ(z) ∝ B(z), could that be an option?
+# NOTE: Denton 2004 or Kletzing 1998 also has some model
 """
     PlasmaState(
     λ_grid::AbstractVector,
@@ -88,12 +94,14 @@ function PlasmaState(
     magnetic_field::Function,
     L::Float64;
     lb_low=0.25,
-    lb_high=0.5
+    lb_high=0.5,
+    ne_model::Function=ne_constant
 )
     n_λ = length(λ_grid)
 
     # Electron plasma frequency
-    n_e = fill(n_e0, n_λ)
+    #n_e = ne_model(λ_grid; n_e0=n_e0)
+    n_e = ne_model(L, λ_grid)
     ω_pe = @. sqrt(n_e * qₑ^2 / (mₑ * ε₀))
 
     # Electron cyclotron frequency
@@ -105,3 +113,7 @@ function PlasmaState(
 
     return PlasmaState(collect(λ_grid), n_e, Ω_e, ω_pe, ω_lb)
 end
+
+
+
+##

@@ -55,8 +55,11 @@ export gyro_frequency, larmor_radius, gyrocenter
 export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
 
+include("PsA/ne_denton.jl")
+export ne_denton
+
 include("PsA/plasma_state.jl")
-export Ωe_at_λ, PlasmaState
+export Ωe_at_λ, PlasmaState, ne_constant
 include("PsA/particle_state.jl")
 export ParticleState
 include("PsA/boris_mover.jl")

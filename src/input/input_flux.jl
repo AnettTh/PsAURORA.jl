@@ -249,7 +249,15 @@ end
 # --------------------------THIS IS WHERE ANETT IS TO BE WORKING-------------------------- #
 ############################################################################################
 
+"""
+TODO: WPI TOF → time axis mapping
 
+compute_flux currently outputs Ie_top[n_beams, n_t, n_E]
+WPI models produce TOF(ω) — a function of wave frequency
+Need to map TOF(ω) → time-shifted flux on the existing time axis
+Question: does each ω correspond to a different arrival time, and how does this integrate with apply_modulation?
+Related: t_ref calculation needs to work for WPI models too
+"""
 
 function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t)
     E_centers = model.energy_grid.E_centers
