@@ -34,4 +34,4 @@ lines!(ax, (ω_grid.*2π) ./ 1e3, TOF_simple; linestyle=:solid,  label="Field-in
 
 axislegend(ax, position=:rb)
 
-save("src/WPI/test_scripts/frequencies/several_omega_$(round(rad2deg(acos(abs(μ))))).png", fig)
+save("src/PsA/test_scripts/frequencies/several_omega_$(round(rad2deg(acos(abs(μ))))).png", fig)

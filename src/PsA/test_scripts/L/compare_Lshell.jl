@@ -31,7 +31,7 @@ function _make_config(E_eV, α_deg, L, n_e0)
     r0 = [L*RE, 0.0, 0.0]
     return (
         label    = "L=$L, E=$(E_eV/1e3)keV, α=$(α_deg)°, n_e=$(n_e0/1e6)cm⁻³",
-        particle = ParticleState(E_eV, -cos(deg2rad(α_deg)), r0, dipole_field),
+        particle = ParticleState(E_eV, -cos(deg2rad(α_deg)), r0, dipole_field, relativistic=true),
         plasma   = PlasmaState(range(0.0, deg2rad(50), length=500), n_e0, dipole_field, L)
     )
 end
@@ -67,4 +67,4 @@ for (i, cfg) in enumerate(configs)
 end
 
 Legend(fig[1, 2], ax)
-save("src/WPI/test_scripts/L/res_vs_freq.png",fig)
+save("src/PsA/test_scripts/L/res_vs_freq.png",fig)

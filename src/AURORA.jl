@@ -47,29 +47,35 @@ export NeutralSpecies, MSISDensity, VectorDensity
 export N2Species, O2Species, OSpecies
 
 # NOTE: Under testing
-include("WPI/magnetic_field.jl")
+include("PsA/magnetic_field.jl")
 export dipole_field, magnetic_basis, r_to_λL
-include("WPI/calculate_plasma_parameters.jl")
+include("PsA/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
 export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
 
-include("WPI/plasma_state.jl")
+include("PsA/plasma_state.jl")
 export Ωe_at_λ, PlasmaState
-include("WPI/particle_state.jl")
+include("PsA/particle_state.jl")
 export ParticleState
-include("WPI/boris_mover.jl")
+include("PsA/boris_mover.jl")
 export boris_mover_TOF
-include("WPI/time_of_flight.jl")
-export time_of_flight
-include("WPI/WPI_dynamics.jl")
+#include("PsA/time_of_flight.jl")
+#export time_of_flight
+include("PsA/WPI_dynamics.jl")
 export dispersion_relation_whistler_branch, wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
 
-include("WPI/test_scripts/L/compare_Lshell.jl")
+include("PsA/test_scripts/L/compare_Lshell.jl")
 export make_configs
+
+include("PsA/TOF.jl")
+export AbstractTOF
+export SimpleTOF, FieldlineTOF
+export WPISimpleTOF, WPIFieldlineTOF
+export time_of_flight
 
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid

@@ -6,17 +6,17 @@ using CairoMakie
 configs = [
     (
         label  = "L=6.5, E=30keV, α=3°",
-        particle = ParticleState(3e4, -cos(deg2rad(3)), [6.5*RE, 0.0, 0.0], dipole_field),
+        particle = ParticleState(3e4, -cos(deg2rad(3)), [6.5*RE, 0.0, 0.0], dipole_field; relativistic=true),
         plasma   = PlasmaState(range(0.0, deg2rad(50), length=500), 1.8e7, dipole_field, 6.5)
     ),
     (
         label  = "L=6.5, E=30keV, α=3°",
-        particle = ParticleState(3e4, -cos(deg2rad(3)), [6.5*RE, 0.0, 0.0], dipole_field),
+        particle = ParticleState(3e4, -cos(deg2rad(3)), [6.5*RE, 0.0, 0.0], dipole_field; relativistic=true),
         plasma   = PlasmaState(range(0.0, deg2rad(50), length=500), 1.8e7, dipole_field, 6.5)
     ),
     (
         label  = "L=6.5, E=30keV, α=3°",
-        particle = ParticleState(3e4, -cos(deg2rad(3)), [6.5*RE, 0.0, 0.0], dipole_field),
+        particle = ParticleState(3e4, -cos(deg2rad(3)), [6.5*RE, 0.0, 0.0], dipole_field; relativistic=true),
         plasma   = PlasmaState(range(0.0, deg2rad(50), length=500), 1.8e7, dipole_field, 6.5)
     ),
 ]
@@ -84,7 +84,7 @@ for (i, cfg) in enumerate(configs)
     r0       = [cfg.L * RE, 0.0, 0.0]
 
     λ_res_grid = map(E_grid) do E
-        p     = ParticleState(E, μ, r0, dipole_field)
+        p     = ParticleState(E, μ, r0, dipole_field; relativistic=true)
         λ_res = resonance_latitude(ω, p, plasma)
         isnothing(λ_res) ? NaN : rad2deg(λ_res)
     end

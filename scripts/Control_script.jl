@@ -47,11 +47,13 @@ initialize!(model)
 t = 0:0.05:1
 _ = compute_flux(flux, model, t)
 @profview compute_flux(flux, model, t)
-##
-run!(sim)
 
-## Run the analysis
-make_Ie_top_file(sim)
-make_volume_excitation_file(sim)
-make_current_file(sim)
-make_column_excitation_file(sim)
+
+###
+#run!(sim)
+#
+### Run the analysis
+#make_Ie_top_file(sim)
+#make_volume_excitation_file(sim)
+#make_current_file(sim)
+#make_column_excitation_file(sim)

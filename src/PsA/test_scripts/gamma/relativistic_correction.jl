@@ -80,4 +80,4 @@ lines!(ax2, [NaN], [NaN]; color=:black, linestyle=:solid, label="Classical")
 lines!(ax2, [NaN], [NaN]; color=:black, linestyle=:dash,  label="Relativistic")
 
 Legend(fig[1, 3], ax2)
-save("src/WPI/test_scripts/gamma/rel_vs_classic.png", fig)
+save("src/PsA/test_scripts/gamma/rel_vs_classic.png", fig)

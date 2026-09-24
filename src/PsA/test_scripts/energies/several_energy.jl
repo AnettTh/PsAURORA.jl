@@ -63,4 +63,4 @@ Legend(fig[1,2], ax)
 #xlims!(ax, 0.8, 1.0)
 #ylims!(ax, 100, 1000)
 
-save("src/WPI/test_scripts/energies/several_energies_$(round(rad2deg(acos(abs(μ))))).png", fig)
+save("src/PsA/test_scripts/energies/several_energies_$(round(rad2deg(acos(abs(μ))))).png", fig)

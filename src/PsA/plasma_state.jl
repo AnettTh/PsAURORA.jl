@@ -50,6 +50,7 @@ end
 
 
 # TODO: Figure out if n_e can be constant (as here), or if some model is to be used
+# NOTE: Demekhov 1994 (p. 5833) uses nₑ(z) ∝ B(z), could that be an option?
 """
     PlasmaState(
     λ_grid::AbstractVector,

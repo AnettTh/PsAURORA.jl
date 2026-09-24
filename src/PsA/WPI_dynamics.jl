@@ -221,7 +221,7 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
             vz = particle.v * cos(α_λ)
             iszero(vz) && return 0.0
         else
-            vz = abs(particle.v * cos(particle.α_lc))       # NOTE: becomes relativistic from particle.v, if needed
+            vz = abs(particle.v * cos(particle.α_lc))
         end
 
         ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
@@ -236,7 +236,13 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
 end
 
 
-# TODO: Change name
+# TODO: Look into other time-frequency structures, for example Demekhov 2016
+"""
+    wave_chirp(ω; ω0=2π*600, ω1=2π*1350, t=0.2)
+
+Linear chirp equal to the one used by Chen 2020. This is, however, an approximation.
+Demekhov 2016 might use a more accurate model, which also is time-dependent.
+"""
 function wave_chirp(ω; ω0=2π*600, ω1=2π*1350, t=0.2)
     chirp_rate = (ω0 - ω1) / t
     return (ω .- ω0) ./ chirp_rate
@@ -244,7 +250,7 @@ end
 
 
 """
-    resonance_latitude(ω, particle, plasma; θ::Float64=0.0, n::Int=1, relativistic::Bool=false)
+    resonance_latitude(ω, particle, plasma; θ::Float64=0.0, n::Int=1)
 
 Calculate the resonance latitude for the defined particle with a whistler mode wave.
 
@@ -304,8 +310,8 @@ function resonance_latitude(ω, particle, plasma; θ::Float64=0.0, n::Int=1)
     return λ_resonance
 end
 
-function resonance_latitude(ω_grid::AbstractVector, particle, plasma; θ::Float64=0.0, n::Int=1, relativistic::Bool=false)
-    return [let r = resonance_latitude(ω, particle, plasma; θ=θ, n=n, relativistic=relativistic)
+function resonance_latitude(ω_grid::AbstractVector, particle, plasma; θ::Float64=0.0, n::Int=1)
+    return [let r = resonance_latitude(ω, particle, plasma; θ=θ, n=n)
                 isnothing(r) ? NaN : r
             end for ω in ω_grid]
 end
