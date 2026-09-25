@@ -104,4 +104,4 @@ Legend(fig[1, 1],
 )
 
 ## Save figure
-save("magnetic_basis.png", fig)
+save("src/WPI/diagnostic_figures/magnetic_basis.png", fig)

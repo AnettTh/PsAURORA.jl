@@ -6,7 +6,7 @@ include("constants.jl")
 # TODO: Evaluate the handeling of z_ionosphere
 # TODO: Go over units, check consistency and use square brackets!
 # TODO: Check all files for radians/degrees-consistency!!!
-export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀, BE
+export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀, BE, qₑ, ε₀
 
 include("grids/abstract_grid.jl")
 include("grids/altitude_grid.jl")
@@ -54,6 +54,8 @@ export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
 export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
+include("WPI/ne_model.jl")
+export ne_denton
 
 include("WPI/plasma_state.jl")
 export Ωe_at_λ, PlasmaState
@@ -67,9 +69,6 @@ include("WPI/WPI_dynamics.jl")
 export dispersion_relation_whistler_branch, wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
-
-include("WPI/test_scripts/L/compare_Lshell.jl")
-export make_configs
 
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid

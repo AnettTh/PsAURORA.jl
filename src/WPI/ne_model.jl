@@ -30,6 +30,7 @@ function ne_denton(L, λ; SI::Bool=true)
 
     # Find the right bin
     i = searchsortedfirst(L_edges, L) - 1
+    @show L, i, length(n_e0_vals)  # debug
     i = clamp(i, 1, length(n_e0_vals))
 
     # Convert to SI-units
@@ -69,7 +70,7 @@ for (L, color) in zip(L_vals, colors)
 end
 
 axislegend(ax, position=:rt)
-save("simple_denton_density.png", fig)
+save("src/WPI/diagnostic_figures/simple_denton_density.png", fig)
 
 
 ##

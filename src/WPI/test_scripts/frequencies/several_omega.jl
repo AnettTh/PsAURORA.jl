@@ -3,7 +3,7 @@ using AURORA; c₀
 using CairoMakie
 
 ## Define the particle
-μ = -cos(deg2rad(0))       # Almost field-aligned
+μ = -cos(deg2rad(3))       # Almost field-aligned
 L = 6.0
 r0 = [L*RE, 0.0, 0.0]
 
@@ -14,7 +14,7 @@ particle = ParticleState(E, μ, r0, dipole_field; relativistic=true)
 λ_grid = range(0.0, deg2rad(50), length=500)
 n_e0 = 1.8e7        # 18/cc, from Hsieh 2022
 
-plasma = PlasmaState(λ_grid, n_e0, dipole_field, L)
+plasma = PlasmaState(λ_grid, ne_denton, dipole_field, L)
 
 
 ## Get group velocity
@@ -34,4 +34,5 @@ lines!(ax, (ω_grid.*2π) ./ 1e3, TOF_simple; linestyle=:solid,  label="Field-in
 
 axislegend(ax, position=:rb)
 
+##
 save("src/WPI/test_scripts/frequencies/several_omega_$(round(rad2deg(acos(abs(μ))))).png", fig)

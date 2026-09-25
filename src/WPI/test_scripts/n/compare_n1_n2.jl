@@ -13,9 +13,9 @@ particles = [ParticleState(E, μ, r0, dipole_field; relativistic=true) for E in 
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
-n_e0 = 1.8e7        # 18/cc, from Hsieh 2022
+#n_e0 = 1.8e7        # 18/cc, from Hsieh 2022
 
-plasma = PlasmaState(λ_grid, n_e0, dipole_field, L)
+plasma = PlasmaState(λ_grid, ne_denton, dipole_field, L)
 
 
 ## Define the wave
@@ -65,7 +65,7 @@ params = """
     Parameters:
     L = $L
     α = $(round(rad2deg(acos(abs(μ))), digits=1))°
-    n_e = $(n_e0/1e6) cm⁻³
+    n_e = denton-model
     """
 
 Label(fig[1, 3],

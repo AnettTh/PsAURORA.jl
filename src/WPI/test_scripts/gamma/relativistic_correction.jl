@@ -17,7 +17,7 @@ p_classical = [ParticleState(E, μ, r0, dipole_field; relativistic=false) for E 
 λ_grid = range(0.0, deg2rad(50), length=500)
 n_e0 = 1.8e7        # 18/cc, from Hsieh 2022
 
-plasma = PlasmaState(λ_grid, n_e0, dipole_field, L)
+plasma = PlasmaState(λ_grid, ne_denton, dipole_field, L)
 
 
 # Define the wave
@@ -80,4 +80,6 @@ lines!(ax2, [NaN], [NaN]; color=:black, linestyle=:solid, label="Classical")
 lines!(ax2, [NaN], [NaN]; color=:black, linestyle=:dash,  label="Relativistic")
 
 Legend(fig[1, 3], ax2)
+
+##
 save("src/WPI/test_scripts/gamma/rel_vs_classic.png", fig)

@@ -82,16 +82,17 @@ of Ω_e.
 """
 function PlasmaState(
     λ_grid::AbstractVector,
-    n_e0::Float64,
+    ne_model::Function,
     magnetic_field::Function,
     L::Float64;
     lb_low=0.25,
     lb_high=0.5
 )
+
     n_λ = length(λ_grid)
 
     # Electron plasma frequency
-    n_e = fill(n_e0, n_λ)
+    n_e = ne_model(L, λ_grid; SI=true)
     ω_pe = @. sqrt(n_e * qₑ^2 / (mₑ * ε₀))
 
     # Electron cyclotron frequency

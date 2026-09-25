@@ -13,9 +13,9 @@ r0 = [L*RE, 0.0, 0.0]
 particle = ParticleState(E, μ, r0, dipole_field)
 
 λ_grid = range(0.0, deg2rad(50), length=500)
-n_e0 = 5e6        # 18/cc, from Hsieh 2022
+#n_e0 = 5e6        # 18/cc, from Hsieh 2022
 
-plasma = PlasmaState(λ_grid, n_e0, dipole_field, L)
+plasma = PlasmaState(λ_grid, ne_denton, dipole_field, L)
 
 # find and plot resonance
 ns = [-1, 0, 1, 2]
@@ -30,11 +30,11 @@ ax = Axis(
     title="Resonance latitude as a function of wave frequency")
 
 parameters_text = """
-    n_e = $(n_e0/1e6) cm⁻³
+    n_e = Denton-model
     L = $L
     E = $(E/1e3) keV
     α = $(round(rad2deg(acos(abs(μ))), digits=1))°
-    ω = 0.1 Ωₑ - 0.5 Ωₑ
+    ω = 0.25 Ωₑ - 0.5 Ωₑ
     θ = 0°
     """
 
@@ -53,4 +53,4 @@ end
 axislegend(ax, position=:rb)
 
 ##
-save("src/WPI/test_scripts/resonance/figures/n_tests.png",fig)
+save("src/WPI/test_scripts/resonance/n_tests.png",fig)

@@ -295,7 +295,8 @@ function resonance_latitude(ω, particle, plasma; θ::Float64=0.0, n::Int=1)
     idx = findfirst(i -> f_possible[i] * f_possible[i+1] < 0, 1:length(f_possible)-1)
 
     # Return nothing if there is no resonance
-    isnothing(idx) && return nothing
+    #isnothing(idx) && return nothing
+    isnothing(idx) && return NaN
 
     # Figure out the latitude where the funciton changed sign
     λ_resonance = find_zero(resonance_condition, (λ_grid[idx], λ_grid[idx+1]))

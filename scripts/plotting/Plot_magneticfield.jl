@@ -76,7 +76,7 @@ axislegend(ax1,
 θ = range(0, 2π, length=100)
 poly!(ax1, cos.(θ), sin.(θ), color=:lightblue, strokecolor=:black, strokewidth=1)
 
-save("dipole_fieldlines.png", fig1)
+save("src/WPI/diagnostic_figures/dipole_fieldlines.png", fig1)
 
 ## ==================== Figure 2: Field strength |B| ==================== ##
 fig2 = Figure(resolution=(800, 800))
@@ -119,7 +119,7 @@ Colorbar(fig2[1, 2], sc, label="|B| (T)")
 # Draw Earth
 poly!(ax2, cos.(θ), sin.(θ), color=:lightblue, strokecolor=:black, strokewidth=1)
 
-save("dipole_field_strength.png", fig2)
+save("src/WPI/diagnostic_figures/dipole_field_strength.png", fig2)
 
 ## ==================== Figure 3: Field vectors ==================== ##
 fig3 = Figure(resolution=(800, 800))
@@ -171,6 +171,6 @@ end
 # Draw Earth
 poly!(ax3, cos.(θ), sin.(θ), color=:lightblue, strokecolor=:black, strokewidth=1)
 
-save("dipole_field_vectors.png", fig3)
+save("src/WPI/diagnostic_figures/dipole_field_vectors.png", fig3)
 
 println("Saved: dipole_fieldlines.png, dipole_field_strength.png, dipole_field_vectors.png")
