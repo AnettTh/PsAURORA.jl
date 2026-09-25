@@ -49,7 +49,6 @@ function Ωe_at_λ(λ, L, magnetic_field)
 end
 
 
-# TODO: Figure out if n_e can be constant (as here), or if some model is to be used
 """
     PlasmaState(
     λ_grid::AbstractVector,

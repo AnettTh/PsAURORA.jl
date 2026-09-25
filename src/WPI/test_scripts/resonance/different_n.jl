@@ -13,7 +13,7 @@ r0 = [L*RE, 0.0, 0.0]
 particle = ParticleState(E, μ, r0, dipole_field)
 
 λ_grid = range(0.0, deg2rad(50), length=500)
-n_e0 = 1.8e7        # 18/cc, from Hsieh 2022
+n_e0 = 5e6        # 18/cc, from Hsieh 2022
 
 plasma = PlasmaState(λ_grid, n_e0, dipole_field, L)
 
@@ -46,7 +46,7 @@ text!(ax, 0.02, 0.98;
 )
 ##
 for n in ns
-    λ_res = resonance_latitude(ω_grid, particle, plasma; n=n, relativistic=true)
+    λ_res = resonance_latitude(ω_grid, particle, plasma; n=n)
     lines!(ax, ω_grid./1e3, rad2deg.(λ_res), label="n = $(Int(n))")
 end
 
