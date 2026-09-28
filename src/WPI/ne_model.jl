@@ -29,7 +29,7 @@ function ne_denton(L, λ; SI::Bool=true)
     R = L .* RE .* cos.(λ).^2
 
     # Find the right bin
-    i = searchsortedfirst(L_edges, L) - 1
+    i = max(1, searchsortedfirst(L_edges, L) - 1)
     @show L, i, length(n_e0_vals)  # debug
     i = clamp(i, 1, length(n_e0_vals))
 

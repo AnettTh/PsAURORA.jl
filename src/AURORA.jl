@@ -58,7 +58,7 @@ include("WPI/ne_model.jl")
 export ne_denton
 
 include("WPI/plasma_state.jl")
-export Ωe_at_λ, PlasmaState
+export Ωe_at_λ, ωpe_at_λ, PlasmaState
 include("WPI/particle_state.jl")
 export ParticleState
 include("WPI/boris_mover.jl")

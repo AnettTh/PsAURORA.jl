@@ -26,6 +26,7 @@ end
 
 
 # NOTE: This will not be compatible with Tsyganenko, figure it out!
+# TODO: This can probably be structured better, move to plasma-parameters and use multiple dispatch?
 """
     Ωe_at_λ(λ, L, magnetic_field)
 
@@ -46,6 +47,14 @@ function Ωe_at_λ(λ, L, magnetic_field)
     B = magnetic_field(L, λ)
 
     return gyro_frequency(norm(B), qₑ, mₑ)
+end
+
+
+function ωpe_at_λ(λ, L, ne_model)
+
+    ne = ne_model(L, λ)
+
+    return sqrt(ne * qₑ^2 / (mₑ * ε₀))
 end
 
 

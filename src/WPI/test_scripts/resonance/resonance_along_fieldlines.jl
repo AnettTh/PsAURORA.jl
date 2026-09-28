@@ -1,97 +1,106 @@
 using AURORA
 using CairoMakie
 
+# TODO: There is some bug here, find it.
+## Make the data
+L_vals = [3, 4, 5, 6, 7, 8]
+colors = [:blue, :red, :green, :orange, :purple, :brown]
 
-## Shared setup
-L_vals = [3, 4, 5, 6, 7]
-n      = 1
-θ      = range(0, 2π, length=100)
+θ = deg2rad(0.0)
+n = 1
+E_eV = 30e3
+μ = -cos(deg2rad(3.0))
 
-fig = Figure(size=(1400, 700))
+ω_frac = 0.5
 
-## ── Panel 1: Fixed ω, varying v∥ (via α) ─────────────────────────────────────
-ax1 = Axis(fig[1, 1];
+## Define figure
+fig = Figure(size=(700, 400))
+ax  = Axis(fig[1, 1];
     xlabel = "X [RE]",
     ylabel = "Z [RE]",
-    title  = "Resonance latitude — fixed ω, varying α",
+    title  = "Resonance velocity as a function of latitude",
     aspect = DataAspect()
 )
 
-ω_fixed  = 0.35 * plasma.Ω_e[1]
-α_vals   = [1.0, 2.0, 3.0, 5.0]   # pitch angles in degrees
-colors_α = [:blue, :red, :green, :orange]
+## Make Earth
+ϕ = range(0, 2π, length=100)
+poly!(ax, Point2f.(cos.(ϕ), sin.(ϕ)); color=:black, strokecolor=:black, strokewidth=1)
 
-poly!(ax1, Point2f.(cos.(θ), sin.(θ)); color=:black, strokecolor=:black, strokewidth=1)
 
-for (α_deg, color) in zip(α_vals, colors_α)
-    for L in L_vals
-        plasma_L = PlasmaState(λ_grid, ne_denton, dipole_field, Float64(L))
-        p        = ParticleState(30e3, -cos(deg2rad(α_deg)), [L*RE, 0.0, 0.0], dipole_field)
-        λ_max    = acos(sqrt((RE + z_ionosphere) / (L * RE)))
-        λ_grid_L = range(0.0, λ_max * 0.99, length=500)
+## Compute
+field_line_data = map(L_vals) do L
 
-        λ_res = resonance_latitude(ω_fixed, p, plasma_L; n=n)
-        isnothing(λ_res) && continue
-        # Field line
-        R_fl = @. L * RE * cos.(λ_grid_L)^2
-        x_fl = @. -R_fl *  cos.(λ_grid_L) / RE
-        z_fl = @.  R_fl *  sin.(λ_grid_L) / RE
-        lines!(ax1, x_fl, z_fl; color=:lightgray, linewidth=1)
-        lines!(ax1, x_fl, -z_fl; color=:lightgray, linewidth=1)
+    particle = ParticleState(E_eV, μ, [RE*L, 0.0, 0.0], dipole_field; relativistic=true)
 
-        # Resonance point
-        R_res = L * RE * cos(λ_res)^2
-        x_res = -R_res * cos(λ_res) / RE
-        z_res =  R_res * sin(λ_res) / RE
-        scatter!(ax1, [x_res], [z_res]; color=color, markersize=8,
-                 label= L==L_vals[1] ? "α=$(α_deg)°" : nothing)
-        scatter!(ax1, [x_res], [-z_res]; color=color, markersize=8)
+    λ_max    = acos(sqrt((RE + z_ionosphere) / (L * RE)))
+    λ_grid_L = range(0.0, λ_max * 0.99, length=500)
+    plasma_L = PlasmaState(λ_grid_L, ne_denton, dipole_field, Float64(L))
+
+    ω = ω_frac * plasma_L.Ω_e[1]
+
+    V_R_grid = map(λ_grid_L) do λ
+        Ω_e   = Ωe_at_λ(λ, Float64(L), dipole_field)
+        ω_pe  = ωpe_at_λ(λ, Float64(L), ne_denton)
+        k     = dispersion_relation_whistler_branch(ω, θ; Ω_e=Ω_e, ω_pe=ω_pe)
+        k_par = k * cos(θ)
+
+        iszero(k_par) && return NaN
+        V_R = ((ω + n * Ω_e / particle.γ) / k_par) / c₀
+
+        (V_R > 1.0 || V_R < 0.0) && return NaN  # unphysical
+        return V_R
     end
+
+    R_grid = @. L * RE * cos(λ_grid_L)^2
+    x = @. -R_grid * cos(λ_grid_L) / RE
+    z = @.  R_grid * sin(λ_grid_L) / RE
+
+    return (; x, z, V_R_grid)
 end
 
-axislegend(ax1, position=:rt)
+## Make the lines
+all_vals = filter(!isnan, vcat([d.V_R_grid for d in field_line_data]...))
+clims_log = (log10(minimum(abs.(all_vals))), log10(maximum(abs.(all_vals))))
 
-## ── Panel 2: Fixed v∥ (via α), varying ω ─────────────────────────────────────
-ax2 = Axis(fig[1, 2];
-    xlabel = "X [RE]",
-    ylabel = "Z [RE]",
-    title  = "Resonance latitude — fixed α, varying ω",
-    aspect = DataAspect()
+# Plot
+for d in field_line_data
+    lines!(ax, d.x,  d.z; color=log10.(abs.(d.V_R_grid)), colormap=:turbo, colorrange=clims_log, linewidth=3)
+    lines!(ax, d.x, -d.z; color=log10.(abs.(d.V_R_grid)), colormap=:turbo, colorrange=clims_log, linewidth=3)
+end
+
+## Add text
+parameters_text = """
+    n_e = Denton-model
+    n = $n
+    E = $(E_eV/1e3) keV
+    α = $(round(rad2deg(acos(abs(μ))), digits=1))°
+    ω = $(ω_frac) Ωₑ
+    θ = 0°
+    """
+
+text!(ax, 0.02, 0.98;
+    text       = parameters_text,
+    space      = :relative,
+    align      = (:left, :top),
+    fontsize   = 11
 )
 
-α_fixed  = 3.0   # degrees
-ω_fracs  = [0.2, 0.3, 0.4, 0.5]
-colors_ω = [:blue, :red, :green, :orange]
+##
+tick_vals     = [0.0, 10^(-0.25), 10^(-0.5), 10^(-0.75), 1.0]
+tick_positions = log10.(tick_vals)
+tick_labels   = ["0.0", "0.75", "0.5", "0.25", "1.0"]
 
-poly!(ax2, Point2f.(cos.(θ), sin.(θ)); color=:lightblue, strokecolor=:black, strokewidth=1)
+Colorbar(fig[1, 2];
+    colormap   = :turbo,
+    limits     = clims_log,
+    label      = "Resonance velocity [v∥/c₀]",
+    ticks      = (tick_positions, tick_labels),
+    tellheight = false
+)
 
-for (ω_frac, color) in zip(ω_fracs, colors_ω)
-    for L in L_vals
-        plasma_L = PlasmaState(λ_grid, ne_denton, dipole_field, Float64(L))
-        p        = ParticleState(30e3, -cos(deg2rad(α_fixed)), [L*RE, 0.0, 0.0], dipole_field)
-        ω        = ω_frac * plasma_L.Ω_e[1]
-        λ_max    = acos(sqrt((RE + z_ionosphere) / (L * RE)))
-        λ_grid_L = range(0.0, λ_max * 0.99, length=500)
+##
+xlims!(0, -8.5)
+ylims!(0, 4)
 
-        λ_res = resonance_latitude(ω, p, plasma_L; n=n)
-        isnothing(λ_res) && continue
-
-        R_fl = @. L * RE * cos(λ_grid_L)^2
-        x_fl = @. -R_fl * cos(λ_grid_L) / RE
-        z_fl = @.  R_fl * sin(λ_grid_L) / RE
-        lines!(ax2, x_fl, z_fl; color=:lightgray, linewidth=1)
-        lines!(ax2, x_fl, -z_fl; color=:lightgray, linewidth=1)
-
-        R_res = L * RE * cos(λ_res)^2
-        x_res = -R_res * cos(λ_res) / RE
-        z_res =  R_res * sin(λ_res) / RE
-        scatter!(ax2, [x_res], [z_res]; color=color, markersize=8,
-                 label= L==L_vals[1] ? "ω=$(ω_frac)Ωe" : nothing)
-        scatter!(ax2, [x_res], [-z_res]; color=color, markersize=8)
-    end
-end
-
-axislegend(ax2, position=:rt)
-
-#
-save("src/PsA/plots/resonance_fieldlines.png", fig)
+##
+save("src/WPI/test_scripts/resonance/res_lat_$(round(ω_frac, digits=2)).png", fig)
