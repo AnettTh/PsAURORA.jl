@@ -236,6 +236,7 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
 end
 
 
+# TODO: Document, make alternative (Demekhov?)
 function wave_chirp(ω; ω0=2π*600, ω1=2π*1350, t=0.2)
     chirp_rate = (ω0 - ω1) / t
     return (ω .- ω0) ./ chirp_rate

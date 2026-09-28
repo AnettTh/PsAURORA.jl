@@ -142,6 +142,25 @@ function Base.show(io::IO, s::MaxwellianSpectrum)
 end
 
 
+## ====================================================================================== ##
+## SubtractedBiMaxwellianSpectrum
+## ====================================================================================== ##
+# TODO: Add documentation!
+struct SubtractedBiMaxwellianSpectrum <: AbstractSpectrum
+    IeE_tot::Float64
+    E₀::Float64
+    Δ::Float64
+    α_lc::Float64
+
+    function SubtractedBiMaxwellianSpectrum(IeE_tot, E₀, Δ, α_lc)
+        IeE_tot > 0 || error("IeE_tot must be positive")
+        E₀ > 0 || error("E₀ must be positive")
+        0 ≤ Δ ≤ 1 || error("Relative depth must be between 0 and 1")
+        0 ≤ α_lc ≤ 1 || error("Relative width must be between 0 and 1")
+        new(Float64(IeE_tot), Float64(E₀), Float64(Δ), Float64(α_lc))
+    end
+end
+
 
 ## ====================================================================================== ##
 ## FileSpectrum
@@ -260,4 +279,11 @@ function evaluate_spectrum(spec::MaxwellianSpectrum, model::AuroraModel)
     end
 
     return Φ  # #e⁻/m²/s/eV (differential, before multiplying by ΔE)
+end
+
+
+# TODO: Make the 2D-spectrum into something that can be handeled?
+function evaluate_spectrum(spec::SubtractedBiMaxwellianSpectrum, model::AuroraModel)
+
+    return nothing
 end

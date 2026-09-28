@@ -77,9 +77,17 @@ include("input/spectra.jl")
 include("input/modulations.jl")
 include("input/input_flux.jl")
 export AbstractSpectrum, FlatSpectrum, GaussianSpectrum, MaxwellianSpectrum, FileSpectrum
+
+export SubtractedBiMaxwellianSpectrum
+
+include("input/losscone_distribution.jl")
+export subtracted_bimaxwellian
+
 export AbstractModulation, ConstantModulation, SinusoidalFlickering, SquareFlickering, SmoothOnset
 export InputFlux, evaluate_spectrum, apply_modulation, compute_flux
 export Ie_top_from_file
+
+
 
 include("solvers/transport_matrices.jl")
 include("solvers/matrix_building.jl")
