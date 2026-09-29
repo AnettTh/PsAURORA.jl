@@ -11,22 +11,32 @@ particles = [ParticleState(E, μ, r0, dipole_field; relativistic=true) for E in 
 
 # Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
-#n_e0 = 1.8e7        # 18/cc, from Hsieh 2022
+n_e0 = 1.8e7        # 18/cc, from Hsieh 2022
 
-#plasma = PlasmaState(λ_grid, n_e0, dipole_field, L)
+#plasma = PlasmaState(λ_grid, ne_constant, dipole_field, L)
 plasma = PlasmaState(λ_grid, ne_denton, dipole_field, L)
 
 # Define the wave
 ωs = range(plasma.Ω_e[1]*0.1, plasma.Ω_e[1]*0.4, length=5)
+for (i, ω) in enumerate(ωs)
+    n_nan = sum(isnan.(TOF_matrix[:, i]))
+    println("ω=$(round(ω/1e3, digits=1)) kHz: $n_nan NaN out of $(length(E_grid))")
+end
 
-
+##
+for (i, ω) in enumerate(ωs)
+    nan_idx = findall(isnan.(TOF_matrix[:, i]))
+    if !isempty(nan_idx)
+        println("ω=$(round(ω/1e3, digits=1)) kHz: NaN at E=$(round.(E_grid[nan_idx]./1e3, digits=1)) keV")
+    end
+end
 ## Calculate TOF
 TOF_matrix = zeros(length(E_grid), length(ωs))  # [n_E × n_ω]
 TOF_simple = zeros(length(E_grid), length(ωs))
 
 
 for (i, p) in enumerate(particles)
-    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=true, wave_launch_time=wave_chirp)
+    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=true , wave_launch_time=wave_chirp)
     TOF_simple[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=false, wave_launch_time=wave_chirp)
 end
 

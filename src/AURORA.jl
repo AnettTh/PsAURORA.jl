@@ -6,7 +6,7 @@ include("constants.jl")
 # TODO: Evaluate the handeling of z_ionosphere
 # TODO: Go over units, check consistency and use square brackets!
 # TODO: Check all files for radians/degrees-consistency!!!
-export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀, BE, qₑ, ε₀
+export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀, BE, qₑ, ε₀, ps
 
 include("grids/abstract_grid.jl")
 include("grids/altitude_grid.jl")
@@ -49,13 +49,14 @@ export N2Species, O2Species, OSpecies
 # NOTE: Under testing
 include("WPI/magnetic_field.jl")
 export dipole_field, magnetic_basis, r_to_λL
+export tsyganenko_field
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
 export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
 include("WPI/ne_model.jl")
-export ne_denton
+export ne_denton, ne_constant
 
 include("WPI/plasma_state.jl")
 export Ωe_at_λ, ωpe_at_λ, PlasmaState

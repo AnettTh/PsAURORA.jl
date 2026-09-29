@@ -2,8 +2,8 @@ using AURORA
 using CairoMakie
 
 ## Define variables for test-run
-T_par = 1e4
-T_perp = 1e2
+T_par = 1e2
+T_perp = 1e4
 N = 1e6
 Δ = 0.5
 β = 0.2
@@ -21,6 +21,7 @@ F = [subtracted_bimaxwellian(vpar, vperp, N, a_par, a_perp, Δ, β, relativistic
 v_lc = collect(v_perp_grid) ./ tan(α_lc)
 
 
+# TODO: Figure out why my perpendicular particles precipitate!!
 ## Make plot
 fig = Figure(size=(650, 600))
 ax  = Axis(fig[1, 1];
@@ -32,7 +33,7 @@ ax  = Axis(fig[1, 1];
 )
 
 ## Meaningful range
-clims = (maximum(F) * 1e-4, maximum(F) * 0.9)
+clims = (6e-22, 5e-18)
 
 hm = heatmap!(ax,
     collect(v_par_grid)  ./ a_par,

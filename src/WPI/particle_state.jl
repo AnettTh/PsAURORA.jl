@@ -95,10 +95,11 @@ function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
     if magnetic_field==dipole_field
         α_lc = losscone_angle(L)
     else
-        raise(ArgumentError(
-            "Remember that several values in ParticleState is invalid for non-dipole!!
-            Revisit ParticleState"
-            ))
+        α_lc = NaN
+        #throw(ArgumentError(
+        #    "Remember that several values in ParticleState is invalid for non-dipole!!
+        #    Revisit ParticleState"
+        #    ))
     end
 
     # Current position pitch-angle and equatorial pitch-angle

@@ -1,5 +1,5 @@
-#using Dates
-#using TsyganenkoModels
+using Dates
+using TsyganenkoModels
 using StaticArrays
 
 # TODO: Add tsyganenko-option
@@ -173,75 +173,124 @@ function r_to_λL(r)
 end
 
 
-#"""
-#    tsyganenko_field(
-#    x,
-#    y,
-#    z;
-#    time="2020-01-01T00:01:40",
-#    pdyn=2.0,
-#    dst=-87.0,
-#    byimf=2.0,
-#    bzimf=-5.0,
-#)
-#
-## Arguments
-#- `x`: Position in x-direction, given in meters.
-#- `y`: Position in y-direction, given in meters.
-#- `z`: Position in z-direction, given in meters.
-#
-## Keyword Arguments
-#
-#- `time`: (default "2020-01-01T00:01:40").
-#- `pdyn`: Solar wind dynamic pressure [nPa] (default 2.0).
-#- `dst`: Disturbance Storm Time index (default -87.0).
-#- `byimf`: IMF By component (default 2.0).
-#- `bzimf`: IMF Bz component (default -5.0).
-#- `component`: Chose which component of the field to return; either external `ext`, internal
-#               `int` or the total field `both`.
-#
-## Returns
-#
-#- A three-element vector `[Bx, By, Bz]` containing magnetic-field components in tesla.
-#
-## Throws
-#
-#- `ArgumentError`: If invalid argument is given to `component`.
-#"""
-#function tsyganenko_field(
-#    x,
-#    y,
-#    z;
-#    time="2020-01-01T00:01:40",
-#    pdyn=2.0,
-#    dst=-87.0,
-#    byimf=2.0,
-#    bzimf=-5.0,
-#    component="both",
-#)
-#    t = DateTime(time)
-#    r_RE = [x/RE, y/RE, z/RE]
-#
-#    param = (; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
-#
-#    # Construct the external- and internal magnetic field, which then is combined
-#    B_ext_nT = TS04(param)(r_RE, ps)
-#    B_int_nT = TsyIGRF()(r_RE, t)
-#
-#
-#    if component == "both"
-#        B_tot_nT = B_ext_nT .+ B_int_nT
-#        Bx, By, Bz = B_tot_nT .* 1e-9
-#    elseif component == "ext"
-#        Bx, By, Bz = B_ext_nT .* 1e-9
-#    elseif component == "int"
-#        Bx, By, Bz = B_int_nT .* 1e-9
-#    else
-#        throw(ArgumentError("Invalid `component` chosen, must be either `ext`, `int` or
-#        `both`."))
-#    end
-#
-#
-#    return [Bx, By, Bz]
-#end
-#
+"""
+    tsyganenko_field(
+    x,
+    y,
+    z;
+    time="2020-01-01T00:01:40",
+    pdyn=2.0,
+    dst=-87.0,
+    byimf=2.0,
+    bzimf=-5.0,
+)
+
+# Arguments
+- `x`: Position in x-direction, given in meters.
+- `y`: Position in y-direction, given in meters.
+- `z`: Position in z-direction, given in meters.
+
+# Keyword Arguments
+
+- `time`: (default "2020-01-01T00:01:40").
+- `pdyn`: Solar wind dynamic pressure [nPa] (default 2.0).
+- `dst`: Disturbance Storm Time index (default -87.0).
+- `byimf`: IMF By component (default 2.0).
+- `bzimf`: IMF Bz component (default -5.0).
+- `component`: Chose which component of the field to return; either external `ext`, internal
+               `int` or the total field `both`.
+
+# Returns
+
+- A three-element vector `[Bx, By, Bz]` containing magnetic-field components in tesla.
+
+# Throws
+
+- `ArgumentError`: If invalid argument is given to `component`.
+"""
+function tsyganenko_field(
+    x,
+    y,
+    z;
+    time="2020-01-01T00:01:40",
+    pdyn=2.0,
+    dst=-87.0,
+    byimf=2.0,
+    bzimf=-5.0,
+    component="both",
+)
+    t = DateTime(time)
+    r_RE = [x/RE, y/RE, z/RE]
+
+    param = (; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
+
+    # Construct the external- and internal magnetic field, which then is combined
+    B_ext_nT = TS04(param)(r_RE, ps)
+    B_int_nT = TsyIGRF()(r_RE, t)
+
+
+    if component == "both"
+        B_tot_nT = B_ext_nT .+ B_int_nT
+        Bx, By, Bz = B_tot_nT .* 1e-9
+    elseif component == "ext"
+        Bx, By, Bz = B_ext_nT .* 1e-9
+    elseif component == "int"
+        Bx, By, Bz = B_int_nT .* 1e-9
+    else
+        throw(ArgumentError("Invalid `component` chosen, must be either `ext`, `int` or
+        `both`."))
+    end
+
+
+    return [Bx, By, Bz]
+end
+
+function tsyganenko_field(r;
+    time="2020-01-01T00:01:40",
+    pdyn=2.0,
+    dst=-87.0,
+    byimf=2.0,
+    bzimf=-5.0,
+    component="both",
+)
+    length(r) == 3 || throw(
+        ArgumentError("Position vector needs to have three cartesian components, whats up?")
+    )
+
+    return tsyganenko_field(r...;
+    time=time,
+    pdyn=pdyn,
+    dst=dst,
+    byimf=byimf,
+    bzimf=bzimf,
+    component=component,
+)
+end
+
+# TODO: Also handle longitude!!
+function tsyganenko_field(L::Real, λ::Real;
+    time="2020-01-01T00:01:40",
+    pdyn=2.0,
+    dst=-87.0,
+    byimf=2.0,
+    bzimf=-5.0,
+    component="both",
+)
+
+    # NOTE: This is hardcoded! Need to change it later
+    ϕ = deg2rad(120.0)
+
+    r = L * RE * cos(λ)^2
+    x = r * cos(λ) * cos(ϕ)
+    y = r * cos(λ) * sin(ϕ)
+    z = r * sin(λ)
+
+    return tsyganenko_field(x, y, z;
+    time=time,
+    pdyn=pdyn,
+    dst=dst,
+    byimf=byimf,
+    bzimf=bzimf,
+    component=component,
+)
+end

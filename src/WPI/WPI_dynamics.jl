@@ -278,6 +278,7 @@ function resonance_latitude(ω, particle, plasma; θ::Float64=0.0, n::Int=1)
         # NOTE: This already exist in plasma???
         Ω_e = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
 
+
         k = dispersion_relation_whistler_branch(ω, θ; ω_pe=ω_pe, Ω_e=Ω_e)
         k_parallel = k * cos(θ)
 
@@ -370,7 +371,7 @@ function WPI_TOF(
         λ_res = resonance_latitude(ω, particle, plasma; θ=θ, n=n)
 
         # For conbinations that don't resonate
-        if isnothing(λ_res)
+        if isnothing(λ_res) || isnan(λ_res)
             tof[i] = NaN
             continue
         end

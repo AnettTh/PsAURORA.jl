@@ -23,6 +23,16 @@ n_e0_vals = [530. , 380. , 230. , 140. , 83. , 39. , 15. , 7.7]  # in cm⁻³
 α_vals    = [  0.2,   0.4,   0.8,   0.9,  0.8,  1.3,  2.1, 1.6]
 L_α_vals  = [  8.1,   5.9,   4.8,   5.2,  6.4,  5.5,  4.8, 6.1]
 
+# NOTE: REMOVE THIS LATER, for debugging only
+# Scalar version
+function ne_constant(L, λ::Real; SI::Bool=true)
+    return 5e6
+end
+
+# Vector version
+function ne_constant(L, λ::AbstractVector; SI::Bool=true)
+    return fill(5e6, length(λ))
+end
 ##
 function ne_denton(L, λ; SI::Bool=true)
 
@@ -30,7 +40,6 @@ function ne_denton(L, λ; SI::Bool=true)
 
     # Find the right bin
     i = max(1, searchsortedfirst(L_edges, L) - 1)
-    @show L, i, length(n_e0_vals)  # debug
     i = clamp(i, 1, length(n_e0_vals))
 
     # Convert to SI-units

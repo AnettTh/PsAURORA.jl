@@ -1,7 +1,7 @@
 using AURORA
 using CairoMakie
 
-# TODO: There is some bug here, find it.
+# NOTE: I do not trust this plot
 ## Make the data
 L_vals = [3, 4, 5, 6, 7, 8]
 colors = [:blue, :red, :green, :orange, :purple, :brown]
@@ -30,16 +30,16 @@ poly!(ax, Point2f.(cos.(ϕ), sin.(ϕ)); color=:black, strokecolor=:black, stroke
 ## Compute
 field_line_data = map(L_vals) do L
 
-    particle = ParticleState(E_eV, μ, [RE*L, 0.0, 0.0], dipole_field; relativistic=true)
+    particle = ParticleState(E_eV, μ, [RE*L, 0.0, 0.0], tsyganenko_field; relativistic=true)
 
     λ_max    = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid_L = range(0.0, λ_max * 0.99, length=500)
-    plasma_L = PlasmaState(λ_grid_L, ne_denton, dipole_field, Float64(L))
+    plasma_L = PlasmaState(λ_grid_L, ne_denton, tsyganenko_field, Float64(L))
 
     ω = ω_frac * plasma_L.Ω_e[1]
 
     V_R_grid = map(λ_grid_L) do λ
-        Ω_e   = Ωe_at_λ(λ, Float64(L), dipole_field)
+        Ω_e   = Ωe_at_λ(λ, Float64(L), tsyganenko_field)
         ω_pe  = ωpe_at_λ(λ, Float64(L), ne_denton)
         k     = dispersion_relation_whistler_branch(ω, θ; Ω_e=Ω_e, ω_pe=ω_pe)
         k_par = k * cos(θ)
@@ -103,4 +103,4 @@ xlims!(0, -8.5)
 ylims!(0, 4)
 
 ##
-save("src/WPI/test_scripts/resonance/res_lat_$(round(ω_frac, digits=2)).png", fig)
+#save("src/WPI/test_scripts/resonance/res_lat_$(round(ω_frac, digits=2)).png", fig)
