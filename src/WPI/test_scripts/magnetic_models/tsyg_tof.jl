@@ -1,5 +1,6 @@
 using AURORA
 using CairoMakie
+using Profile
 
 ## Define the particles
 μ = -cos(deg2rad(3))       # Almost field-aligned
@@ -38,6 +39,13 @@ for (i, p) in enumerate(particle_tsyg)
 end
 
 
+## Check for bottleneck
+#WPI_TOF(ωs_tsyg[1], particle_tsyg[1], plasma_tsyg; field_dependent=true, wave_launch_time=wave_chirp)
+#@profview for _ in 1:10
+#    WPI_TOF(ωs_tsyg[1], particle_tsyg[1], plasma_tsyg; field_dependent=true, wave_launch_time=wave_chirp)
+#end
+
+
 ## Make Figure
 fig = Figure(size=(900,500))
 ax = Axis(
@@ -51,23 +59,27 @@ ax = Axis(
 #ax.yticks = [1, 10, 100, 1000]
 #ax.ytickformat = values -> ["$(Int(v))" for v in values]
 
-ω_norm_dipole = (ωs_dipole .- minimum(ωs_dipole)) ./ (maximum(ωs_dipole) - minimum(ωs_dipole))
-ω_norm_tsyg   = (ωs_tsyg   .- minimum(ωs_tsyg  )) ./ (maximum(ωs_tsyg  ) - minimum(ωs_tsyg  ))
+#ω_norm_dipole = (ωs_dipole .- minimum(ωs_dipole)) ./ (maximum(ωs_dipole) - minimum(ωs_dipole))
+#ω_norm_tsyg   = (ωs_tsyg   .- minimum(ωs_tsyg  )) ./ (maximum(ωs_tsyg  ) - minimum(ωs_tsyg  ))
 
 
 colors = [:blue, :red, :green, :orange, :purple]  # one per ω
 
-for (i, ω) in enumerate(ωs_dipole) # TODO: Nor correct to use ωs_dipole for both
+for (i, ω) in enumerate(ωs_dipole)
     lines!(ax, TOF_dipole[:, i], E_grid ./ 1e3;
         color=colors[i],
         linestyle=:solid,
         label="ω = $(round(ω * 2π/1e3, digits=1)) kHz"
     )
+end
+for (i, ω) in enumerate(ωs_tsyg)
     lines!(ax, TOF_tsyg[:, i], E_grid ./ 1e3;
         color=colors[i],
-        linestyle=:dash
+        linestyle=:dash,
+        label="ω = $(round(ω * 2π/1e3, digits=1)) kHz"
     )
 end
+
 lines!(ax, [NaN], [NaN]; color=:black, linestyle=:solid, label="Dipole field")
 lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,  label="Tsyganenko")
 

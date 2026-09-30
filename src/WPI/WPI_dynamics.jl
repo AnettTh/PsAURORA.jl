@@ -4,9 +4,9 @@ using QuadGK
 using LinearAlgebra
 using Roots
 
-# TODO: Make road-map of the WPI-file, as it is a bit messy at this point
+# IDEA: Make road-map of the WPI-file, as it is a bit messy at this point
 """
-    dispersion_relation_whistler_branch(ω, θ; ω_pe=37.9e3 * 2π, Ω_e=9.48e3 * 2π)
+    dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
 
 Calculate the wavenumber the whistler-branch of the Appleton-Hartree equation for oblique
 waves (Hsieh 2022, equation ).
@@ -22,11 +22,8 @@ both.
 - `ω`: Wave angular frequency for the whistler-mode chorus wave [rad/s].
 - `θ`: Wave normal angle of the propagating wave, non-zero value indicates oblique wave
   [rad].
-
-# Keyword Arguments
-
-- `ω_pe`: Electron plasma frequencie, default is 37.9 kHz (Hsieh 2022) [Hz].
-- `Ω_e`: Electron cyclotron frequencie, default is 9.48 kHz (Hsieh 2022) [Hz].
+- `ω_pe`: Electron plasma frequencie [rad/s].
+- `Ω_e`: Electron cyclotron frequencie [rad/s].
 
 # Returns
 
@@ -35,30 +32,15 @@ both.
 # Throws
 
 - `ArgumentError`: If the WNA is outside of ±1 (not in radians).
+- `ArgumentError`: If the frequency is outside the LBC range.
 """
-# TODO: Move kwargs to args
-function dispersion_relation_whistler_branch(ω, θ; ω_pe=37.9e3*2π, Ω_e=9.48e3*2π)
+function dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
 
     abs(θ) > 1 && throw(ArgumentError("Are you sure you are using radians for the WNA?"))
 
-    ω > abs(0.5 * Ω_e) && throw(ArgumentError(
+    any(ω .> abs.(0.5 .* Ω_e)) && throw(ArgumentError(
         "You are not in the LBC-range, sure this is right?"
         ))
-
-    # TODO: Add cold-plasma check, I think that involves Ω_e and ω_pe??
-
-    # NOTE: Can remove the throws for array-check when the rest of the code is safe
-    if ω isa AbstractArray && Ω_e isa AbstractArray
-        length(ω) == length(Ω_e) || throw(DimensionMismatch(
-            "ω and Ω_e must have the same length when both are arrays — " *
-            "they represent different physical dimensions (frequency vs latitude)"
-        ))
-    end
-    if ω isa AbstractArray && ω_pe isa AbstractArray
-        length(ω) == length(ω_pe) || throw(DimensionMismatch(
-            "ω and ω_pe must have the same length when both are arrays"
-        ))
-    end
 
     X = @. ω_pe^2 / ω^2
     Y = @. Ω_e / ω
@@ -76,13 +58,9 @@ function dispersion_relation_whistler_branch(ω, θ; ω_pe=37.9e3*2π, Ω_e=9.48
     return k
 end
 
-
-# TODO: Move kwargs to args
+# NOTE: Might need a WNA here?
 """
-    group_velocity_whistler_wave(
-    ω::AbstractArray;
-    Ω_e::Float64=9.48e3 * 2π,
-    ω_pe::Float64=37.9e3 * 2π)
+    group_velocity_whistler_wave(ω, Ω_e, ω_pe)
 
 Calculates the group velocity `v_g` for the whistler mode chorus wave as a function of
 chorus angular frequency `ω`.
@@ -92,32 +70,20 @@ This is valid assuming chorus frequencies `ω` ≫ ion gyro-frequencies (Chen 20
 # Arguments
 
 - `ω`: Chorus angular frequency, often a linearly rising tone [rad/s].
-
-# Keyword Arguments
-
-- `Ω_e`: Electron gyrofrequency at a specific location λ [rad/s], default is 9.48 kHz (from
-  Hsieh et al. 2022).
-- `ω_pe`: Electron plasma frequency at a specific location λ [rad/s], default is
-  `4×Ω_e`=37.9 kHz (from Hsieh et al. 2022).
+- `Ω_e`: Electron gyrofrequency at latitude λ [rad/s].
+- `ω_pe`: Electron plasma frequency at latitude λ [rad/s].
 
 # Returns
 
-- The group velocity for the set of parameters chosen.
+- The group velocity for the set of parameters chosen [m/s].
 
 # Throws
 
 - `ArgumentError`: If the frequencies does not match that of the whistler-branch.
-- `ArgumentError`: If the plasma parameters are outside of the expected domain, might not be
-  non-realistic, but for now it indicates an error.
 """
-function group_velocity_whistler_wave(
-    ω::Union{Real, AbstractArray};
-    Ω_e::Union{Float64, AbstractVector}=9.48e3*2π,
-    ω_pe::Union{Float64, AbstractVector}=37.9e3*2π)
+function group_velocity_whistler_wave(ω, Ω_e, ω_pe)
 
-    # TODO: add cold-plasma check?
     any(@. ω > Ω_e) && throw(ArgumentError("Not on whistler branch, check your frequencies!"))
-    #any(ω_pe .< Ω_e) && throw(ArgumentError("Plasma parameters not valid, reality-check needed!"))
 
     a = @. (2 * c₀) / (ω_pe / Ω_e)
     b = @. (1 - (ω / Ω_e))^(3/2)
@@ -173,10 +139,10 @@ function wave_transit(
             plasma.Ω_e[1]
 
         ω_pe = field_dependent ?
-            ωpe_at_λ(λ, particle.L, ne_denton) : # TODO: add ne_model to PlasmaState, to make it adaptable!
+            ωpe_at_λ(λ, particle.L, plasma.ne_model) :
             plasma.ω_pe[1]
 
-        v_g = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=ω_pe)
+        v_g = group_velocity_whistler_wave(ω, Ω_e, ω_pe)
         ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
         return ds_dλ / v_g
     end
@@ -216,7 +182,7 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
 
     function f(λ)
         if field_dependent
-            # NOTE: Also here hardcoded solution to fix
+            # TODO: Also here hardcoded solution to fix
             if particle.magnetic_field == dipole_field
                 B_λ = particle.magnetic_field(particle.L, λ)
             elseif particle.magnetic_field == tsyganenko_field
@@ -230,14 +196,14 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
             vz = particle.v * cos(α_λ)
             iszero(vz) && return 0.0
         else
-            vz = abs(particle.v * cos(particle.α_lc))       # NOTE: becomes relativistic from particle.v, if needed
+            vz = abs(particle.v * cos(particle.α_lc))
         end
 
         ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
         return ds_dλ / vz
     end
 
-    # NOTE: will not run if the particle is outside the loss-cone, as the limits here is invalid, but that might be fine? Add check for this?
+    # IDEA: Will not run if the particle is outside the loss-cone, as the limits here is invalid, but that might be fine? Might not even need it, as boris-mover is to be used?
     t_e, _ = quadgk(f, λ_resonance, particle.λ_ionosphere)
 
 
@@ -245,31 +211,28 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
 end
 
 
-# TODO: Finish documentation
+# NOTE: This is not a realistic model, but used as a temporary solution. Look into default value of t!
 """
-    wave_chirp(ω; ω0=2π*600, ω1=2π*1350, t=0.2)
+    wave_chirp(ω::AbstractVector; t::Real=0.2)
 
-Wave chirp frequency characteristic t₀(ω).
+Compute the chorus wave launch time profile t₀(ω) at the magnetic equator.
+
+Returns the time at which a wave of angular frequency ω is launched from the equatorial
+source region, assuming a linear frequency chirp (rising tone), as modeled in Chen 2020. The
+default parameter of rise-time in 0.2 s correspond to Chen 2020, and the start- and end
+frequencies is the start- and end point of the frequency range.
 
 # Arguments
 
-- `ω`: Total frequency range [rad/s].
+- `ω`: Angular frequency at which to evaluate t₀ [rad/s].
 
 # Keyword Arguments
 
-- `ω0`:
-- `ω1`:
-- `t`:
+- `t`: Duration of the chorus element [s], default is 0.2 s.
 """
-function wave_chirp(
-    ω::AbstractVector;
-    ω0::Float64=2π*600,
-    ω1::Float64=2π*1350,
-    t::Float64=0.2
-)
-    # TODO: Check if it makes sense to use ω[1] and ω[end] instead
-    chirp_rate = (ω0 - ω1) / t
-    return (ω .- ω0) ./ chirp_rate
+function wave_chirp(ω::AbstractVector; t::Real=0.2)
+    chirp_rate = ω[1] - ω[end] / t
+    return (ω .- ω[1]) ./ chirp_rate
 end
 
 
@@ -299,16 +262,12 @@ being the default value.
 """
 function resonance_latitude(ω, particle, plasma; θ::Float64=0.0, n::Int=1)
 
-    # TODO: Change this to work also for ω_pe as a function of position
-    # ω_pe = plasma.ω_pe[1]  # constant
-
     # Define the resonance condition (equation that should equal zero)
     function resonance_condition(λ; n=n, θ=θ)
-        # NOTE: This already exist in plasma???
         Ω_e = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
-        ω_pe = ωpe_at_λ(λ, particle.L, ne_denton)   # TODO: change this to arbitrary ne-model
+        ω_pe = ωpe_at_λ(λ, particle.L, plasma.ne_model)
 
-        k = dispersion_relation_whistler_branch(ω, θ; ω_pe=ω_pe, Ω_e=Ω_e)
+        k = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
         k_parallel = k * cos(θ)
 
         # TODO: remove hard-coded solution
@@ -379,8 +338,8 @@ keyword arguments, else, it is assumed instant at all frequencies.
 # Keyword Arguments
 
 - `wave_launch_time`: The time at which the frequencies in the frequency grid is launched
-  from the source region (equator). If everything is launched at once, this is set to
-  `nothing` (default), or it can be a defined function that takes frequencies `ω`.
+  from the source region (equator). The default is a simple chirp, but can be any function
+  that takes frequencies `ω`.
 - `field_dependent`: Decides which model to use, default is the field-dependent one.
 - `θ`: Wave-normal angle of the wave, default is `1.0` (field-aligned).
 - `n`: Harmonic number, default is `1`.
@@ -394,15 +353,15 @@ function WPI_TOF(
     ω_grid::AbstractVector,
     particle::ParticleState,
     plasma::PlasmaState;
-    wave_launch_time=nothing,
+    wave_launch_time=wave_chirp,
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1
 )
 
-    # TODO: figure out if delay is needed for single frequency
-    # Is either a scalar (Saito-Miyoshi) or a functon of frequency (Chen)
-    t_l = isnothing(wave_launch_time) ? 0.0 : wave_launch_time(ω_grid)
+    # Calculate wave-launch time based on given model
+    # NOTE: Need to incorporate kwargs here in some way
+    t_l = wave_launch_time(ω_grid)
 
     tof = zeros(length(ω_grid))
 
@@ -424,7 +383,7 @@ function WPI_TOF(
             plasma;
             field_dependent=field_dependent
         )
-        # TODO: Add boris-mover in magnetic field here!
+        # IDEA: Add boris-mover in magnetic field here!
         t_e = particle_transit(
             particle,
             λ_res;

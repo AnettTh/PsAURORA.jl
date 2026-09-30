@@ -44,7 +44,7 @@ struct ParticleState{F<:Function}
     γ              :: Float64
 end
 
-# TODO: Test this for non-equatorial r0
+# TODO: Test this for non-equatorial r0, check that values makes sense physically
 """
     ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
 
@@ -93,14 +93,10 @@ function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
 
     # Loss-cone angle at the equator
     if magnetic_field==dipole_field
-        α_lc = losscone_angle(L)
+        α_lc = losscone_angle(L)        # TODO: Test this for off-equatorial positions, to check for bugs! It should be larger than α_eq?
     else
         α_lc = NaN
-        # TODO: Figure out what to do here, maybe just calculate it?? Good to have.
-        #throw(ArgumentError(
-        #    "Remember that several values in ParticleState is invalid for non-dipole!!
-        #    Revisit ParticleState"
-        #    ))
+        # IDEA: Include also non-dipolar losscone, if not too expensive? Check what it is used for first
     end
 
     # Current position pitch-angle and equatorial pitch-angle

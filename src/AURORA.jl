@@ -1,11 +1,7 @@
 module AURORA
 
-# TODO: Evaluate whether L or R0 should be used throughout the entire code, now it is a mess!
-include("constants.jl")
-# TODO: remove export when not testing?
-# TODO: Evaluate the handeling of z_ionosphere
-# TODO: Go over units, check consistency and use square brackets!
 # TODO: Check all files for radians/degrees-consistency!!!
+include("constants.jl")
 export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀, BE, qₑ, ε₀, ps
 
 include("grids/abstract_grid.jl")
@@ -46,9 +42,10 @@ include("physics/species.jl")
 export NeutralSpecies, MSISDensity, VectorDensity
 export N2Species, O2Species, OSpecies
 
-# NOTE: Under testing
+include("WPI/coordinate_conversions.jl")
+export r_to_λL
 include("WPI/magnetic_field.jl")
-export dipole_field, magnetic_basis, r_to_λL
+export dipole_field, magnetic_basis
 export tsyganenko_field, tsyganenko_field_spherical
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ

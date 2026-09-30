@@ -44,4 +44,4 @@ text!(ax, 0.02, 0.98;
 
 axislegend(ax, position=:rb)
 
-save("src/WPI/test_scripts/resonance/resonance_lat_vs_energy_log.png", fig)
+#save("src/WPI/test_scripts/resonance/resonance_lat_vs_energy_log.png", fig)

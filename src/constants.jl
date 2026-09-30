@@ -7,8 +7,12 @@ const RE = 6378e3             # Earth's radius [m]
 const μ₀ = 1.26e-6            # Vacuum permeability [N/A²]
 const M  = 8.05e22            # Earths magnetic moment  [A m²]
 
+# NOTE: Evaluate the handeling of z_ionosphere
 const z_ionosphere = 600e3              # Height of the ionosphere [m]
+
 const eV_in_J      = 1.602176634e-19    # Electron volt in Joules [J]
 const BE           = 3.11e-5            # Magnetic field strength at Earth [T] (??)
 const ε₀           = 8.8541878188e-12   # Vacuum permeability [F/m]
+
+# NOTE: Check if this actually is a constant, or date-based
 const ps           =-0.533585131        # Dipole tilt angle [rad]

@@ -2,7 +2,7 @@ using AURORA
 using AURORA; mₑ, qₑ, ε₀
 using LinearAlgebra
 
-# TODO: Figure out how to define λ_grid from the plasma state itself?
+# IDEA: Figure out how to define λ_grid from the plasma state itself?
 """
     PlasmaState
 
@@ -15,18 +15,18 @@ Cold plasma parameters along a magnetic field line, as a function of magnetic la
 - `Ω_e`: Electron gyrofrequency grid [rad/s].
 - `ω_pe`: Electron plasma frequency grid [rad/s].
 - `ω_lb`: Lower-band chorus wave frequency range [rad/s].
+- `ne_model`: Model used to make density distribution.
 """
-struct PlasmaState
-    λ    :: Vector{Float64}
-    n_e  :: Vector{Float64}
-    Ω_e  :: Vector{Float64}
-    ω_pe :: Vector{Float64}
-    ω_lb :: Vector{Float64}
+struct PlasmaState{F<:Function}
+    λ        :: Vector{Float64}
+    n_e      :: Vector{Float64}
+    Ω_e      :: Vector{Float64}
+    ω_pe     :: Vector{Float64}
+    ω_lb     :: Vector{Float64}
+    ne_model :: F
 end
 
 
-# NOTE: This will not be compatible with Tsyganenko, figure it out!
-# TODO: These two can probably be structured better, move to plasma-parameters and use multiple dispatch?
 """
     Ωe_at_λ(λ, L, magnetic_field)
 
@@ -43,7 +43,7 @@ Calculate the electron gyrofreequency `Ω_e` as a function of magnetic latitude 
 - The gyrofrequency as a fuction of magnetic latitude [rad/s].
 """
 function Ωe_at_λ(λ, L, magnetic_field)
-
+    # TODO: Figure out how to avoid this hardcoding
     if magnetic_field==dipole_field
         B = magnetic_field(L, λ)
     elseif magnetic_field==tsyganenko_field
@@ -52,30 +52,28 @@ function Ωe_at_λ(λ, L, magnetic_field)
         throw(ArgumentError("Look into hardcoded temporary solution!"))
     end
 
-    return gyro_frequency(norm(B), qₑ, mₑ)
+    return abs(qₑ) * norm(B) / mₑ
 end
 
 
 """
-    ωpe_at_λ(λ, L, ne_model)
+    ωpe_at_λ(λ::Real, L::Real, ne_model::Function)
 
-Calculate the plasma frequency of electrons for some latitude `λ` and L-shell `L`, given
-some defined position-dependent density model.
+Calculate the plasma frequency of electrons for some scalar latitude `λ` and L-shell `L`,
+given some defined position-dependent density model.
 
 # Arguments
 
-- `λ`: Vector or scalar for latitude [rad].
-- `L`: Vector or scalar for L-shell.
+- `λ`: Scalar for latitude [rad].
+- `L`: Scalar for L-shell.
 - `ne_model`: Function describing the density model in use, dependent on `L` and `λ`.
 
 # Returns
 
 - Electron plasma frequency [rad/s].
 """
-function ωpe_at_λ(λ, L, ne_model)
+function ωpe_at_λ(λ::Real, L::Real, ne_model::Function)
 
-    # TODO: Figure out how how to handle different models
-    # TODO: Add some multiple dispatch to also do scalar values
     ne = ne_model(L, λ)
 
     return @. sqrt(ne * qₑ^2 / (mₑ * ε₀))
@@ -87,7 +85,9 @@ end
     λ_grid::AbstractVector,
     ne_model::Function,
     magnetic_field::Function,
-    L::Float64
+    L;
+    lb_low=0.25,
+    lb_high=0.5
 )
 
 Construct a `PlasmaState` along at a magnetic field line on a given L-shell.
@@ -117,7 +117,7 @@ function PlasmaState(
     λ_grid::AbstractVector,
     ne_model::Function,
     magnetic_field::Function,
-    L::Float64;
+    L;
     lb_low=0.25,
     lb_high=0.5
 )
@@ -135,5 +135,5 @@ function PlasmaState(
     Ω_eq = Ω_e[1]
     ω_lb = range(Ω_eq*lb_low, Ω_eq*lb_high, length=n_λ)
 
-    return PlasmaState(collect(λ_grid), n_e, Ω_e, ω_pe, ω_lb)
+    return PlasmaState(collect(λ_grid), n_e, Ω_e, ω_pe, collect(ω_lb), ne_model)
 end

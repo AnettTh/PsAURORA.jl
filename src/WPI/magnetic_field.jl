@@ -134,50 +134,6 @@ function magnetic_basis(B)
 end
 
 
-# TODO: Find better place for this?
-"""
-    r_to_λL(r::AbstractVector)
-    r_to_λL(x::Real, y::Real, z::Real)
-
-Converts a position in a dipolar field from cartesian coordinates to magnetic latitude and
-L-shell.
-
-# Arguments
-
-- `r`: Cartesian position (vector format) [m].
-- `x, y, z`: Cartesian position (component format) [m].
-
-# Returns
-
-- `λ`: Position magnetic latitude [rad].
-- `L`: Position L-shell.
-
-# Throws
-
-- `ArgumentError`: If `r` don't have exactly three components.
-- `ArgumentError`: If `r` isn't in the x-z-plane. # TODO: Fix this??
-- `ArgumentError`: If `r` has zero magnitude.
-- `ArgumentError`: If `r` is inside Earth.
-"""
-function r_to_λL(r::AbstractVector)
-    length(r) == 3 || throw(ArgumentError("r must have three components (Chartesian)."))
-    iszero(r[2]) || throw(ArgumentError("Assumes x-z-plane, your y is invalid. Check it!"))
-
-    r_mag = norm(r)
-
-    iszero(r_mag) && throw(ArgumentError("r must be nonzero"))
-
-    r_mag ≤ RE && throw(ArgumentError("r is inside Earth"))
-    λ = asin(r[3] / r_mag)
-    L = r_mag / (RE * cos(λ)^2)
-    return λ, L
-end
-
-function r_to_λL(x::Real, y::Real, z::Real)
-    return r_to_λL([x, y, z])
-end
-
-
 """
     tsyganenko_field(
     x::Real,
@@ -230,7 +186,7 @@ end
 
 - A three-element vector `[Bx, By, Bz]` containing magnetic-field components [T].
 
-# Throws #TODO: Add more throws?
+# Throws
 
 - `ArgumentError`: If invalid argument is given to `component`.
 """
@@ -245,6 +201,7 @@ function tsyganenko_field(
     bzimf=-5.0,
     component="both",
 )
+
     # Convert to format needed by TsyganenkoModels
     t = DateTime(time)
     r_RE = [x/RE, y/RE, z/RE]

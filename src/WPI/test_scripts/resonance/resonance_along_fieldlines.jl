@@ -1,7 +1,6 @@
 using AURORA
 using CairoMakie
 
-# NOTE: I do not trust this plot
 ## Make the data
 L_vals = [3, 4, 5, 6, 7, 8]
 colors = [:blue, :red, :green, :orange, :purple, :brown]
@@ -11,7 +10,7 @@ n = 1
 E_eV = 30e3
 μ = -cos(deg2rad(3.0))
 
-ω_frac = 0.5
+ω_frac = 0.1
 
 ## Define figure
 fig = Figure(size=(700, 400))
@@ -41,13 +40,12 @@ field_line_data = map(L_vals) do L
     V_R_grid = map(λ_grid_L) do λ
         Ω_e   = Ωe_at_λ(λ, Float64(L), tsyganenko_field)
         ω_pe  = ωpe_at_λ(λ, Float64(L), ne_denton)
-        k     = dispersion_relation_whistler_branch(ω, θ; Ω_e=Ω_e, ω_pe=ω_pe)
+        k     = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
         k_par = k * cos(θ)
 
         iszero(k_par) && return NaN
         V_R = ((ω + n * Ω_e / particle.γ) / k_par) / c₀
-
-        (V_R > 1.0 || V_R < 0.0) && return NaN  # unphysical
+        any(V_R .> 1.0 .|| V_R .< 0.0) && return NaN  # unphysical
         return V_R
     end
 
@@ -59,7 +57,7 @@ field_line_data = map(L_vals) do L
 end
 
 ## Make the lines
-all_vals = filter(!isnan, vcat([d.V_R_grid for d in field_line_data]...))
+all_vals = filter(!isnan, vcat([vec(d.V_R_grid) for d in field_line_data]...))
 clims_log = (log10(minimum(abs.(all_vals))), log10(maximum(abs.(all_vals))))
 
 # Plot
@@ -103,4 +101,4 @@ xlims!(0, -8.5)
 ylims!(0, 4)
 
 ##
-#save("src/WPI/test_scripts/resonance/res_lat_$(round(ω_frac, digits=2)).png", fig)
+#save("src/WPI/test_scripts/resonance/res_lat_$(round(ω_frac, digits=2))_tsyg.png", fig)

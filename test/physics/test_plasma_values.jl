@@ -42,39 +42,39 @@
 end
 
 
-@testitem "gyro_frequency" begin
-    using AURORA
-    using AURORA: qₑ, mₑ, eV_in_J
-    using LinearAlgebra
-
-    @testset "Throws for zero field" begin
-        @test_throws ArgumentError gyro_frequency(0.0, qₑ, mₑ)
-        @test_throws ArgumentError gyro_frequency([0.0, 0.0, 0.0], qₑ, mₑ)
-    end
-
-    @testset "Scalar and vector methods agree" begin
-        B = [1e-5, 2e-5, 3e-5]
-        B_mag = norm(B)
-        @test gyro_frequency(B, qₑ, mₑ) ≈ gyro_frequency(B_mag, qₑ, mₑ) rtol=1e-10
-    end
-
-    @testset "Correct analytical value" begin
-        # ω_g = |q| * B / m
-        B_mag = 5e-5   # 50 μT, typical ionospheric value
-        ω_analytical = abs(qₑ) * B_mag / mₑ
-        @test gyro_frequency(B_mag, qₑ, mₑ) ≈ ω_analytical rtol=1e-10
-    end
-
-    @testset "Frequency increases with field strength" begin
-        @test gyro_frequency(2e-5, qₑ, mₑ) > gyro_frequency(1e-5, qₑ, mₑ)
-    end
-
-    @testset "Sign of charge does not matter" begin
-        B_mag = 5e-5
-        @test gyro_frequency(B_mag, qₑ, mₑ) ≈ gyro_frequency(B_mag, -qₑ, mₑ) rtol=1e-10
-    end
-
-end
+#@testitem "gyro_frequency" begin
+#    using AURORA
+#    using AURORA: qₑ, mₑ, eV_in_J
+#    using LinearAlgebra
+#
+#    @testset "Throws for zero field" begin
+#        @test_throws ArgumentError gyro_frequency(0.0, qₑ, mₑ)
+#        @test_throws ArgumentError gyro_frequency([0.0, 0.0, 0.0], qₑ, mₑ)
+#    end
+#
+#    @testset "Scalar and vector methods agree" begin
+#        B = [1e-5, 2e-5, 3e-5]
+#        B_mag = norm(B)
+#        @test gyro_frequency(B, qₑ, mₑ) ≈ gyro_frequency(B_mag, qₑ, mₑ) rtol=1e-10
+#    end
+#
+#    @testset "Correct analytical value" begin
+#        # ω_g = |q| * B / m
+#        B_mag = 5e-5   # 50 μT, typical ionospheric value
+#        ω_analytical = abs(qₑ) * B_mag / mₑ
+#        @test gyro_frequency(B_mag, qₑ, mₑ) ≈ ω_analytical rtol=1e-10
+#    end
+#
+#    @testset "Frequency increases with field strength" begin
+#        @test gyro_frequency(2e-5, qₑ, mₑ) > gyro_frequency(1e-5, qₑ, mₑ)
+#    end
+#
+#    @testset "Sign of charge does not matter" begin
+#        B_mag = 5e-5
+#        @test gyro_frequency(B_mag, qₑ, mₑ) ≈ gyro_frequency(B_mag, -qₑ, mₑ) rtol=1e-10
+#    end
+#
+#end
 
 
 @testitem "larmor_radius" begin

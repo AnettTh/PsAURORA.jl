@@ -31,7 +31,7 @@ function parallel_velocity(particle::ParticleState, λ_grid::AbstractVector)
     return v_parallel
 end
 
-# Add this to ParticleState? Might be useful for boris-mover
+# NOTE: These might be useful for the boris-mover, might want to add them to ParticleState?
 """
     larmor_radius(m, q, v, B)
 
@@ -62,7 +62,7 @@ function larmor_radius(m, q, v, B)
     return (m * v_perp) / (abs(q) * B_mag)
 end
 
-# IDEA: add this to ParticleState?
+
 """
     gyrocenter(r, v, B, q, m)
 
@@ -100,4 +100,36 @@ function gyrocenter(r, v, B, q, m)
     ρ = (m / (q * B_mag)) * cross(v_perp, b_hat)
 
     return r_s - ρ
+end
+
+
+"""
+    gyro_frequency(B::AbstractVector, q, m)
+    gyro_frequency(B_mag::Real, q, m)
+
+Calculate the gyro-frequency of a test particle in a magnetic field. Can take magnetic field
+either as cartesian vector or as magnitude.
+
+# Arguments
+
+- `B`: Magnetic field vector `[Bx, By, Bz]` [T].
+- `B_mag` : Magnetic field strength [T].
+- `q`: The charge of the test particle [C].
+- `m`: The mass of the test particle [kg].
+
+# Returns
+
+- Gyrofrequency of the test particle [rad/s]
+
+# Throws
+
+- `ArgumentError`: Undefined if the magnitude of the magnetic field is zero.
+"""
+function gyro_frequency(B::AbstractVector, q, m)
+    return gyro_frequency(norm(B), q, m)
+end
+
+function gyro_frequency(B_mag::Real, q, m)
+    B_mag > 0 || throw(ArgumentError("Must have nonzero B"))
+    return abs(q) * B_mag / m
 end

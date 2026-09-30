@@ -1,11 +1,7 @@
 using AURORA
 using LinearAlgebra: norm, cross
 
-# TODO: Add option for perturbed B- and E-field, which are needed for WPI-version.
-# TODO: Re-introduce E-field
-# TODO: Relativistic corrections
-# TODO: Magnetic field in L, λ instead? Try to avoid gyro_frequency
-# TODO: Make new version that tracks particles from eq-ish instead of ionospheric heights.
+# TODO: Make version with: source to ionsosphere, any magnetic field, E, δE and δB, γ included.
 """
     boris_mover_TOF(
     magnetic_field,
@@ -86,7 +82,7 @@ function boris_mover_TOF(
 
         # Find desired resolution for current step
         B_mag = sqrt(Bx^2 + By^2 + Bz^2)
-        ω_g = gyro_frequency(B_mag, qₑ, mₑ)
+        ω_g = abs(qₑ) * B_mag / mₑ    #gyro_frequency(B_mag, qₑ, mₑ) NOTE: Check that this is fine
         T_g = 2π / ω_g
 
         # Ensuring no steps are too large
