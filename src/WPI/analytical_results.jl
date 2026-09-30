@@ -104,3 +104,12 @@ function total_drift(L, E_eV, q, m, θ; degrees::Bool=false)
 
     return τ * v_d
 end
+
+""" # NOTE: From Khazanov 2015, needs documentation """
+function minimal_resonance_energy(ω, plasma, particle)
+
+    E_m = norm(particle.B0)^2 / (8π * plasma.n_e[1])
+    E_min = @. E_m * (plasma.Ω_e[1] / ω) * (1 - (ω)/(plasma.Ω_e[1]))^3
+
+    return E_min
+end

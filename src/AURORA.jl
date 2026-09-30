@@ -55,6 +55,9 @@ export quarter_bounceperiod, average_driftvelocity, total_drift
 include("WPI/ne_model.jl")
 export ne_denton
 
+include("WPI/analytical_results.jl")
+export minimal_resonance_energy
+
 include("WPI/plasma_state.jl")
 export Ωe_at_λ, ωpe_at_λ, PlasmaState
 include("WPI/particle_state.jl")
