@@ -26,7 +26,7 @@ end
 
 
 # NOTE: This will not be compatible with Tsyganenko, figure it out!
-# TODO: This can probably be structured better, move to plasma-parameters and use multiple dispatch?
+# TODO: These two can probably be structured better, move to plasma-parameters and use multiple dispatch?
 """
     Ωe_at_λ(λ, L, magnetic_field)
 
@@ -44,24 +44,48 @@ Calculate the electron gyrofreequency `Ω_e` as a function of magnetic latitude 
 """
 function Ωe_at_λ(λ, L, magnetic_field)
 
-    B = magnetic_field(L, λ)
+    if magnetic_field==dipole_field
+        B = magnetic_field(L, λ)
+    elseif magnetic_field==tsyganenko_field
+        B = tsyganenko_field_spherical(L, λ, deg2rad(120))
+    else
+        throw(ArgumentError("Look into hardcoded temporary solution!"))
+    end
 
     return gyro_frequency(norm(B), qₑ, mₑ)
 end
 
 
+"""
+    ωpe_at_λ(λ, L, ne_model)
+
+Calculate the plasma frequency of electrons for some latitude `λ` and L-shell `L`, given
+some defined position-dependent density model.
+
+# Arguments
+
+- `λ`: Vector or scalar for latitude [rad].
+- `L`: Vector or scalar for L-shell.
+- `ne_model`: Function describing the density model in use, dependent on `L` and `λ`.
+
+# Returns
+
+- Electron plasma frequency [rad/s].
+"""
 function ωpe_at_λ(λ, L, ne_model)
 
+    # TODO: Figure out how how to handle different models
+    # TODO: Add some multiple dispatch to also do scalar values
     ne = ne_model(L, λ)
 
-    return sqrt(ne * qₑ^2 / (mₑ * ε₀))
+    return @. sqrt(ne * qₑ^2 / (mₑ * ε₀))
 end
 
 
 """
     PlasmaState(
     λ_grid::AbstractVector,
-    n_e0::Float64,
+    ne_model::Function,
     magnetic_field::Function,
     L::Float64
 )
@@ -76,7 +100,7 @@ of Ω_e.
 # Arguments
 
 - `λ_grid`: Magnetic latitude grid [rad].
-- `n_e0`: Cold electron number density, assumed constant along the field line [m⁻³].
+- `ne_model`: Function for the position-dependent density model.
 - `magnetic_field`: Magnetic field function `f(L, λ)`.
 - `L`: L-shell number [RE].
 

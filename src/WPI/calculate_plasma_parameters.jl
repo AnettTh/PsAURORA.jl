@@ -3,13 +3,16 @@ using LinearAlgebra: norm, dot, cross
 using StaticArrays
 
 """
-    gyro_frequency(B, q, m)
+    gyro_frequency(B::AbstractVector, q, m)
+    gyro_frequency(B_mag::Real, q, m)
 
-Calculate the gyro-frequency of a test particle in a magnetic field.
+Calculate the gyro-frequency of a test particle in a magnetic field. Can take magnetic field
+either as cartesian vector or as magnitude.
 
 # Arguments
 
 - `B`: Magnetic field vector `[Bx, By, Bz]` [T].
+- `B_mag` : Magnetic field strength [T].
 - `q`: The charge of the test particle [C].
 - `m`: The mass of the test particle [kg].
 
@@ -196,7 +199,15 @@ end
 
 
 """
-    get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator::Bool=true)
+    get_v0_from_Eμ(
+    magnetic_field,
+    r0,
+    E_eV,
+    μ;
+    ϕ=0.0,
+    towards_equator::Bool=true,
+    relativistic::Bool=false
+)
 
 Calculate the electron velocity vector given initial values.
 
@@ -220,9 +231,17 @@ phase of the gyration.
 - `towards_equator`: Decides if the valocity is parallel or anti-parallel with the magnetic
   field, parallel being towards the equator IF in the northern hemisphere. The default is
   `true`.
-- `relativistic`: Option to correct for relativistic effects, default is false.
+- `relativistic`: Option to correct for relativistic effects, default is `false`.
 """
-function get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; ϕ=0.0, towards_equator::Bool=true, relativistic::Bool=false)
+function get_v0_from_Eμ(
+    magnetic_field,
+    r0,
+    E_eV,
+    μ;
+    ϕ=0.0,
+    towards_equator::Bool=true,
+    relativistic::Bool=false
+)
 
     -1 ≤ μ ≤ 1 || throw(ArgumentError("μ must be between -1 and 1"))
 

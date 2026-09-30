@@ -2,8 +2,6 @@ using Dates
 using TsyganenkoModels
 using StaticArrays
 
-# TODO: Add tsyganenko-option
-
 """
     dipole_field(x, y, z)
     dipole_field(r)
@@ -14,7 +12,8 @@ Compute the dipole magnetic field vector at given position.
 Returns the magnetic field components `[Bx, By, Bz]` in tesla, modeled as a magnetic
 dipole field. The function can take either three Cartesian coordinates, an array of
 Cartesian coordinates, or two components specifying the L-shell and  magnetic latitude of
-the position. The field is only valid within 10 Earth radii from the center of the Earth.
+the position. The field assumes axisymmetry (X-Z plane) and is only valid within 10 Earth
+radii from the center of the Earth.
 
 # Arguments
 
@@ -36,7 +35,7 @@ the position. The field is only valid within 10 Earth radii from the center of t
 - `ArgumentError`: If the position is outside the valid range (`r > 10 RE`).
 - `ArgumentError`: If the input vector `r` does not have exactly three elements.
 """
-function dipole_field(x, y, z)
+function dipole_field(x::Real, y::Real, z::Real)
 
     r2 = x^2 + y^2 + z^2       #[m]
     r = sqrt(r2)
@@ -51,8 +50,8 @@ function dipole_field(x, y, z)
 
     r > 10 * RE && throw(
         ArgumentError(
-            "Position outside of valid range for dipole field approximation, is this as
-            intended?"
+            "Position outside of valid range for dipole field approximation, is this as" *
+            "intended?"
         )
     )
 
@@ -68,7 +67,7 @@ function dipole_field(x, y, z)
 end
 
 
-function dipole_field(r)
+function dipole_field(r::AbstractVector)
     length(r) == 3 || throw(
         ArgumentError("Position vector needs to have three cartesian components, whats up?")
     )
@@ -135,16 +134,18 @@ function magnetic_basis(B)
 end
 
 
-# TODO: Doc-string, throws, multiple dispatch
+# TODO: Find better place for this?
 """
-    r_to_λL(r)
+    r_to_λL(r::AbstractVector)
+    r_to_λL(x::Real, y::Real, z::Real)
 
 Converts a position in a dipolar field from cartesian coordinates to magnetic latitude and
 L-shell.
 
 # Arguments
 
-- `r`: Cartesian position [m].
+- `r`: Cartesian position (vector format) [m].
+- `x, y, z`: Cartesian position (component format) [m].
 
 # Returns
 
@@ -158,7 +159,7 @@ L-shell.
 - `ArgumentError`: If `r` has zero magnitude.
 - `ArgumentError`: If `r` is inside Earth.
 """
-function r_to_λL(r)
+function r_to_λL(r::AbstractVector)
     length(r) == 3 || throw(ArgumentError("r must have three components (Chartesian)."))
     iszero(r[2]) || throw(ArgumentError("Assumes x-z-plane, your y is invalid. Check it!"))
 
@@ -172,12 +173,16 @@ function r_to_λL(r)
     return λ, L
 end
 
+function r_to_λL(x::Real, y::Real, z::Real)
+    return r_to_λL([x, y, z])
+end
+
 
 """
     tsyganenko_field(
-    x,
-    y,
-    z;
+    x::Real,
+    y::Real,
+    z::Real;
     time="2020-01-01T00:01:40",
     pdyn=2.0,
     dst=-87.0,
@@ -185,33 +190,8 @@ end
     bzimf=-5.0,
 )
 
-# Arguments
-- `x`: Position in x-direction, given in meters.
-- `y`: Position in y-direction, given in meters.
-- `z`: Position in z-direction, given in meters.
-
-# Keyword Arguments
-
-- `time`: (default "2020-01-01T00:01:40").
-- `pdyn`: Solar wind dynamic pressure [nPa] (default 2.0).
-- `dst`: Disturbance Storm Time index (default -87.0).
-- `byimf`: IMF By component (default 2.0).
-- `bzimf`: IMF Bz component (default -5.0).
-- `component`: Chose which component of the field to return; either external `ext`, internal
-               `int` or the total field `both`.
-
-# Returns
-
-- A three-element vector `[Bx, By, Bz]` containing magnetic-field components in tesla.
-
-# Throws
-
-- `ArgumentError`: If invalid argument is given to `component`.
-"""
-function tsyganenko_field(
-    x,
-    y,
-    z;
+    tsyganenko_field(
+    r::AbstractVector;
     time="2020-01-01T00:01:40",
     pdyn=2.0,
     dst=-87.0,
@@ -219,33 +199,80 @@ function tsyganenko_field(
     bzimf=-5.0,
     component="both",
 )
+
+    tsyganenko_field(
+    L::Real,
+    λ::Real;
+    time="2020-01-01T00:01:40",
+    pdyn=2.0,
+    dst=-87.0,
+    byimf=2.0,
+    bzimf=-5.0,
+    component="both",
+)
+
+# Arguments
+- `x, y, z`: Cartesian position components [m].
+- `r`: Cartesian position vector [m].
+- `L, λ, ϕ`: Position as L-shell, latitude and longitude [-, rad, rad].
+
+# Keyword Arguments
+
+- `time`: Given as a string in ISO8601 format, default is '"2020-01-01T00:01:40"'.
+- `pdyn`: Solar wind dynamic pressure [nPa], default is `2.0`.
+- `dst`: Disturbance Storm Time index [nT], default is `-87.0`.
+- `byimf`: IMF By component [nT], default is `2.0`.
+- `bzimf`: IMF Bz component [nT], default is `-5.0`.
+- `component`: String to chose which component of the field to return; either external `ext`
+  , internal `int` or the total field `both`, default is `"both"`.
+
+# Returns
+
+- A three-element vector `[Bx, By, Bz]` containing magnetic-field components [T].
+
+# Throws #TODO: Add more throws?
+
+- `ArgumentError`: If invalid argument is given to `component`.
+"""
+function tsyganenko_field(
+    x::Real,
+    y::Real,
+    z::Real;
+    time="2020-01-01T00:01:40",
+    pdyn=2.0,
+    dst=-87.0,
+    byimf=2.0,
+    bzimf=-5.0,
+    component="both",
+)
+    # Convert to format needed by TsyganenkoModels
     t = DateTime(time)
     r_RE = [x/RE, y/RE, z/RE]
 
     param = (; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
 
-    # Construct the external- and internal magnetic field, which then is combined
-    B_ext_nT = TS04(param)(r_RE, ps)
-    B_int_nT = TsyIGRF()(r_RE, t)
-
-
+    # Construct the components and combine
     if component == "both"
-        B_tot_nT = B_ext_nT .+ B_int_nT
-        Bx, By, Bz = B_tot_nT .* 1e-9
+        B_ext_nT = TS04(param)(r_RE, ps)
+        B_int_nT = TsyIGRF()(r_RE, t)
+        B_tot_nT = B_ext_nT .+ B_int_nT     # [nT]
+        Bx, By, Bz = B_tot_nT .* 1e-9       # [T]
     elseif component == "ext"
-        Bx, By, Bz = B_ext_nT .* 1e-9
+        B_ext_nT = TS04(param)(r_RE, ps)    # [nT]
+        Bx, By, Bz = B_ext_nT .* 1e-9       # [T]
     elseif component == "int"
-        Bx, By, Bz = B_int_nT .* 1e-9
+        B_int_nT = TsyIGRF()(r_RE, t)       # [nT]
+        Bx, By, Bz = B_int_nT .* 1e-9       # [T]
     else
         throw(ArgumentError("Invalid `component` chosen, must be either `ext`, `int` or
         `both`."))
     end
 
-
     return [Bx, By, Bz]
 end
 
-function tsyganenko_field(r;
+function tsyganenko_field(
+    r::AbstractVector;
     time="2020-01-01T00:01:40",
     pdyn=2.0,
     dst=-87.0,
@@ -268,17 +295,17 @@ function tsyganenko_field(r;
 end
 
 # TODO: Also handle longitude!!
-function tsyganenko_field(L::Real, λ::Real;
+function tsyganenko_field_spherical(
+    L::Real,
+    λ::Real,
+    ϕ::Real;
     time="2020-01-01T00:01:40",
     pdyn=2.0,
     dst=-87.0,
     byimf=2.0,
     bzimf=-5.0,
-    component="both",
+    component="both"
 )
-
-    # NOTE: This is hardcoded! Need to change it later
-    ϕ = deg2rad(120.0)
 
     r = L * RE * cos(λ)^2
     x = r * cos(λ) * cos(ϕ)

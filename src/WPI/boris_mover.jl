@@ -5,6 +5,7 @@ using LinearAlgebra: norm, cross
 # TODO: Re-introduce E-field
 # TODO: Relativistic corrections
 # TODO: Magnetic field in L, λ instead? Try to avoid gyro_frequency
+# TODO: Make new version that tracks particles from eq-ish instead of ionospheric heights.
 """
     boris_mover_TOF(
     magnetic_field,

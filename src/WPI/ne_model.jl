@@ -19,21 +19,15 @@ L_edges = [
 
 # Table values
 #              3.5,   3.9,   4.4,   4.9,  5.5,  6.2   7.0, 7.8
-n_e0_vals = [530. , 380. , 230. , 140. , 83. , 39. , 15. , 7.7]  # in cm⁻³
+n_e0_vals = [530. , 380. , 230. , 140. , 83. , 39. , 15. , 7.7]  # [cm⁻³]
 α_vals    = [  0.2,   0.4,   0.8,   0.9,  0.8,  1.3,  2.1, 1.6]
-L_α_vals  = [  8.1,   5.9,   4.8,   5.2,  6.4,  5.5,  4.8, 6.1]
 
-# NOTE: REMOVE THIS LATER, for debugging only
-# Scalar version
-function ne_constant(L, λ::Real; SI::Bool=true)
-    return 5e6
-end
+# These are not used for anything, but a part of the model??
+# L_α_vals  = [  8.1,   5.9,   4.8,   5.2,  6.4,  5.5,  4.8, 6.1]
 
-# Vector version
-function ne_constant(L, λ::AbstractVector; SI::Bool=true)
-    return fill(5e6, length(λ))
-end
+
 ##
+# TODO: Check if this is valid also when using non-dipolar model!!
 function ne_denton(L, λ; SI::Bool=true)
 
     R = L .* RE .* cos.(λ).^2
@@ -55,6 +49,7 @@ function ne_denton(L, λ; SI::Bool=true)
 end
 
 
+# TODO: Move this to a separate file
 ##
 L_vals = [3, 4, 5, 6, 7, 8]
 colors = [:blue, :red, :green, :orange, :purple, :brown]

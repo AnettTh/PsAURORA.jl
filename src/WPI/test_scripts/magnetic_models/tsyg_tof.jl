@@ -40,7 +40,13 @@ end
 
 ## Make Figure
 fig = Figure(size=(900,500))
-ax = Axis(fig[1,1], xlabel="time-of-flight [s]", ylabel="E [keV]", title="Pitch-angle $(round(rad2deg(acos(abs(μ)))))")#, yscale=log10)
+ax = Axis(
+    fig[1,1],
+    xlabel="time-of-flight [s]",
+    ylabel="E [keV]",
+    title="Pitch-angle $(round(rad2deg(acos(abs(μ)))))",
+    #yscale=log10
+)
 
 #ax.yticks = [1, 10, 100, 1000]
 #ax.ytickformat = values -> ["$(Int(v))" for v in values]
@@ -51,7 +57,7 @@ ax = Axis(fig[1,1], xlabel="time-of-flight [s]", ylabel="E [keV]", title="Pitch-
 
 colors = [:blue, :red, :green, :orange, :purple]  # one per ω
 
-for (i, ω) in enumerate(ωs)
+for (i, ω) in enumerate(ωs_dipole) # TODO: Nor correct to use ωs_dipole for both
     lines!(ax, TOF_dipole[:, i], E_grid ./ 1e3;
         color=colors[i],
         linestyle=:solid,
@@ -62,8 +68,8 @@ for (i, ω) in enumerate(ωs)
         linestyle=:dash
     )
 end
-lines!(ax, [NaN], [NaN]; color=:black, linestyle=:solid,  label="Dipole field")
-lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,   label="Tsyganenko")
+lines!(ax, [NaN], [NaN]; color=:black, linestyle=:solid, label="Dipole field")
+lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,  label="Tsyganenko")
 
 Legend(fig[1,2], ax)
 
@@ -71,4 +77,4 @@ Legend(fig[1,2], ax)
 #xlims!(ax, 0.8, 1.0)
 #ylims!(ax, 100, 1000)
 
-save("src/WPI/test_scripts/energies/tsyg_tof.png", fig)
+#save("src/WPI/test_scripts/energies/tsyg_tof.png", fig)

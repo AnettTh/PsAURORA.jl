@@ -49,14 +49,14 @@ export N2Species, O2Species, OSpecies
 # NOTE: Under testing
 include("WPI/magnetic_field.jl")
 export dipole_field, magnetic_basis, r_to_λL
-export tsyganenko_field
+export tsyganenko_field, tsyganenko_field_spherical
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
 export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
 include("WPI/ne_model.jl")
-export ne_denton, ne_constant
+export ne_denton
 
 include("WPI/plasma_state.jl")
 export Ωe_at_λ, ωpe_at_λ, PlasmaState
@@ -70,6 +70,7 @@ include("WPI/WPI_dynamics.jl")
 export dispersion_relation_whistler_branch, wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
+export group_velocity_whistler_wave
 
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid

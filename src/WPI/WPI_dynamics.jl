@@ -4,7 +4,7 @@ using QuadGK
 using LinearAlgebra
 using Roots
 
-
+# TODO: Make road-map of the WPI-file, as it is a bit messy at this point
 """
     dispersion_relation_whistler_branch(ω, θ; ω_pe=37.9e3 * 2π, Ω_e=9.48e3 * 2π)
 
@@ -36,6 +36,7 @@ both.
 
 - `ArgumentError`: If the WNA is outside of ±1 (not in radians).
 """
+# TODO: Move kwargs to args
 function dispersion_relation_whistler_branch(ω, θ; ω_pe=37.9e3*2π, Ω_e=9.48e3*2π)
 
     abs(θ) > 1 && throw(ArgumentError("Are you sure you are using radians for the WNA?"))
@@ -76,6 +77,7 @@ function dispersion_relation_whistler_branch(ω, θ; ω_pe=37.9e3*2π, Ω_e=9.48
 end
 
 
+# TODO: Move kwargs to args
 """
     group_velocity_whistler_wave(
     ω::AbstractArray;
@@ -170,8 +172,11 @@ function wave_transit(
             Ωe_at_λ(λ, particle.L, particle.magnetic_field) :
             plasma.Ω_e[1]
 
-        # NOTE: This currently assumes nₑ constant along the field-line. Look for model?
-        v_g = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=plasma.ω_pe[1])
+        ω_pe = field_dependent ?
+            ωpe_at_λ(λ, particle.L, ne_denton) : # TODO: add ne_model to PlasmaState, to make it adaptable!
+            plasma.ω_pe[1]
+
+        v_g = group_velocity_whistler_wave(ω; Ω_e=Ω_e, ω_pe=ω_pe)
         ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
         return ds_dλ / v_g
     end
@@ -182,11 +187,7 @@ end
 
 
 """
-    particle_transit(
-    particle,
-    λ_resonance;
-    z_ionosphere::Float64=600e3
-    )
+    particle_transit(particle, λ_resonance; z_ionosphere::Float64=600e3)
 
 Calculates the transit time of the particle from the resonance latitude to the ionosphere.
 
@@ -215,7 +216,15 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
 
     function f(λ)
         if field_dependent
-            B_λ = particle.magnetic_field(particle.L, λ)
+            # NOTE: Also here hardcoded solution to fix
+            if particle.magnetic_field == dipole_field
+                B_λ = particle.magnetic_field(particle.L, λ)
+            elseif particle.magnetic_field == tsyganenko_field
+                B_λ = tsyganenko_field_spherical(particle.L, λ, deg2rad(120))
+            else
+                throw(ArgumentError("Hardcoded temporary solution, look into it!"))
+            end
+
             α_λ = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
             isnothing(α_λ) && return 0.0
             vz = particle.v * cos(α_λ)
@@ -236,8 +245,29 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
 end
 
 
-# TODO: Document, make alternative (Demekhov?)
-function wave_chirp(ω; ω0=2π*600, ω1=2π*1350, t=0.2)
+# TODO: Finish documentation
+"""
+    wave_chirp(ω; ω0=2π*600, ω1=2π*1350, t=0.2)
+
+Wave chirp frequency characteristic t₀(ω).
+
+# Arguments
+
+- `ω`: Total frequency range [rad/s].
+
+# Keyword Arguments
+
+- `ω0`:
+- `ω1`:
+- `t`:
+"""
+function wave_chirp(
+    ω::AbstractVector;
+    ω0::Float64=2π*600,
+    ω1::Float64=2π*1350,
+    t::Float64=0.2
+)
+    # TODO: Check if it makes sense to use ω[1] and ω[end] instead
     chirp_rate = (ω0 - ω1) / t
     return (ω .- ω0) ./ chirp_rate
 end
@@ -262,7 +292,6 @@ being the default value.
 
 - `θ`: WNA, default is nothing (ducted).
 - `n`: Resonance number, default is `1` (cyclotron resonance).
-- `relativistic`: Option to correct for relativistic energies, default is `false`.
 
 # Returns
 
@@ -271,18 +300,26 @@ being the default value.
 function resonance_latitude(ω, particle, plasma; θ::Float64=0.0, n::Int=1)
 
     # TODO: Change this to work also for ω_pe as a function of position
-    ω_pe = plasma.ω_pe[1]  # constant
+    # ω_pe = plasma.ω_pe[1]  # constant
 
     # Define the resonance condition (equation that should equal zero)
     function resonance_condition(λ; n=n, θ=θ)
         # NOTE: This already exist in plasma???
         Ω_e = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
-
+        ω_pe = ωpe_at_λ(λ, particle.L, ne_denton)   # TODO: change this to arbitrary ne-model
 
         k = dispersion_relation_whistler_branch(ω, θ; ω_pe=ω_pe, Ω_e=Ω_e)
         k_parallel = k * cos(θ)
 
-        B = norm(particle.magnetic_field(particle.L, λ))
+        # TODO: remove hard-coded solution
+        if particle.magnetic_field == dipole_field
+            B = norm(particle.magnetic_field(particle.L, λ))
+        elseif particle.magnetic_field == tsyganenko_field
+            B = norm(tsyganenko_field_spherical(particle.L, λ, deg2rad(120)))
+        else
+            throw("Hardcoded temporary solution, check it!")
+        end
+
         α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B)
 
         v_parallel = particle.v * cos(α)
@@ -315,14 +352,16 @@ end
 
 """
     WPI_TOF(
-    ω_grid,
-    particle,
-    plasma;
+    ω_grid::AbstractVector,
+    particle::ParticleState,
+    plasma::PlasmaState;
     wave_launch_time=nothing,
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1
 )
+
+    WPI_TOF(ω::Real, particle, plasma; kwargs...
 
 Calculates the time-of-flight of a particle resonating with a whistler mode chorus wave,
 then precipitating into the ionosphere.
@@ -352,15 +391,16 @@ keyword arguments, else, it is assumed instant at all frequencies.
   [s].
 """
 function WPI_TOF(
-    ω_grid,
-    particle,
-    plasma;
+    ω_grid::AbstractVector,
+    particle::ParticleState,
+    plasma::PlasmaState;
     wave_launch_time=nothing,
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1
 )
 
+    # TODO: figure out if delay is needed for single frequency
     # Is either a scalar (Saito-Miyoshi) or a functon of frequency (Chen)
     t_l = isnothing(wave_launch_time) ? 0.0 : wave_launch_time(ω_grid)
 
@@ -384,6 +424,7 @@ function WPI_TOF(
             plasma;
             field_dependent=field_dependent
         )
+        # TODO: Add boris-mover in magnetic field here!
         t_e = particle_transit(
             particle,
             λ_res;

@@ -13,7 +13,6 @@ r0 = [L*RE, 0.0, 0.0]
 particle = ParticleState(E, μ, r0, dipole_field)
 
 λ_grid = range(0.0, deg2rad(50), length=500)
-#n_e0 = 5e6        # 18/cc, from Hsieh 2022
 
 plasma = PlasmaState(λ_grid, ne_denton, dipole_field, L)
 

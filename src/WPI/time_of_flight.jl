@@ -1,7 +1,7 @@
 using AURORA
 
 #===================================Run preferred method===================================#
-# IDEA: Make this into 'AbstractPropagation' with WPI also!!
+# TODO: Rewrite this to also fit with the WPI-versions?
 """
     time_of_flight(
     E_eV,
@@ -82,6 +82,7 @@ function time_of_flight(
 
         return result.tof
 
+    # TODO: Remove placeholders or rewrite
     elseif propagation == :WPI_field_independent
         tof = 1.0
 

@@ -1,6 +1,8 @@
 using AURORA
 using CairoMakie
 
+
+# NOTE: this still uses n_e0 constant, change to denton to see what happens
 ## Define configurations to compare
 function make_configs(;
     E_eV   = 30e3,

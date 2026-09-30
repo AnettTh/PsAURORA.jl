@@ -25,6 +25,7 @@ the magnetic field model.
 - `α_lc`: Loss cone angle at the initial position [rad].
 - `λ_ionosphere`: Magnetic latitude where the L-shell intersects the ionosphere [rad].
 - `magnetic_field`: Magnetic field model function `f(x, y, z)`.
+- `γ`: Lorentz factor.
 """
 struct ParticleState{F<:Function}
     E_eV           :: Float64
@@ -90,12 +91,12 @@ function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
     λ0 = asin(r0[3] / r_mag)
     L = r_mag / (RE * cos(λ0)^2)
 
-    # Loss-cone angle at the equator, IF the field is dipolar
-    # (with throw to help remember limitation)
+    # Loss-cone angle at the equator
     if magnetic_field==dipole_field
         α_lc = losscone_angle(L)
     else
         α_lc = NaN
+        # TODO: Figure out what to do here, maybe just calculate it?? Good to have.
         #throw(ArgumentError(
         #    "Remember that several values in ParticleState is invalid for non-dipole!!
         #    Revisit ParticleState"
