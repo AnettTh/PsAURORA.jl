@@ -26,6 +26,7 @@ the magnetic field model.
 - `λ_ionosphere`: Magnetic latitude where the L-shell intersects the ionosphere [rad].
 - `magnetic_field`: Magnetic field model function `f(x, y, z)`.
 - `γ`: Lorentz factor.
+- `ϕ`: Longitude [rad].
 """
 struct ParticleState{F<:Function}
     E_eV           :: Float64
@@ -42,6 +43,7 @@ struct ParticleState{F<:Function}
     λ_ionosphere   :: Float64
     magnetic_field :: F
     γ              :: Float64
+    ϕ              :: Float64
 end
 
 # TODO: Test this for non-equatorial r0, check that values makes sense physically
@@ -91,6 +93,9 @@ function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
     λ0 = asin(r0[3] / r_mag)
     L = r_mag / (RE * cos(λ0)^2)
 
+    # TODO: test this!!
+    ϕ = atan(r0[2], r0[1])
+
     # Loss-cone angle at the equator
     # IDEA: Look into the definition of α from Hsieh 2022
     if magnetic_field==dipole_field
@@ -122,6 +127,7 @@ function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
         α_lc,
         λ_ionosphere,
         magnetic_field,
-        γ
+        γ,
+        ϕ
     )
 end

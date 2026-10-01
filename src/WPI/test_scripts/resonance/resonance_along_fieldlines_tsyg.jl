@@ -1,6 +1,8 @@
 using AURORA
 using CairoMakie
 
+
+# NOTE: This does not work
 ## Make the data
 L_vals = [3, 4, 5, 6, 7, 8]
 ϕ = 0.0
@@ -11,7 +13,7 @@ n = 1
 E_eV = 30e3
 μ = -cos(deg2rad(3.0))
 
-ω_frac = 0.5
+ω_frac = 0.1
 
 ## Define figure
 fig = Figure(size=(700, 400))
@@ -30,36 +32,52 @@ poly!(ax, Point2f.(cos.(Φ), sin.(Φ)); color=:black, strokecolor=:black, stroke
 ## Compute
 field_line_data = map(L_vals) do L
 
-    particle = ParticleState(E_eV, μ, [RE*L, 0.0, 0.0], tsyganenko_field; relativistic=true)
-
-    λ_max    = acos(sqrt((RE + z_ionosphere) / (L * RE)))
-    λ_grid_L = range(0.0, λ_max * 0.99, length=500)
+    # Starting position at 4 MLT
+    r0 = [RE*L * cos(ϕ), RE*L * sin(ϕ), 0.0]
+    particle = ParticleState(E_eV, μ, r0, tsyganenko_field; relativistic=true)
 
     ## Define the plasma
-    R_max   = find_R_max(tsyganenko_field, L, 0.0, ϕ)
-    ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, tsyganenko_field, R_max)
+    R_max   = find_R_max(tsyganenko_field, Float64(L), 0.0, ϕ)
+    ne_func = (l, λ) -> denton_density_model(l, λ, ϕ, tsyganenko_field, R_max)
+
+    ## Trace field line from starting point
+    xs_f, ys_f, zs_f, _ = trace_with_density(tsyganenko_field, ne_func, r0...; ds= RE*0.02)
+    xs_b, ys_b, zs_b, _ = trace_with_density(tsyganenko_field, ne_func, r0...; ds=-RE*0.02)
+
+    xs = [reverse(xs_b); xs_f[2:end]]
+    ys = [reverse(ys_b); ys_f[2:end]]
+    zs = [reverse(zs_b); zs_f[2:end]]
+
+    # λ at each point along field line
+    rs  = @. sqrt(xs^2 + ys^2 + zs^2)
+    λs  = @. asin(zs / rs)
+    Ls  = @. rs / (RE * cos(λs)^2)
+
+    # λ_grid from field line trace
+    λ_grid_L = λs
+
+    ## Construct PlasmaState on traced field line
     plasma_L = PlasmaState(λ_grid_L, ϕ, ne_func, tsyganenko_field, Float64(L))
-    #plasma_L = PlasmaState(λ_grid_L, ϕ, denton_density_model, tsyganenko_field, Float64(L))
 
     ω = ω_frac * plasma_L.Ω_e[1]
 
-    V_R_grid = map(λ_grid_L) do λ
-        Ω_e   = Ωe_at_λ(λ, Float64(L), tsyganenko_field)
-        ω_pe  = ωpe_at_λ(plasma_L.ne_model, Float64(L), λ) #, particle.ϕ, particle.magnetic_field)
+    V_R_grid = map(enumerate(λ_grid_L)) do (i, λ)
+        Ω_e   = plasma_L.Ω_e[i]
+        ω_pe  = plasma_L.ω_pe[i]
         k     = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
         k_par = k * cos(θ)
 
         iszero(k_par) && return NaN
         V_R = ((ω + n * Ω_e / particle.γ) / k_par) / c₀
-        any(V_R .> 1.0 .|| V_R .< 0.0) && return NaN  # unphysical
+        (V_R > 1.0 || V_R < 0.0) && return NaN
         return V_R
     end
 
-    R_grid = @. L * RE * cos(λ_grid_L)^2
-    x = @. -R_grid * cos(λ_grid_L) / RE
-    z = @.  R_grid * sin(λ_grid_L) / RE
+    # Project onto meridional plane for plotting
+    r_perp = @. -sqrt(xs^2 + ys^2) / RE   # negative = nightside
+    z_plot = zs ./ RE
 
-    return (; x, z, V_R_grid)
+    return (; x=r_perp, z=z_plot, V_R_grid)
 end
 
 ## Make the lines

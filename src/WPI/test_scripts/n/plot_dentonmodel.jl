@@ -3,6 +3,7 @@ using CairoMakie
 
 ##
 L_vals = [3, 4, 5, 6, 7, 8]
+ϕ = 0.0
 colors = [:blue, :red, :green, :orange, :purple, :brown]
 
 fig = Figure()
@@ -18,7 +19,12 @@ for (L, color) in zip(L_vals, colors)
     λ_max  = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid = range(0.0, λ_max, length=500)
 
-    n_e = ne_denton.(L, λ_grid; SI=true)
+    R_max = find_R_max(dipole_field, L, 0.0, ϕ)
+
+    ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max)
+    n_e     = ne_func.(L, λ_grid)
+
+    #n_e = denton_density_model.(L, λ_grid, ϕ, dipole_field, R_max; SI=true)
     R_grid = @. L * RE * cos(λ_grid)^2
 
     lines!(ax, R_grid ./ RE, n_e; color=color, label="L = $L")
@@ -46,7 +52,11 @@ n_e_all = Float64[]
 for L in L_vals
     λ_max  = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid = range(0.0, λ_max, length=500)
-    append!(n_e_all, log10.(ne_denton.(L, λ_grid; SI=true)))
+
+    R_max = find_R_max(dipole_field, L, 0.0, ϕ)
+    ne_func = (l, λ) -> denton_density_model(l, λ, ϕ, dipole_field, R_max)
+    append!(n_e_all, log10.(ne_func.(L, λ_grid)))
+    #append!(n_e_all, log10.(denton_density_model.(L, λ_grid, ϕ, dipole_field, R_max; SI=true)))
 end
 clims = (minimum(n_e_all), maximum(n_e_all))
 
@@ -54,7 +64,10 @@ for L in L_vals
     λ_max  = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid = range(0.0, λ_max, length=500)
 
-    n_e    = ne_denton.(L, λ_grid; SI=true)
+    R_max = find_R_max(dipole_field, L, 0.0, ϕ)
+    ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max)
+    n_e     = ne_func.(L, λ_grid)
+    #n_e    = denton_density_model.(L, λ_grid, ϕ, dipole_field, R_max; SI=true)
     R_grid = @. L * RE * cos(λ_grid)^2
     x      = @. -R_grid * cos(λ_grid) / RE   # nightside → negative x
     z      = @.  R_grid * sin(λ_grid) / RE

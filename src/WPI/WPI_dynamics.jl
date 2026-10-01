@@ -139,7 +139,7 @@ function wave_transit(
             plasma.Ω_e[1]
 
         ω_pe = field_dependent ?
-            ωpe_at_λ(λ, particle.L, plasma.ne_model) :
+            ωpe_at_λ(plasma.ne_model, particle.L, λ) : #, particle.ϕ, particle.magnetic_field) :
             plasma.ω_pe[1]
 
         v_g = group_velocity_whistler_wave(ω, Ω_e, ω_pe)
@@ -265,7 +265,7 @@ function resonance_latitude(ω, particle, plasma; θ::Float64=0.0, n::Int=1)
     # Define the resonance condition (equation that should equal zero)
     function resonance_condition(λ; n=n, θ=θ)
         Ω_e = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
-        ω_pe = ωpe_at_λ(λ, particle.L, plasma.ne_model)
+        ω_pe = ωpe_at_λ(plasma.ne_model, particle.L, λ) #, particle.ϕ, particle.magnetic_field)
 
         k = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
         k_parallel = k * cos(θ)

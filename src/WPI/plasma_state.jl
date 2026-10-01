@@ -19,6 +19,7 @@ Cold plasma parameters along a magnetic field line, as a function of magnetic la
 """
 struct PlasmaState{F<:Function}
     λ        :: Vector{Float64}
+    ϕ        :: Float64
     n_e      :: Vector{Float64}
     Ω_e      :: Vector{Float64}
     ω_pe     :: Vector{Float64}
@@ -57,24 +58,27 @@ end
 
 
 """
-    ωpe_at_λ(λ::Real, L::Real, ne_model::Function)
+    ωpe_at_λ(ne_model::Function, L, λ, ϕ, magnetic_field::Function)
 
-Calculate the plasma frequency of electrons for some scalar latitude `λ` and L-shell `L`,
-given some defined position-dependent density model.
+Calculate the plasma frequency of electrons for some latitude `λ` and L-shell `L`, given
+some defined position- and magnetic field dependent density model.
 
 # Arguments
 
-- `λ`: Scalar for latitude [rad].
-- `L`: Scalar for L-shell.
 - `ne_model`: Function describing the density model in use, dependent on `L` and `λ`.
+- `L`: Position L-shell.
+- `λ`: Position latitude [rad].
+- `ϕ`: Position longitude [rad].
+- `magnetic_field`: Function describing the magnetic field model.
 
 # Returns
 
 - Electron plasma frequency [rad/s].
 """
-function ωpe_at_λ(λ::Real, L::Real, ne_model::Function)
+function ωpe_at_λ(ne_model::Function, L, λ)#, ϕ, magnetic_field::Function)
 
-    ne = ne_model(L, λ)
+    #R_max = find_R_max(magnetic_field, L, λ, ϕ)
+    ne = ne_model(L, λ) #, ϕ, magnetic_field, R_max)
 
     return @. sqrt(ne * qₑ^2 / (mₑ * ε₀))
 end
@@ -85,7 +89,8 @@ end
     λ_grid::AbstractVector,
     ne_model::Function,
     magnetic_field::Function,
-    L;
+    L,
+    ϕ;
     lb_low=0.25,
     lb_high=0.5
 )
@@ -103,6 +108,7 @@ of Ω_e.
 - `ne_model`: Function for the position-dependent density model.
 - `magnetic_field`: Magnetic field function `f(L, λ)`.
 - `L`: L-shell number [RE].
+- `ϕ`: Longitude [rad].
 
 # Keyword Arguments
 
@@ -115,6 +121,7 @@ of Ω_e.
 """
 function PlasmaState(
     λ_grid::AbstractVector,
+    ϕ,
     ne_model::Function,
     magnetic_field::Function,
     L;
@@ -125,7 +132,8 @@ function PlasmaState(
     n_λ = length(λ_grid)
 
     # Electron plasma frequency
-    n_e = ne_model(L, λ_grid; SI=true)
+    # R_max = find_R_max(magnetic_field, L, 0.0, ϕ)
+    n_e = ne_model.(L, λ_grid)#, ϕ, magnetic_field, R_max)
     ω_pe = @. sqrt(n_e * qₑ^2 / (mₑ * ε₀))
 
     # Electron cyclotron frequency
@@ -135,5 +143,5 @@ function PlasmaState(
     Ω_eq = Ω_e[1]
     ω_lb = range(Ω_eq*lb_low, Ω_eq*lb_high, length=n_λ)
 
-    return PlasmaState(collect(λ_grid), n_e, Ω_e, ω_pe, collect(ω_lb), ne_model)
+    return PlasmaState(collect(λ_grid), ϕ, n_e, Ω_e, ω_pe, collect(ω_lb), ne_model)
 end

@@ -3,6 +3,7 @@ using CairoMakie
 
 ## Parameters
 L_vals  = [4.0, 5.0, 6.0, 7.0, 8.0]
+ϕ       = 0.0
 μ       = -cos(deg2rad(3.0))
 ω_frac  = 0.35   # fraction of equatorial Ωe
 n       = 1
@@ -21,7 +22,13 @@ ax  = Axis(fig[1, 1];
 for (L, color) in zip(L_vals, colors)
     r0       = [L*RE, 0.0, 0.0]
     λ_grid   = range(0.0, deg2rad(60), length=500)
-    plasma_L = PlasmaState(λ_grid, ne_denton, tsyganenko_field, L)
+
+    ## Define the plasma
+    R_max   = find_R_max(tsyganenko_field, L, 0.0, ϕ)
+    ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, tsyganenko_field, R_max)
+    plasma_L = PlasmaState(λ_grid, ϕ, ne_func, tsyganenko_field, Float64(L))
+    #plasma_L = PlasmaState(λ_grid, ϕ, denton_density_model, tsyganenko_field, L)
+
     ω        = ω_frac * plasma_L.Ω_e[1]
 
     λ_res_grid = map(E_grid) do E

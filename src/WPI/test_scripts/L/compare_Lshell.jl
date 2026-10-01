@@ -8,6 +8,7 @@ function make_configs(;
     E_eV   = 30e3,
     α_deg  = 3.0,
     L      = 6.5,
+    ϕ      = 0.0,
     n_e0   = 1.8e7,
 )
     # Detect which parameter is a collection
@@ -16,7 +17,7 @@ function make_configs(;
 
     # If none vary, return a single config
     if isempty(varying)
-        return [_make_config(E_eV, α_deg, L, n_e0)]
+        return [_make_config(E_eV, α_deg, L, ϕ, n_e0)]
     end
 
     key, values = varying[1]
@@ -25,16 +26,16 @@ function make_configs(;
         α    = key == :α_deg ? val : α_deg
         l    = key == :L     ? val : L
         ne   = key == :n_e0  ? val : n_e0
-        _make_config(E, α, l, ne)
+        _make_config(E, α, l, ϕ, ne)
     end
 end
 
-function _make_config(E_eV, α_deg, L, n_e0)
+function _make_config(E_eV, α_deg, L, ϕ, n_e0)
     r0 = [L*RE, 0.0, 0.0]
     return (
         label    = "L=$L, E=$(E_eV/1e3)keV, α=$(α_deg)°, n_e=$(n_e0/1e6)cm⁻³",
         particle = ParticleState(E_eV, -cos(deg2rad(α_deg)), r0, dipole_field),
-        plasma   = PlasmaState(range(0.0, deg2rad(50), length=500), ne_denton, dipole_field, L)
+        plasma   = PlasmaState(range(0.0, deg2rad(50), length=500), ϕ, denton_density_model, dipole_field, L)
     )
 end
 

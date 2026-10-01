@@ -6,6 +6,7 @@ using CairoMakie
 # Shows that the ducted wave (θ=0°) can only scatter for the first and second harmonic
 ## Define particle and plasma
 L = 6.5
+ϕ = 0.0
 E = 30e3
 μ = - cos(deg2rad(3))
 r0 = [L*RE, 0.0, 0.0]
@@ -14,7 +15,13 @@ particle = ParticleState(E, μ, r0, dipole_field)
 
 λ_grid = range(0.0, deg2rad(50), length=500)
 
-plasma = PlasmaState(λ_grid, ne_denton, dipole_field, L)
+## Define the plasma
+λ_grid = range(0.0, deg2rad(50), length=500)
+
+R_max   = find_R_max(dipole_field, L, 0.0, ϕ)
+ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max)
+plasma = PlasmaState(λ_grid, ϕ, ne_func, dipole_field, Float64(L))
+#plasma = PlasmaState(λ_grid, ϕ, denton_density_model, dipole_field, L)
 
 # find and plot resonance
 ns = [-1, 0, 1, 2]

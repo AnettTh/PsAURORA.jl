@@ -302,7 +302,6 @@ function find_R_max(
     z0 = r * sin(λ)
 
     R_max = norm([x0, y0, z0])
-    @show(R_max)
 
     # For verification
     xs = store_trace ? [x0] : Float64[]

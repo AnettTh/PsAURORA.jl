@@ -1,13 +1,15 @@
 using AURORA
 using CairoMakie
 using Profile
+using ProgressMeter
 
 ## Define the particles
 μ = -cos(deg2rad(3))       # Almost field-aligned
 L = 6.0
+ϕ = 0.0
 r0 = [L*RE, 0.0, 0.0]
 
-E_grid = range(1e3, 40e3, length=300)
+E_grid = range(1e3, 40e3, length=100)
 
 particle_dipole = [ParticleState(E, μ, r0, dipole_field; relativistic=true) for E in E_grid]
 particle_tsyg   = [ParticleState(E, μ, r0, tsyganenko_field; relativistic=true) for E in E_grid]
@@ -15,8 +17,15 @@ particle_tsyg   = [ParticleState(E, μ, r0, tsyganenko_field; relativistic=true)
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
 
-plasma_dipole = PlasmaState(λ_grid, ne_denton, dipole_field, L)
-plasma_tsyg   = PlasmaState(λ_grid, ne_denton, tsyganenko_field, L)
+R_max_dipole   = find_R_max(dipole_field, L, 0.0, ϕ)
+ne_func_dipole = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max_dipole)
+plasma_dipole = PlasmaState(λ_grid, ϕ, ne_func_dipole, dipole_field, Float64(L))
+#plasma_dipole = PlasmaState(λ_grid, ϕ, denton_density_model, dipole_field, L)
+
+R_max_tsyg   = find_R_max(tsyganenko_field, L, 0.0, ϕ)
+ne_func_tsyg = (L, λ) -> denton_density_model(L, λ, ϕ, tsyganenko_field, R_max_tsyg)
+plasma_tsyg = PlasmaState(λ_grid, ϕ, ne_func_tsyg, tsyganenko_field, Float64(L))
+#plasma_tsyg   = PlasmaState(λ_grid, ϕ, denton_density_model, tsyganenko_field, L)
 
 # Define the wave
 ωs_dipole = range(plasma_dipole.Ω_e[1]*0.1, plasma_dipole.Ω_e[1]*0.4, length=5)
@@ -29,12 +38,18 @@ TOF_dipole = zeros(length(E_grid), length(ωs_dipole))  # [n_E × n_ω]
 TOF_tsyg   = zeros(length(E_grid), length(ωs_tsyg  ))
 
 
-for (i, p) in enumerate(particle_dipole)
+@showprogress for (i, p) in enumerate(particle_dipole)
     TOF_dipole[i, :] = WPI_TOF(ωs_dipole, p, plasma_dipole; field_dependent=true, wave_launch_time=wave_chirp)
 end
 
+## Check for bottleneck
+WPI_TOF(ωs_dipole[1], particle_dipole[1], plasma_dipole; field_dependent=true, wave_launch_time=wave_chirp)
+@profview for _ in 1:10
+    WPI_TOF(ωs_dipole[1], particle_dipole[1], plasma_dipole; field_dependent=true, wave_launch_time=wave_chirp)
+end
+
 ##
-for (i, p) in enumerate(particle_tsyg)
+@showprogress for (i, p) in enumerate(particle_tsyg)
     TOF_tsyg[i, :] = WPI_TOF(ωs_tsyg, p, plasma_tsyg; field_dependent=true, wave_launch_time=wave_chirp)
 end
 
