@@ -15,7 +15,9 @@ a_perp = sqrt(2 * T_perp * eV_in_J / mₑ)
 v_par_grid  = range(-5 * a_par,  5 * a_par,  length=300)
 v_perp_grid = range(-5 * a_perp, 5 * a_perp, length=300)
 
-F = [subtracted_bimaxwellian(vpar, vperp, N, a_par, a_perp, Δ, β, relativistic=false)
+
+##
+F = [subtracted_bimaxwellian_Liu(vpar, vperp, N, a_par, a_perp, Δ, β, relativistic=false)
      for vperp in v_perp_grid, vpar in v_par_grid]
 
 v_lc = collect(v_perp_grid) ./ tan(α_lc)

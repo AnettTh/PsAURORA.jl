@@ -1,7 +1,8 @@
 using AURORA
 
+# TODO: This has opposite behavior, figure out why
 ##
-function subtracted_bimaxwellian(
+function subtracted_bimaxwellian_Liu(
     v_parallel,
     v_perp,
     N::Float64,
