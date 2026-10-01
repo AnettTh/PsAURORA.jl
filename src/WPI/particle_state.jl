@@ -92,6 +92,7 @@ function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
     L = r_mag / (RE * cos(λ0)^2)
 
     # Loss-cone angle at the equator
+    # IDEA: Look into the definition of α from Hsieh 2022
     if magnetic_field==dipole_field
         α_lc = losscone_angle(L)        # TODO: Test this for off-equatorial positions, to check for bugs! It should be larger than α_eq?
     else
