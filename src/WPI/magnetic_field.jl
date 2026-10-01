@@ -1,7 +1,11 @@
 using Dates
 using TsyganenkoModels
 using StaticArrays
+using LinearAlgebra
 
+# TODO: Add function for R_max that takes fieldmodel
+# IDEA: Make magnetic field struct?
+# Check if it is possible to use only a spherical coordinate system throughout the whole program, converting when necessary
 """
     dipole_field(x, y, z)
     dipole_field(r)
@@ -277,4 +281,69 @@ function tsyganenko_field_spherical(
     bzimf=bzimf,
     component=component,
 )
+end
+
+
+# NOTE: This might also need to take kwargs for tsyganenko-field, i.e. need to make struct!
+function find_R_max(
+    magnetic_field,
+    L,
+    λ,
+    ϕ;
+    ds=RE*0.01,
+    n_steps=10000,
+    store_trace::Bool=false
+)
+
+    # Initial postition
+    r = L * RE * cos(λ)^2
+    x0 = r * cos(λ) * cos(ϕ)
+    y0 = r * cos(λ) * sin(ϕ)
+    z0 = r * sin(λ)
+
+    R_max = norm([x0, y0, z0])
+    @show(R_max)
+
+    # For verification
+    xs = store_trace ? [x0] : Float64[]
+    ys = store_trace ? [y0] : Float64[]
+    zs = store_trace ? [z0] : Float64[]
+
+    # Trace along fieldlines in both direcitons
+    for sign in [1, -1]
+        x, y, z = x0, y0, z0
+        for _ in 1:n_steps
+            # Find the current magnetic field direction
+            B = magnetic_field(x, y, z)
+            B_mag = norm(B)
+            iszero(B_mag) && throw(ArgumentError("Why is your magnetic field zero, Miss??"))
+            bx, by, bz = B ./ B_mag
+
+            # Move one step in the right direction
+            x += sign * ds * bx
+            y += sign * ds * by
+            z += sign * ds * bz
+
+            # Update the largest sampled radius
+            R_current = sqrt(x^2 + y^2 + z^2)
+            R_max = max(R_current, R_max)
+
+            # For verification
+            if store_trace
+                push!(xs, x)
+                push!(ys, y)
+                push!(zs, z)
+            end
+
+            # Stop at the ionosphere or above 10 RE
+            R_current ≤ RE + z_ionosphere && break
+            R_current > 10 * RE && break
+        end
+    end
+
+    if store_trace
+        return R_max, (; xs, ys, zs)
+    else
+        return R_max
+    end
 end

@@ -47,13 +47,14 @@ export r_to_λL
 include("WPI/magnetic_field.jl")
 export dipole_field, magnetic_basis
 export tsyganenko_field, tsyganenko_field_spherical
+export find_R_max
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
 export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
-include("WPI/ne_model.jl")
-export ne_denton
+include("WPI/denton_density.jl")
+export ne_denton, denton_density_model
 
 include("WPI/analytical_results.jl")
 export minimal_resonance_energy
@@ -82,8 +83,11 @@ export AbstractSpectrum, FlatSpectrum, GaussianSpectrum, MaxwellianSpectrum, Fil
 
 export SubtractedBiMaxwellianSpectrum
 
-include("input/losscone_distribution.jl")
-export subtracted_bimaxwellian
+include("input/Liu2018_distribution.jl")
+export subtracted_bimaxwellian_Liu
+
+include("input/Hsieh2022_distribution.jl")
+export subtracted_bimaxwellian_Hsieh
 
 export AbstractModulation, ConstantModulation, SinusoidalFlickering, SquareFlickering, SmoothOnset
 export InputFlux, evaluate_spectrum, apply_modulation, compute_flux
