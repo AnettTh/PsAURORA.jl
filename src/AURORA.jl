@@ -60,13 +60,13 @@ export AbstractDensityModel, ConstantDensity, DentonDensity, electron_density
 include("WPI/analytical_results.jl")
 export minimal_resonance_energy
 
+include("WPI/make_magnetic_field.jl")
+export DipoleMagneticField, TsyganenkoMagneticField
+export Cartesian, Spherical
 include("WPI/make_plasma.jl")
 export Ωe_at_λ, ωpe_at_λ, PlasmaState
 include("WPI/make_particle.jl")
 export ParticleState
-include("WPI/make_magnetic_field.jl")
-export DipoleMagneticField, TsyganenkoMagneticField
-export Cartesian, Spherical
 include("WPI/make_wave.jl")
 
 include("WPI/boris_mover.jl")
@@ -90,7 +90,7 @@ export AbstractSpectrum, FlatSpectrum, GaussianSpectrum, MaxwellianSpectrum, Fil
 export SubtractedBiMaxwellianSpectrum
 
 include("input/Liu2018_distribution.jl")
-export subtracted_bimaxwellian_Liu
+export subtracted_bimaxwellian_Liu, subtracted_bimaxwellian
 
 include("input/Hsieh2022_distribution.jl")
 export subtracted_bimaxwellian_Hsieh

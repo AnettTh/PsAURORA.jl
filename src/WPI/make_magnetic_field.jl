@@ -8,6 +8,8 @@ struct Cartesian
     z :: Float64
 end
 
+
+# TODO: Check if the code runs without these now
 Base.iterate(r::Cartesian) = (r.x, 1)
 Base.iterate(r::Cartesian, i) = i == 1 ? (r.y, 2) : i == 2 ? (r.z, 3) : nothing
 Base.length(::Cartesian) = 3

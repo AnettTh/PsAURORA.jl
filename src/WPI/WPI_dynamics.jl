@@ -204,6 +204,7 @@ end
 
 
 # NOTE: This is not a realistic model, but used as a temporary solution. Look into default value of t!
+# TODO: Use AbstractWave instead of this
 """
     wave_chirp(ω::AbstractVector; t::Real=0.2)
 

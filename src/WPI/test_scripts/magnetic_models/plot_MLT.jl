@@ -96,4 +96,4 @@ Colorbar(fig[1, 3];
     tellheight = false
 )
 ##
-save("src/WPI/diagnostic_figures/tsyganenko_fieldlines.png", fig)
+#save("src/WPI/diagnostic_figures/tsyganenko_fieldlines.png", fig)
