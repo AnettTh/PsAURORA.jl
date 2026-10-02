@@ -2,18 +2,23 @@ using AURORA
 using AURORA; c₀
 using CairoMakie
 
+
+## Define magnetic field
+ϕ = 0.0
+magnetic_field = DipoleMagneticField()
+
 ## Define the particle
 μ = -cos(deg2rad(3))       # Almost field-aligned
 L = 6.0
 ϕ = 0.0
-r0 = [L*RE, 0.0, 0.0]
+r0 = Cartesian(L*RE, 0.0, 0.0)
 
 E = 3e4
-particle = ParticleState(E, μ, r0, dipole_field; relativistic=true)
+particle = ParticleState(E, μ, r0, magnetic_field; relativistic=true)
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
-plasma = PlasmaState(λ_grid, ϕ, DentonDensity(dipole_field, L, ϕ), dipole_field, Float64(L))
+plasma = PlasmaState(λ_grid, ϕ, DentonDensity(magnetic_field, L, ϕ), magnetic_field, Float64(L))
 
 
 ## Get group velocity
@@ -34,4 +39,4 @@ lines!(ax, (ω_grid.*2π) ./ 1e3, TOF_simple; linestyle=:solid,  label="Field-in
 axislegend(ax, position=:rb)
 
 ##
-save("src/WPI/test_scripts/frequencies/several_omega_$(round(rad2deg(acos(abs(μ))))).png", fig)
+#save("src/WPI/test_scripts/frequencies/several_omega_$(round(rad2deg(acos(abs(μ))))).png", fig)

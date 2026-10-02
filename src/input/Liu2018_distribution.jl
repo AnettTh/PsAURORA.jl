@@ -1,7 +1,7 @@
 using AURORA
 
-# TODO: This has opposite behavior, figure out why
-##
+
+## IDEA: Add option for several subtractions
 function subtracted_bimaxwellian_Liu(
     v_parallel,
     v_perp,

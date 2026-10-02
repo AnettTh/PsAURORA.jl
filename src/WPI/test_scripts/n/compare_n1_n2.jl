@@ -2,19 +2,23 @@ using AURORA
 using AURORA; c₀
 using CairoMakie
 
+## Make magnetic field
+ϕ = 0.0
+magnetic_field = DipoleMagneticField()
+
 ## Define the particles
 μ = -cos(deg2rad(3))       # Almost field-aligned
 L = 6.5
 ϕ = 0.0
-r0 = [L*RE, 0.0, 0.0]
+r0 = Cartesian(L*RE, 0.0, 0.0)
 
 E_grid = range(1e3, 40e3, length=100)
 
-particles = [ParticleState(E, μ, r0, dipole_field; relativistic=true) for E in E_grid]
+particles = [ParticleState(E, μ, r0, magnetic_field; relativistic=true) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
-plasma = PlasmaState(λ_grid, ϕ, DentonDensity(dipole_field, L, ϕ), dipole_field, Float64(L))
+plasma = PlasmaState(λ_grid, ϕ, DentonDensity(magnetic_field, L, ϕ), magnetic_field, Float64(L))
 
 
 ## Define the wave

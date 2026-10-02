@@ -2,9 +2,11 @@ using AURORA
 using CairoMakie
 
 # TODO: Change this to follow actual tsyganenko-fieldlines
+## Make magnetic field
+ϕ = 0.0
+magnetic_field = TsyganenkoMagneticField(ϕ)
 ## Make the data
 L_vals = [3, 4, 5, 6, 7, 8]
-ϕ = 0.0
 colors = [:blue, :red, :green, :orange, :purple, :brown]
 
 θ = deg2rad(0.0)
@@ -12,7 +14,7 @@ n = 1
 E_eV = 30e3
 μ = -cos(deg2rad(3.0))
 
-ω_frac = 0.5
+ω_frac = 0.2
 
 ## Define figure
 fig = Figure(size=(700, 400))
@@ -31,19 +33,19 @@ poly!(ax, Point2f.(cos.(Φ), sin.(Φ)); color=:black, strokecolor=:black, stroke
 ## Compute
 field_line_data = map(L_vals) do L
 
-    particle = ParticleState(E_eV, μ, [RE*L, 0.0, 0.0], tsyganenko_field; relativistic=true)
+    particle = ParticleState(E_eV, μ, Cartesian(RE*L, 0.0, 0.0), magnetic_field; relativistic=true)
 
     λ_max    = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid_L = range(0.0, λ_max * 0.99, length=500)
 
     ## Define the plasma
-    plasma_L = PlasmaState(λ_grid_L, ϕ, DentonDensity(tsyganenko_field, L, ϕ), tsyganenko_field, Float64(L))
+    plasma_L = PlasmaState(λ_grid_L, ϕ, DentonDensity(magnetic_field, L, ϕ), magnetic_field, Float64(L))
 
     ω = ω_frac * plasma_L.Ω_e[1]
 
     V_R_grid = map(λ_grid_L) do λ
-        Ω_e   = Ωe_at_λ(λ, Float64(L), tsyganenko_field)
-        ω_pe  = ωpe_at_λ(plasma_L.ne_model, Float64(L), λ) #, particle.ϕ, particle.magnetic_field)
+        Ω_e   = Ωe_at_λ(λ, Float64(L), particle.ϕ, magnetic_field)
+        ω_pe  = ωpe_at_λ(plasma_L.ne_model, Float64(L), λ)
         k     = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
         k_par = k * cos(θ)
 

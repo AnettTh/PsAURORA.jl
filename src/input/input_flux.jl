@@ -250,7 +250,7 @@ end
 ############################################################################################
 
 
-
+# TODO: Revise this to fit with the changes to the code
 function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t)
     E_centers = model.energy_grid.E_centers
     ΔE = model.energy_grid.ΔE

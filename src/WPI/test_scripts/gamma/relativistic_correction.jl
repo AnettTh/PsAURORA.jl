@@ -3,13 +3,14 @@ using AURORA; c₀
 using CairoMakie
 
 
+## Make magnetic field
+ϕ = 0.0
+magnetic_field = TsyganenkoMagneticField(ϕ)
+
 ## Define the particles
 μ = -cos(deg2rad(3))       # Almost field-aligned
 L = 6.0
-ϕ = 0.0
-r0 = [L*RE, 0.0, 0.0]
-#magnetic_field = dipole_field
-magnetic_field = tsyganenko_field
+r0 = Cartesian(L*RE, 0.0, 0.0)
 
 E_grid = range(1e3, 40e3, length=100)
 
@@ -84,4 +85,4 @@ Legend(fig[1, 3], ax2)
 
 ##
 #save("src/WPI/test_scripts/gamma/rel_vs_classic.png", fig)
-save("src/WPI/test_scripts/gamma/tsyg_rel_vs_classic.png", fig)
+#save("src/WPI/test_scripts/gamma/tsyg_rel_vs_classic.png", fig)

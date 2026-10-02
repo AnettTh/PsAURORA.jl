@@ -3,9 +3,11 @@ using CairoMakie
 
 
 # NOTE: This does not work
+## Make magnetic field
+ϕ = 0.0
+magnetic_field = TsyganenkoMagneticField(ϕ)
 ## Make the data
 L_vals = [3, 4, 5, 6, 7, 8]
-ϕ = 0.0
 colors = [:blue, :red, :green, :orange, :purple, :brown]
 
 θ = deg2rad(0.0)
@@ -33,12 +35,12 @@ poly!(ax, Point2f.(cos.(Φ), sin.(Φ)); color=:black, strokecolor=:black, stroke
 field_line_data = map(L_vals) do L
 
     # Starting position at 4 MLT
-    r0 = [RE*L * cos(ϕ), RE*L * sin(ϕ), 0.0]
-    particle = ParticleState(E_eV, μ, r0, tsyganenko_field; relativistic=true)
+    r0 = Cartesian(RE*L * cos(ϕ), RE*L * sin(ϕ), 0.0)
+    particle = ParticleState(E_eV, μ, r0, magnetic_field; relativistic=true)
 
     ## Trace field line from starting point
-    xs_f, ys_f, zs_f, _ = trace_with_density(tsyganenko_field, DentonDensity(tsyganenko_field, L, ϕ), r0...; ds= RE*0.02)
-    xs_b, ys_b, zs_b, _ = trace_with_density(tsyganenko_field, DentonDensity(tsyganenko_field, L, ϕ), r0...; ds=-RE*0.02)
+    xs_f, ys_f, zs_f, _ = trace_with_density(magnetic_field, DentonDensity(magnetic_field, L, ϕ), r0.x, r0.y, r0.z; ds= RE*0.02)
+    xs_b, ys_b, zs_b, _ = trace_with_density(magnetic_field, DentonDensity(magnetic_field, L, ϕ), r0.x, r0.y, r0.z; ds=-RE*0.02)
 
     xs = [reverse(xs_b); xs_f[2:end]]
     ys = [reverse(ys_b); ys_f[2:end]]
@@ -53,7 +55,7 @@ field_line_data = map(L_vals) do L
     λ_grid_L = λs
 
     ## Construct PlasmaState on traced field line
-    plasma_L = PlasmaState(λ_grid_L, ϕ, DentonDensity(tsyganenko_field, L, ϕ), tsyganenko_field, Float64(L))
+    plasma_L = PlasmaState(λ_grid_L, ϕ, DentonDensity(magnetic_field, L, ϕ), magnetic_field, Float64(L))
 
     ω = ω_frac * plasma_L.Ω_e[1]
 

@@ -42,12 +42,11 @@ include("physics/species.jl")
 export NeutralSpecies, MSISDensity, VectorDensity
 export N2Species, O2Species, OSpecies
 
-include("WPI/coordinate_conversions.jl")
-export r_to_λL
+include("WPI/coordinates.jl")
+export r_to_λL, magnetic_basis, find_R_max
 include("WPI/magnetic_field.jl")
-export dipole_field, magnetic_basis
+export dipole_field
 export tsyganenko_field, tsyganenko_field_spherical
-export find_R_max
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
@@ -61,10 +60,15 @@ export AbstractDensityModel, ConstantDensity, DentonDensity, electron_density
 include("WPI/analytical_results.jl")
 export minimal_resonance_energy
 
-include("WPI/plasma_state.jl")
+include("WPI/make_plasma.jl")
 export Ωe_at_λ, ωpe_at_λ, PlasmaState
-include("WPI/particle_state.jl")
+include("WPI/make_particle.jl")
 export ParticleState
+include("WPI/make_magnetic_field.jl")
+export DipoleMagneticField, TsyganenkoMagneticField
+export Cartesian, Spherical
+include("WPI/make_wave.jl")
+
 include("WPI/boris_mover.jl")
 export boris_mover_TOF
 include("WPI/time_of_flight.jl")

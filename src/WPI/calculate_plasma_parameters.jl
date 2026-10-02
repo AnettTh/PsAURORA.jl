@@ -2,7 +2,7 @@ using AURORA; dipole_field
 using LinearAlgebra: norm, dot, cross
 using StaticArrays
 
-
+# TODO: Change this to something that takes any field
 """
     losscone_angle(L; degree::Bool=false)
 

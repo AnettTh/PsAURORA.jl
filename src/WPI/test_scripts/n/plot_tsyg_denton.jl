@@ -4,6 +4,7 @@ using CairoMakie
 ## Parameters
 L_vals = [4, 5, 6, 7, 8]
 ϕ      = deg2rad(120.0)   # 4 MLT
+magnetic_field = TsyganenkoMagneticField(ϕ)
 
 ## Trace field lines and compute density
 function trace_with_density(B_func, ne_func, x0, y0, z0; ds=RE*0.05, n_steps=1000)
@@ -11,7 +12,7 @@ function trace_with_density(B_func, ne_func, x0, y0, z0; ds=RE*0.05, n_steps=100
 
     x, y, z = x0, y0, z0
     for _ in 1:n_steps
-        B    = B_func(x, y, z)
+        B    = B_func(Cartesian(x, y, z))
         Bmag = norm(B)
         iszero(Bmag) && break
         bx, by, bz = B ./ Bmag
@@ -36,15 +37,14 @@ end
 
 ## Collect data
 fieldline_data = map(L_vals) do L
-    R_max   = find_R_max(tsyganenko_field, Float64(L), 0.0, ϕ)
-    ne_func = (L_i, λ) -> denton_density_model(L_i, λ, ϕ, tsyganenko_field, R_max)
+    model = DentonDensity(magnetic_field, L, ϕ)
 
     x0 = L * RE * cos(ϕ)
     y0 = L * RE * sin(ϕ)
     z0 = 0.0
 
-    xs_f, ys_f, zs_f, ne_f = trace_with_density(tsyganenko_field, ne_func, x0, y0, z0; ds= RE*0.05)
-    xs_b, ys_b, zs_b, ne_b = trace_with_density(tsyganenko_field, ne_func, x0, y0, z0; ds=-RE*0.05)
+    xs_f, ys_f, zs_f, ne_f = trace_with_density(magnetic_field, model, x0, y0, z0; ds= RE*0.05)
+    xs_b, ys_b, zs_b, ne_b = trace_with_density(magnetic_field, model, x0, y0, z0; ds=-RE*0.05)
 
     xs  = [reverse(xs_b);  xs_f[2:end]]
     ys  = [reverse(ys_b);  ys_f[2:end]]
@@ -87,4 +87,4 @@ Colorbar(fig[1, 2];
 xlims!(ax, 0, -9)
 
 ##
-save("src/WPI/diagnostic_figures/tsyganenko_density_fieldlines.png", fig)
+#save("src/WPI/diagnostic_figures/tsyganenko_density_fieldlines.png", fig)

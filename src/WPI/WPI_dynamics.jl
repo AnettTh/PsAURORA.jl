@@ -135,7 +135,7 @@ function wave_transit(
     function f(λ)
         # If field-dependent, choose based on position, else use equatorial Ω_e
         Ω_e = field_dependent ?
-            Ωe_at_λ(λ, particle.L, particle.magnetic_field) :
+            Ωe_at_λ(λ, particle.L, particle.ϕ, particle.magnetic_field) :
             plasma.Ω_e[1]
 
         ω_pe = field_dependent ?
@@ -182,15 +182,7 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
 
     function f(λ)
         if field_dependent
-            # TODO: Also here hardcoded solution to fix
-            if particle.magnetic_field == dipole_field
-                B_λ = particle.magnetic_field(particle.L, λ)
-            elseif particle.magnetic_field == tsyganenko_field
-                B_λ = tsyganenko_field_spherical(particle.L, λ, particle.ϕ)
-            else
-                throw(ArgumentError("Hardcoded temporary solution, look into it!"))
-            end
-
+            B_λ = particle.magnetic_field(Spherical(particle.L, λ, particle.ϕ))
             α_λ = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
             isnothing(α_λ) && return 0.0
             vz = particle.v * cos(α_λ)
@@ -264,38 +256,33 @@ function resonance_latitude(ω, particle, plasma; θ::Float64=0.0, n::Int=1)
 
     # Define the resonance condition (equation that should equal zero)
     function resonance_condition(λ; n=n, θ=θ)
-        Ω_e = Ωe_at_λ(λ, particle.L, particle.magnetic_field)
-        ω_pe = ωpe_at_λ(plasma.ne_model, particle.L, λ) #, particle.ϕ, particle.magnetic_field)
+        Ω_e = Ωe_at_λ(λ, particle.L, particle.ϕ, particle.magnetic_field)
+        ω_pe = ωpe_at_λ(plasma.ne_model, particle.L, λ)
 
         k = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
         k_parallel = k * cos(θ)
 
-        # TODO: remove hard-coded solution
-        if particle.magnetic_field == dipole_field
-            B = norm(particle.magnetic_field(particle.L, λ))
-        elseif particle.magnetic_field == tsyganenko_field
-            B = norm(tsyganenko_field_spherical(particle.L, λ, deg2rad(120)))
-        else
-            throw("Hardcoded temporary solution, check it!")
-        end
+        B = particle.magnetic_field(Spherical(particle.L, λ, particle.ϕ))
+        B_mag = norm(B)
 
-        α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B)
+        α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_mag)
 
+        isnothing(α) && return NaN
         v_parallel = particle.v * cos(α)
 
         return ω - k_parallel * v_parallel + (n*Ω_e / particle.γ)
     end
 
-    # Find which λ causes the resonance condition-function to change sign
+    ## Find which λ causes the resonance condition-function to change sign
     λ_grid = plasma.λ
     f_possible = resonance_condition.(λ_grid, n=n)
 
-    idx = findfirst(i -> f_possible[i] * f_possible[i+1] < 0, 1:length(f_possible)-1)
+    idx = findfirst(i -> !isnan(f_possible[i]) &&
+                     !isnan(f_possible[i+1]) &&
+                     f_possible[i] * f_possible[i+1] < 0,
+                1:length(f_possible)-1)
 
-    # Return nothing if there is no resonance
-    #isnothing(idx) && return nothing
     isnothing(idx) && return NaN
-
     # Figure out the latitude where the funciton changed sign
     λ_resonance = find_zero(resonance_condition, (λ_grid[idx], λ_grid[idx+1]))
 

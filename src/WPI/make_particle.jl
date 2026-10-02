@@ -28,12 +28,12 @@ the magnetic field model.
 - `γ`: Lorentz factor.
 - `ϕ`: Longitude [rad].
 """
-struct ParticleState{F<:Function}
+struct ParticleState{F}
     E_eV           :: Float64
     v              :: Float64
     μ              :: Float64
     α0             :: Float64
-    r0             :: SVector{3, Float64}
+    r0             :: SVector{3, Float64}   # TODO: Change this to Cartesian, and maybe add Spherical?
     B0             :: SVector{3, Float64}
     b̂              :: SVector{3, Float64}
     L              :: Float64
@@ -71,10 +71,10 @@ position `r0` is used to determine the L-shell and all latitude-dependent quanti
 
 - A fully initialized `ParticleState`.
 """
-function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
+function ParticleState(E_eV, μ, r0::Cartesian, magnetic_field::AbstractMagneticField; relativistic::Bool=false)
 
     # Check validity of initial position
-    r_mag = norm(r0)
+    r_mag = norm((r0.x, r0.y, r0.z))
     r_mag ≤ RE && throw(ArgumentError("r0 must be outside the Earth's surface."))
 
     # Get velocity and relativistic constant
@@ -90,15 +90,15 @@ function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
     b̂, _, _, _ = magnetic_basis(B0)
 
     # Latitude of initial position and L-shell
-    λ0 = asin(r0[3] / r_mag)
+    λ0 = asin(r0.z / r_mag)
     L = r_mag / (RE * cos(λ0)^2)
 
     # TODO: test this!!
-    ϕ = atan(r0[2], r0[1])
+    ϕ = atan(r0.z, r0.x)
 
     # Loss-cone angle at the equator
     # IDEA: Look into the definition of α from Hsieh 2022
-    if magnetic_field==dipole_field
+    if magnetic_field isa DipoleMagneticField
         α_lc = losscone_angle(L)        # TODO: Test this for off-equatorial positions, to check for bugs! It should be larger than α_eq?
     else
         α_lc = NaN
@@ -118,7 +118,7 @@ function ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
         v,
         μ,
         α0,
-        SVector{3}(r0),
+        SVector(r0.x, r0.y, r0.z),
         SVector{3}(B0),
         SVector{3}(b̂),
         L,

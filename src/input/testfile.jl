@@ -9,8 +9,8 @@ A = 1.0
 β = 0.8
 
 a_par = sqrt(2 * T_parallel * eV_in_J / mₑ)
-v_par_grid  = range(-4 * a_par, 4 * a_par,  length=300)
-v_perp_grid = range(0, 4 * a_par, length=300)
+v_par_grid  = range(-5 * a_par, 5 * a_par,  length=300)
+v_perp_grid = range(-5 * a_par, 5 * a_par, length=300)
 
 
 ##
@@ -19,11 +19,11 @@ F = [subtracted_bimaxwellian_Liu(vpar, vperp, N, T_parallel, A, Δ, β)
 
 
 ## Make plot
-fig = Figure(size=(650, 600))
+fig = Figure(size=(700, 600))
 ax  = Axis(fig[1, 1];
     xlabel = "v∥",
     ylabel = "v⊥",
-    title  = "Loss cone bi-Maxwellian \n
+    title  = "Subtracted bi-Maxwellian \n
     T∥=$(round(T_parallel*1e-3, digits=1)) keV, A=$(round(A, digits=1)) keV, Δ=$Δ, β=$β",
     aspect=DataAspect()
 )
@@ -35,9 +35,15 @@ clims = (minimum(F_log), maximum(F_log))
 hm = heatmap!(ax,
     collect(v_par_grid),
     collect(v_perp_grid),
-    F_log;
+    F_log';
     colormap = :turbo,
     colorrange = clims
 )
+#hm_mirror = heatmap!(ax,
+#    collect(v_par_grid),
+#    -collect(v_perp_grid),
+#    F_log';
+#    colormap = :turbo,
+#    colorrange = clims)
 
-Colorbar(fig[1, 2], hm; label="log(Phase space density [m⁻⁶s³])", tellheight=true)
+Colorbar(fig[1, 2], hm; label="log(Phase space density [m⁻⁶s³])", tellheight=false)

@@ -3,21 +3,26 @@ using CairoMakie
 using Profile
 using ProgressMeter
 
+
+## Define magnetic field
+ϕ = 0.0
+dipole = DipoleMagneticField()
+tsyganenko = TsyganenkoMagneticField(ϕ)
+
 ## Define the particles
 μ = -cos(deg2rad(3))       # Almost field-aligned
 L = 6.0
-ϕ = 0.0
-r0 = [L*RE, 0.0, 0.0]
+r0 = Cartesian(L*RE, 0.0, 0.0)
 
 E_grid = range(1e3, 40e3, length=100)
 
-particle_dipole = [ParticleState(E, μ, r0, dipole_field; relativistic=true) for E in E_grid]
-particle_tsyg   = [ParticleState(E, μ, r0, tsyganenko_field; relativistic=true) for E in E_grid]
+particle_dipole = [ParticleState(E, μ, r0, dipole; relativistic=true) for E in E_grid]
+particle_tsyg   = [ParticleState(E, μ, r0, tsyganenko; relativistic=true) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
-plasma_dipole = PlasmaState(λ_grid, ϕ, DentonDensity(dipole_field, L, ϕ), dipole_field, Float64(L))
-plasma_tsyg = PlasmaState(λ_grid, ϕ, DentonDensity(tsyganenko_field, L, ϕ), tsyganenko_field, Float64(L))
+plasma_dipole = PlasmaState(λ_grid, ϕ, DentonDensity(dipole, L, ϕ), dipole, Float64(L))
+plasma_tsyg = PlasmaState(λ_grid, ϕ, DentonDensity(tsyganenko, L, ϕ), tsyganenko, Float64(L))
 
 # Define the wave
 ωs_dipole = range(plasma_dipole.Ω_e[1]*0.1, plasma_dipole.Ω_e[1]*0.4, length=5)

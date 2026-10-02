@@ -2,7 +2,7 @@ using AURORA
 using AURORA; mₑ, qₑ, ε₀
 using LinearAlgebra
 
-# IDEA: Figure out how to define λ_grid from the plasma state itself?
+# IDEA: Figure out how to define λ_grid from the plasma state itself? Maybe use find_R_max to locate where the fieldline hits the ionosphere?
 """
     PlasmaState
 
@@ -27,9 +27,9 @@ struct PlasmaState{M}
     ne_model :: M
 end
 
-
+# TODO: change to take Spherical instead?
 """
-    Ωe_at_λ(λ, L, magnetic_field)
+    Ωe_at_λ(λ, L, ϕ, magnetic_field)
 
 Calculate the electron gyrofreequency `Ω_e` as a function of magnetic latitude `λ`.
 
@@ -43,16 +43,8 @@ Calculate the electron gyrofreequency `Ω_e` as a function of magnetic latitude 
 
 - The gyrofrequency as a fuction of magnetic latitude [rad/s].
 """
-function Ωe_at_λ(λ, L, magnetic_field)
-    # TODO: Figure out how to avoid this hardcoding
-    if magnetic_field==dipole_field
-        B = magnetic_field(L, λ)
-    elseif magnetic_field==tsyganenko_field
-        B = tsyganenko_field_spherical(L, λ, deg2rad(120))
-    else
-        throw(ArgumentError("Look into hardcoded temporary solution!"))
-    end
-
+function Ωe_at_λ(λ, L, ϕ, magnetic_field::AbstractMagneticField)
+    B = magnetic_field(Spherical(L, λ, ϕ))
     return abs(qₑ) * norm(B) / mₑ
 end
 
@@ -120,7 +112,7 @@ function PlasmaState(
     λ_grid::AbstractVector,
     ϕ::Float64,
     ne_model::AbstractDensityModel,
-    magnetic_field::Function,
+    magnetic_field::AbstractMagneticField,
     L;
     lb_low=0.25,
     lb_high=0.5
@@ -133,7 +125,7 @@ function PlasmaState(
     ω_pe = @. sqrt(n_e * qₑ^2 / (mₑ * ε₀))
 
     # Electron cyclotron frequency
-    Ω_e = Ωe_at_λ.(λ_grid, L, magnetic_field)
+    Ω_e = Ωe_at_λ.(λ_grid, L, ϕ, Ref(magnetic_field))
 
     # Whistler-mode chorus wave frequencies
     Ω_eq = Ω_e[1]

@@ -4,6 +4,7 @@ using CairoMakie
 ##
 L_vals = [3, 4, 5, 6, 7, 8]
 ϕ = 0.0
+magnetic_field = DipoleMagneticField()
 colors = [:blue, :red, :green, :orange, :purple, :brown]
 
 fig = Figure()
@@ -15,23 +16,19 @@ ax  = Axis(fig[1, 1];
 )
 
 for (L, color) in zip(L_vals, colors)
-    # R ranges from Earth surface to beyond L*RE
     λ_max  = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid = range(0.0, λ_max, length=500)
 
-    R_max = find_R_max(dipole_field, L, 0.0, ϕ)
+    model  = DentonDensity(magnetic_field, Float64(L), ϕ)
+    n_e    = model.(L, λ_grid)
 
-    ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max)
-    n_e     = ne_func.(L, λ_grid)
-
-    #n_e = denton_density_model.(L, λ_grid, ϕ, dipole_field, R_max; SI=true)
     R_grid = @. L * RE * cos(λ_grid)^2
 
     lines!(ax, R_grid ./ RE, n_e; color=color, label="L = $L")
 end
 
 axislegend(ax, position=:rt)
-save("src/WPI/diagnostic_figures/simple_denton_density.png", fig)
+#save("src/WPI/diagnostic_figures/simple_denton_density.png", fig)
 
 
 ##
@@ -52,22 +49,16 @@ n_e_all = Float64[]
 for L in L_vals
     λ_max  = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid = range(0.0, λ_max, length=500)
-
-    R_max = find_R_max(dipole_field, L, 0.0, ϕ)
-    ne_func = (l, λ) -> denton_density_model(l, λ, ϕ, dipole_field, R_max)
-    append!(n_e_all, log10.(ne_func.(L, λ_grid)))
-    #append!(n_e_all, log10.(denton_density_model.(L, λ_grid, ϕ, dipole_field, R_max; SI=true)))
+    model  = DentonDensity(magnetic_field, Float64(L), ϕ)
+    append!(n_e_all, log10.(model.(L, λ_grid)))
 end
 clims = (minimum(n_e_all), maximum(n_e_all))
 
 for L in L_vals
     λ_max  = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid = range(0.0, λ_max, length=500)
-
-    R_max = find_R_max(dipole_field, L, 0.0, ϕ)
-    ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max)
-    n_e     = ne_func.(L, λ_grid)
-    #n_e    = denton_density_model.(L, λ_grid, ϕ, dipole_field, R_max; SI=true)
+    model  = DentonDensity(magnetic_field, L, ϕ)
+    n_e    = model.(L, λ_grid)
     R_grid = @. L * RE * cos(λ_grid)^2
     x      = @. -R_grid * cos(λ_grid) / RE   # nightside → negative x
     z      = @.  R_grid * sin(λ_grid) / RE
