@@ -5,8 +5,11 @@ using CairoMakie
 T_parallel = 10e3
 N = 1e6
 A = 1.0
-Δ = 0.0
+Δ = 0.5
 β = 0.8
+r = 2.0
+M = 20
+α_lc = deg2rad(3)
 
 a_par = sqrt(2 * T_parallel * eV_in_J / mₑ)
 v_par_grid  = range(-5 * a_par, 5 * a_par,  length=300)
@@ -14,8 +17,10 @@ v_perp_grid = range(-5 * a_par, 5 * a_par, length=300)
 
 
 ##
-F = [subtracted_bimaxwellian_Liu(vpar, vperp, N, T_parallel, A, Δ, β)
-     for vperp in v_perp_grid, vpar in v_par_grid]
+#F = [subtracted_bimaxwellian_Liu(vpar, vperp, N, T_parallel, A, Δ, β)
+#     for vperp in v_perp_grid, vpar in v_par_grid]
+F = [subtracted_bimaxwellian(vpa, vpe, N, T_parallel, A, α_lc, Δ, r, M)
+    for vpa in v_par_grid, vpe in v_perp_grid]
 
 
 ## Make plot
