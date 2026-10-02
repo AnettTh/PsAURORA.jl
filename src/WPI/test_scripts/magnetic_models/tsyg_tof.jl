@@ -16,16 +16,8 @@ particle_tsyg   = [ParticleState(E, μ, r0, tsyganenko_field; relativistic=true)
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
-
-R_max_dipole   = find_R_max(dipole_field, L, 0.0, ϕ)
-ne_func_dipole = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max_dipole)
-plasma_dipole = PlasmaState(λ_grid, ϕ, ne_func_dipole, dipole_field, Float64(L))
-#plasma_dipole = PlasmaState(λ_grid, ϕ, denton_density_model, dipole_field, L)
-
-R_max_tsyg   = find_R_max(tsyganenko_field, L, 0.0, ϕ)
-ne_func_tsyg = (L, λ) -> denton_density_model(L, λ, ϕ, tsyganenko_field, R_max_tsyg)
-plasma_tsyg = PlasmaState(λ_grid, ϕ, ne_func_tsyg, tsyganenko_field, Float64(L))
-#plasma_tsyg   = PlasmaState(λ_grid, ϕ, denton_density_model, tsyganenko_field, L)
+plasma_dipole = PlasmaState(λ_grid, ϕ, DentonDensity(dipole_field, L, ϕ), dipole_field, Float64(L))
+plasma_tsyg = PlasmaState(λ_grid, ϕ, DentonDensity(tsyganenko_field, L, ϕ), tsyganenko_field, Float64(L))
 
 # Define the wave
 ωs_dipole = range(plasma_dipole.Ω_e[1]*0.1, plasma_dipole.Ω_e[1]*0.4, length=5)
@@ -42,11 +34,11 @@ TOF_tsyg   = zeros(length(E_grid), length(ωs_tsyg  ))
     TOF_dipole[i, :] = WPI_TOF(ωs_dipole, p, plasma_dipole; field_dependent=true, wave_launch_time=wave_chirp)
 end
 
-## Check for bottleneck
-WPI_TOF(ωs_dipole[1], particle_dipole[1], plasma_dipole; field_dependent=true, wave_launch_time=wave_chirp)
-@profview for _ in 1:10
-    WPI_TOF(ωs_dipole[1], particle_dipole[1], plasma_dipole; field_dependent=true, wave_launch_time=wave_chirp)
-end
+### Check for bottleneck
+#WPI_TOF(ωs_dipole[1], particle_dipole[1], plasma_dipole; field_dependent=true, wave_launch_time=wave_chirp)
+#@profview for _ in 1:10
+#    WPI_TOF(ωs_dipole[1], particle_dipole[1], plasma_dipole; field_dependent=true, wave_launch_time=wave_chirp)
+#end
 
 ##
 @showprogress for (i, p) in enumerate(particle_tsyg)

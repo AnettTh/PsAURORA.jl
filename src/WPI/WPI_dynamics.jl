@@ -186,7 +186,7 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
             if particle.magnetic_field == dipole_field
                 B_λ = particle.magnetic_field(particle.L, λ)
             elseif particle.magnetic_field == tsyganenko_field
-                B_λ = tsyganenko_field_spherical(particle.L, λ, deg2rad(120))
+                B_λ = tsyganenko_field_spherical(particle.L, λ, particle.ϕ)
             else
                 throw(ArgumentError("Hardcoded temporary solution, look into it!"))
             end
@@ -199,14 +199,14 @@ function particle_transit(particle, λ_resonance; field_dependent::Bool=true)
             vz = abs(particle.v * cos(particle.α_lc))
         end
 
+        # Removing NaN-values to not break the integration
         ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
-        return ds_dλ / vz
+        result = ds_dλ / vz
+        isnan(result) && return 0.0
+        return result
     end
 
-    # IDEA: Will not run if the particle is outside the loss-cone, as the limits here is invalid, but that might be fine? Might not even need it, as boris-mover is to be used?
     t_e, _ = quadgk(f, λ_resonance, particle.λ_ionosphere)
-
-
     return abs.(t_e)
 end
 

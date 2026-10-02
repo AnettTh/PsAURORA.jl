@@ -1,6 +1,7 @@
 using AURORA
 using CairoMakie
 
+# TODO: Change this to follow actual tsyganenko-fieldlines
 ## Make the data
 L_vals = [3, 4, 5, 6, 7, 8]
 ϕ = 0.0
@@ -36,10 +37,7 @@ field_line_data = map(L_vals) do L
     λ_grid_L = range(0.0, λ_max * 0.99, length=500)
 
     ## Define the plasma
-    R_max   = find_R_max(tsyganenko_field, L, 0.0, ϕ)
-    ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, tsyganenko_field, R_max)
-    plasma_L = PlasmaState(λ_grid_L, ϕ, ne_func, tsyganenko_field, Float64(L))
-    #plasma_L = PlasmaState(λ_grid_L, ϕ, denton_density_model, tsyganenko_field, Float64(L))
+    plasma_L = PlasmaState(λ_grid_L, ϕ, DentonDensity(tsyganenko_field, L, ϕ), tsyganenko_field, Float64(L))
 
     ω = ω_frac * plasma_L.Ω_e[1]
 

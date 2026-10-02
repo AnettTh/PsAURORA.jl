@@ -14,11 +14,7 @@ particles = [ParticleState(E, μ, r0, dipole_field; relativistic=true) for E in 
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
-
-R_max   = find_R_max(dipole_field, L, 0.0, ϕ)
-ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max)
-plasma = PlasmaState(λ_grid, ne_func, dipole_field, Float64(L))
-#plasma = PlasmaState(λ_grid, ϕ, denton_density_model, dipole_field, L)
+plasma = PlasmaState(λ_grid, ϕ, DentonDensity(dipole_field, L, ϕ), dipole_field, Float64(L))
 
 
 ## Define the wave

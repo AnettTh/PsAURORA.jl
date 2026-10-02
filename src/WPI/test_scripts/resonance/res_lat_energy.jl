@@ -21,14 +21,12 @@ ax  = Axis(fig[1, 1];
 
 for (L, color) in zip(L_vals, colors)
     r0       = [L*RE, 0.0, 0.0]
-    λ_grid   = range(0.0, deg2rad(60), length=500)
 
     ## Define the plasma
-    R_max   = find_R_max(tsyganenko_field, L, 0.0, ϕ)
-    ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, tsyganenko_field, R_max)
-    plasma_L = PlasmaState(λ_grid, ϕ, ne_func, tsyganenko_field, Float64(L))
-    #plasma_L = PlasmaState(λ_grid, ϕ, denton_density_model, tsyganenko_field, L)
+    λ_grid   = range(0.0, deg2rad(60), length=500)
+    plasma_L = PlasmaState(λ_grid, ϕ, DentonDensity(tsyganenko_field, L, ϕ), tsyganenko_field, Float64(L))
 
+    ## Define the wave
     ω        = ω_frac * plasma_L.Ω_e[1]
 
     λ_res_grid = map(E_grid) do E

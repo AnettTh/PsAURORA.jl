@@ -17,14 +17,14 @@ Cold plasma parameters along a magnetic field line, as a function of magnetic la
 - `ω_lb`: Lower-band chorus wave frequency range [rad/s].
 - `ne_model`: Model used to make density distribution.
 """
-struct PlasmaState{F<:Function}
+struct PlasmaState{M}
     λ        :: Vector{Float64}
-    ϕ        :: Float64
     n_e      :: Vector{Float64}
     Ω_e      :: Vector{Float64}
     ω_pe     :: Vector{Float64}
     ω_lb     :: Vector{Float64}
-    ne_model :: F
+    ϕ        :: Float64
+    ne_model :: M
 end
 
 
@@ -75,10 +75,9 @@ some defined position- and magnetic field dependent density model.
 
 - Electron plasma frequency [rad/s].
 """
-function ωpe_at_λ(ne_model::Function, L, λ)#, ϕ, magnetic_field::Function)
+function ωpe_at_λ(ne_model::AbstractDensityModel, L, λ)
 
-    #R_max = find_R_max(magnetic_field, L, λ, ϕ)
-    ne = ne_model(L, λ) #, ϕ, magnetic_field, R_max)
+    ne = ne_model(L, λ)
 
     return @. sqrt(ne * qₑ^2 / (mₑ * ε₀))
 end
@@ -87,10 +86,9 @@ end
 """
     PlasmaState(
     λ_grid::AbstractVector,
-    ne_model::Function,
+    ne_model::AbstractDensityModel,
     magnetic_field::Function,
-    L,
-    ϕ;
+    L;
     lb_low=0.25,
     lb_high=0.5
 )
@@ -108,7 +106,6 @@ of Ω_e.
 - `ne_model`: Function for the position-dependent density model.
 - `magnetic_field`: Magnetic field function `f(L, λ)`.
 - `L`: L-shell number [RE].
-- `ϕ`: Longitude [rad].
 
 # Keyword Arguments
 
@@ -121,8 +118,8 @@ of Ω_e.
 """
 function PlasmaState(
     λ_grid::AbstractVector,
-    ϕ,
-    ne_model::Function,
+    ϕ::Float64,
+    ne_model::AbstractDensityModel,
     magnetic_field::Function,
     L;
     lb_low=0.25,
@@ -132,8 +129,7 @@ function PlasmaState(
     n_λ = length(λ_grid)
 
     # Electron plasma frequency
-    # R_max = find_R_max(magnetic_field, L, 0.0, ϕ)
-    n_e = ne_model.(L, λ_grid)#, ϕ, magnetic_field, R_max)
+    n_e = ne_model.(L, λ_grid)
     ω_pe = @. sqrt(n_e * qₑ^2 / (mₑ * ε₀))
 
     # Electron cyclotron frequency
@@ -143,5 +139,5 @@ function PlasmaState(
     Ω_eq = Ω_e[1]
     ω_lb = range(Ω_eq*lb_low, Ω_eq*lb_high, length=n_λ)
 
-    return PlasmaState(collect(λ_grid), ϕ, n_e, Ω_e, ω_pe, collect(ω_lb), ne_model)
+    return PlasmaState(collect(λ_grid), n_e, Ω_e, ω_pe, collect(ω_lb), ϕ, ne_model)
 end

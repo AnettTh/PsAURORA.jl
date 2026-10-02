@@ -13,17 +13,11 @@ r0 = [L*RE, 0.0, 0.0]
 
 particle = ParticleState(E, μ, r0, dipole_field)
 
-λ_grid = range(0.0, deg2rad(50), length=500)
-
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
+plasma = PlasmaState(λ_grid, ϕ, DentonDensity(dipole_field, L, ϕ), dipole_field, Float64(L))
 
-R_max   = find_R_max(dipole_field, L, 0.0, ϕ)
-ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max)
-plasma = PlasmaState(λ_grid, ϕ, ne_func, dipole_field, Float64(L))
-#plasma = PlasmaState(λ_grid, ϕ, denton_density_model, dipole_field, L)
-
-# find and plot resonance
+## find and plot resonance
 ns = [-1, 0, 1, 2]
 ω_grid = range(plasma.Ω_e[1]*0.1, plasma.Ω_e[1]*0.5, length=500)
 

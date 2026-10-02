@@ -1,18 +1,38 @@
+using AURORA
+
+##
 abstract type AbstractDensityModel end
 
 struct ConstantDensity <: AbstractDensityModel
-    n_e :: Float
+    n_e :: Float64
 end
 
 struct DentonDensity <: AbstractDensityModel
+    R_max :: Float64
+    ϕ     :: Float64
+end
 
+# Constructors for Denton density model
+function DentonDensity(magnetic_field, L, ϕ)
+    R_max = find_R_max(magnetic_field, Float64(L), 0.0, ϕ)
+    return DentonDensity(R_max, ϕ)
+end
+
+function DentonDensity(::typeof(dipole_field), L, ϕ)
+    R_max = Float64(L) * RE
+    return DentonDensity(R_max, ϕ)
 end
 
 
-function electron_density(model::ConstantDensity, L, λ, magnetic_field)
+# Evaluate the methods
+function electron_density(model::ConstantDensity, L, λ)
     return model.n_e
 end
 
-function electron_density(model::DentonDensity, L, λ, magnetic_field)
-
+function electron_density(model::DentonDensity, L, λ)
+    return denton_density_model(L, λ, model.ϕ, model.R_max)
 end
+
+# Make both callable as functions
+(model::ConstantDensity)(L, λ) = electron_density(model, L, λ)
+(model::DentonDensity)(L, λ) = electron_density(model, L, λ)

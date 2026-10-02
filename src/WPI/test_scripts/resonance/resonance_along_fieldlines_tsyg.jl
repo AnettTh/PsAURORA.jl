@@ -36,13 +36,9 @@ field_line_data = map(L_vals) do L
     r0 = [RE*L * cos(ϕ), RE*L * sin(ϕ), 0.0]
     particle = ParticleState(E_eV, μ, r0, tsyganenko_field; relativistic=true)
 
-    ## Define the plasma
-    R_max   = find_R_max(tsyganenko_field, Float64(L), 0.0, ϕ)
-    ne_func = (l, λ) -> denton_density_model(l, λ, ϕ, tsyganenko_field, R_max)
-
     ## Trace field line from starting point
-    xs_f, ys_f, zs_f, _ = trace_with_density(tsyganenko_field, ne_func, r0...; ds= RE*0.02)
-    xs_b, ys_b, zs_b, _ = trace_with_density(tsyganenko_field, ne_func, r0...; ds=-RE*0.02)
+    xs_f, ys_f, zs_f, _ = trace_with_density(tsyganenko_field, DentonDensity(tsyganenko_field, L, ϕ), r0...; ds= RE*0.02)
+    xs_b, ys_b, zs_b, _ = trace_with_density(tsyganenko_field, DentonDensity(tsyganenko_field, L, ϕ), r0...; ds=-RE*0.02)
 
     xs = [reverse(xs_b); xs_f[2:end]]
     ys = [reverse(ys_b); ys_f[2:end]]
@@ -57,7 +53,7 @@ field_line_data = map(L_vals) do L
     λ_grid_L = λs
 
     ## Construct PlasmaState on traced field line
-    plasma_L = PlasmaState(λ_grid_L, ϕ, ne_func, tsyganenko_field, Float64(L))
+    plasma_L = PlasmaState(λ_grid_L, ϕ, DentonDensity(tsyganenko_field, L, ϕ), tsyganenko_field, Float64(L))
 
     ω = ω_frac * plasma_L.Ω_e[1]
 

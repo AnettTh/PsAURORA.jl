@@ -8,23 +8,20 @@ using CairoMakie
 L = 6.0
 ϕ = 0.0
 r0 = [L*RE, 0.0, 0.0]
+#magnetic_field = dipole_field
+magnetic_field = tsyganenko_field
 
 E_grid = range(1e3, 40e3, length=100)
 
-p_relativistic = [ParticleState(E, μ, r0, dipole_field; relativistic=true) for E in E_grid]
-p_classical = [ParticleState(E, μ, r0, dipole_field; relativistic=false) for E in E_grid]
+p_relativistic = [ParticleState(E, μ, r0, magnetic_field; relativistic=true) for E in E_grid]
+p_classical = [ParticleState(E, μ, r0, magnetic_field; relativistic=false) for E in E_grid]
 
-# Define the plasma
+## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
-
-R_max   = find_R_max(dipole_field, L, 0.0, ϕ)
-ne_func = (L, λ) -> denton_density_model(L, λ, ϕ, dipole_field, R_max)
-
-plasma = PlasmaState(λ_grid, ϕ, ne_func, dipole_field, Float64(L))
-#plasma = PlasmaState(λ_grid, ϕ, denton_density_model, dipole_field, L)
+plasma = PlasmaState(λ_grid, ϕ, DentonDensity(magnetic_field, L, ϕ), magnetic_field, Float64(L))
 
 
-# Define the wave
+## Define the wave
 ωs = range(plasma.Ω_e[1]*0.1, plasma.Ω_e[1]*0.4, length=5)
 
 ## Calculate TOF
@@ -52,14 +49,14 @@ fig = Figure(size=(1400, 500))
 ax1 = Axis(fig[1, 1],
     xlabel = "time-of-flight [s]",
     ylabel = "E [keV]",
-    title  = "Field-independent (α=$(round(rad2deg(acos(abs(μ)))))°)"
+    title  = "Tsyganenko model: Field-independent (α=$(round(rad2deg(acos(abs(μ)))))°)"
 )
 
 # Panel 2: Field-dependent mode, both classical and relativistic
 ax2 = Axis(fig[1, 2],
     xlabel = "time-of-flight [s]",
     ylabel = "E [keV]",
-    title  = "Field-dependent (α=$(round(rad2deg(acos(abs(μ)))))°)"
+    title  = "Tsyganenko model: Field-dependent (α=$(round(rad2deg(acos(abs(μ)))))°)"
 )
 
 colors = [:blue, :red, :green, :orange, :purple]  # one per ω
@@ -86,4 +83,5 @@ lines!(ax2, [NaN], [NaN]; color=:black, linestyle=:dash,  label="Relativistic")
 Legend(fig[1, 3], ax2)
 
 ##
-save("src/WPI/test_scripts/gamma/rel_vs_classic.png", fig)
+#save("src/WPI/test_scripts/gamma/rel_vs_classic.png", fig)
+save("src/WPI/test_scripts/gamma/tsyg_rel_vs_classic.png", fig)

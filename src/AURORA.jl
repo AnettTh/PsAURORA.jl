@@ -55,6 +55,8 @@ export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
 include("WPI/denton_density.jl")
 export ne_denton, denton_density_model
+include("WPI/density_model.jl")
+export AbstractDensityModel, ConstantDensity, DentonDensity, electron_density
 
 include("WPI/analytical_results.jl")
 export minimal_resonance_energy
