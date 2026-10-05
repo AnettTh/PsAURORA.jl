@@ -1,6 +1,6 @@
 using AURORA
 
-##
+## TODO: Look into returning  magnetic_field and ϕ also from this, to avoid pushing it twice!
 abstract type AbstractDensityModel end
 
 struct ConstantDensity <: AbstractDensityModel

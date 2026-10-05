@@ -1,4 +1,5 @@
 using AURORA
+using ProgressMeter
 
 """
 
@@ -24,63 +25,65 @@ Simulate the trajectory of a charged particle using the Boris mover.
 A named tuple containing `position`, `velocity`, `time` and `footpoint`
 """
 function boris_mover(
-    magnetic_field::AbstractMagneticField,
-    wave::AbstractWave,
-    particle::AbstractParticle,
-    n_T::Int,
-    r0,
-    v0,
-    q,
-    m;
-    resolution::Int=10
+    particle::ParticleState; #,
+    # plasma::PlasmaState,
+    #wave::AbstractWave;
+    n_T::Int=100_000,
+    resolution::Int=10,
+    store_trajectory::Bool=false
 )
 
     n_T > 0 || throw(ArgumentError("n_T must be positive"))
     resolution > 0 || throw(ArgumentError("resolution must be positive"))
-    m != 0 || throw(ArgumentError("particle mass must be nonzero"))
+    #mₑ != 0 || throw(ArgumentError("particle mass must be nonzero"))
 
     # Define where the particle has hit the ionosphere
     r_ionosphere = RE + z_ionosphere
-    #footpoint = nothing
 
     # Find total number of steps reqired
     steps = Int(n_T * resolution)
 
-    # Find initial E-field, B-field and gyroperiod
-    #E0 = electric_field(r0...)
-    #B0 = magnetic_field(r0...)
-    #ω_g0 = gyro_frequency(B0, q, m)
-    #T_g0 = 2π / ω_g0
+    # Find initial E-field, B-field and gyroperiods
+    E0 = [0.0, 0.0, 0.0]
+    #B0 = particle.magnetic_field(particle.r0...)
+    #Ω_e0 = Ω_e[0]
+    #T0 = 2π / ω_g0
 
     # Make time-range based on resolution (samples per gyroperiod)
     #dt = T_g0 / resolution
 
-    r_array = zeros(steps + 1, 3)
-    v_array = zeros(steps + 1, 3)
-    t_array = zeros(steps + 1)
+    if store_trajectory
+        r_array = zeros(steps + 1, 3)
+        v_array = zeros(steps + 1, 3)
+        t_array = zeros(steps + 1)
+    end
 
     # Initial values
-    x, y, z = r0
-    vx, vy, vz = v0
+    x, y, z = particle.r0
+    vx, vy, vz = particle.v0
     t_current = 0.0
 
-    r_array[1, :] .= (x, y, z)
-    v_array[1, :] .= (vx, vy, vz)
-    t_array[1] = t_current
+    if store_trajectory
+        r_array[1, :] .= (x, y, z)
+        v_array[1, :] .= (vx, vy, vz)
+        t_array[1] = t_current
+    end
 
     # Update particle
     for i in 2:(steps + 1)
-        Bx, By, Bz = magnetic_field(x, y, z)
-        Ex, Ey, Ez = electric_field(x, y, z)
+        # TODO: Is it as simple as adding some function for δB and δE here?
+        Bx, By, Bz = particle.magnetic_field(Cartesian(x, y, z)) #.+ wave.δB
+        Ex, Ey, Ez = E0 #+ wave.δE
 
-        ω_g = gyro_frequency([Bx, By, Bz], q, m)
-        T_g = 2π / ω_g
+        # Define cyclotron frequency and period for timestep
+        Ω_e = (norm([Bx, By, Bz]) * abs(qₑ)) / mₑ
+        T = 2π / Ω_e
 
         # Define adaptive timestep
-        dt = T_g / resolution
+        dt = T / resolution
 
         # Half electric acceleration
-        q_prime = dt * q / 2m
+        q_prime = dt * qₑ / 2mₑ
 
         #-----------Core Boris-scheme-----------
 
@@ -118,20 +121,29 @@ function boris_mover(
         # Update stored values with current values
         t_current += dt
 
-        r_array[i, :] .= (x, y, z)
-        v_array[i, :] .= (vx, vy, vz)
-        t_array[i] = t_current
+        if store_trajectory
+            r_array[i, :] .= (x, y, z)
+            v_array[i, :] .= (vx, vy, vz)
+            t_array[i] = t_current
+        end
 
-        if stop_at_ionosphere && x^2 + y^2 + z^2 ≤ r_ionosphere^2
-
-            return (
-                position=r_array[1:i, :],
-                velocity=v_array[1:i, :],
-                time=t_array[1:i],
-                footpoint=(x, y, z)
-            )
+        if x^2 + y^2 + z^2 ≤ r_ionosphere^2
+            if store_trajectory
+                return (
+                    position=r_array[1:i, :],
+                    velocity=v_array[1:i, :],
+                    time=t_array[1:i],
+                    footpoint=(x, y, z)
+                )
+            else
+                return (time=t_current, footpoint=(x, y, z))
+            end
         end
     end
 
-    return (position = r_array, velocity = v_array, time = t_array, footpoint = nothing)
+    if store_trajectory
+        return (position=r_array, velocity=v_array, time=t_array, footpoint=nothing)
+    else
+        return (time=t_current, footpoint=nothing)
+    end
 end

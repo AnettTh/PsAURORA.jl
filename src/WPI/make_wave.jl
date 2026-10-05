@@ -39,21 +39,16 @@ end
 
 
 struct DemekhovWave <: AbstractWave
-    ω0         :: Float64   # Start frequency [rad/s]
-    ω1         :: Float64   # End frequency [rad/s]
-    t_duration :: Float64   # Duration of chirp [s]
-    θ          :: Float64   # Wave normal angle [rad]
-    A_Bw       :: Float64   # Wave magnetic amplitude [T]
-    Ω2         :: Float64   # Trapping frequency [rad/s]
-    k          :: Float64   # Wave number
-    v_perp     :: Float64   # Perpendicular velocity
-    E_field    :: Any       # PLACEHOLDER
-    B_field    :: Any       # PLACEHOLDER
+    plasma     :: PlasmaState   # Holding the plasma parameters
+    t_duration :: Float64       # Duration of chirp [s]
+    θ          :: Float64       # Wave normal angle [rad]
+    A_Bw       :: Float64       # Wave magnetic amplitude [T]
+    E_field    :: Any           # PLACEHOLDER
+    B_field    :: Any           # PLACEHOLDER
 end
 
-function DemekhovWave(ω0, ω1, t_duration, θ, A_Bw, k, v_perp)
-    Ω2 = qₑ * k * v_perp * A_Bw / mₑ    # TODO: Need to make k(z) and v_perp(z)!!
-    return DemekhovWave(ω0, ω1, t_duration, θ, A_Bw, Ω2, k, v_perp,
+function DemekhovWave(plasma::PlasmaState, t_duration, θ, A_Bw)
+    return DemekhovWave(plasma, t_duration, θ, A_Bw,
         (x, y, z) -> zeros(3),      # PLACEHOLDER
         (x, y, z) -> zeros(3))      # PLACEHOLDER
 end
@@ -69,6 +64,12 @@ function wave_frequency(wave::ChirpWave, t)
 end
 
 function wave_frequency(wave::DemekhovWave, t)
-    frequency_drift_rate = wave.Ω2 / 2π
-    return clamp(wave.ω0 + frequency_drift_rate * t, wave.ω0, wave.ω1)
+    # TODO: This is now frequency as a function of time at one location, need time as a function of frequency
+    ω0 = wave.plasma.ω_lb[1]
+    k = dispersion_relation_whistler_branch(ω0, wave.θ, wave.plasma.ω_pe[1], wave.plasma.Ω_e[1])
+    v_g = group_velocity_whistler_wave(ω0, wave.plasma.Ω_e[1], wave.plasma.ω_pe[1])
+
+    frequency_drift_rate = (qₑ * k * v_g * wave.A_Bw) / (2π * mₑ)
+
+    return clamp(ω0 + frequency_drift_rate * t, ω0, wave.plasma.ω_lb[end])
 end

@@ -68,17 +68,22 @@ export Ωe_at_λ, ωpe_at_λ, PlasmaState
 include("WPI/make_particle.jl")
 export ParticleState
 include("WPI/make_wave.jl")
-export AbstractWave, ChirpWave, wave_frequency, MonochromaticWave
+export AbstractWave, ChirpWave, MonochromaticWave, DemekhovWave
+export wave_frequency
 
 include("WPI/boris_mover.jl")
 export boris_mover_TOF
 include("WPI/time_of_flight.jl")
 export time_of_flight
+include("WPI/dispersion.jl")
+export dispersion_relation_whistler_branch, group_velocity_whistler_wave
 include("WPI/WPI_dynamics.jl")
-export dispersion_relation_whistler_branch, wave_transit, particle_transit, WPI_TOF
+export  wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
-export group_velocity_whistler_wave
+
+include("WPI/particle_tracer.jl")
+export boris_mover
 
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid

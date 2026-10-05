@@ -2,6 +2,7 @@ using AURORA
 using CairoMakie
 using Profile
 using ProgressMeter
+using JLD2
 
 
 ## Define magnetic field
@@ -56,6 +57,8 @@ end
 #@profview for _ in 1:10
 #    WPI_TOF(ωs_tsyg[1], particle_tsyg[1], plasma_tsyg; field_dependent=true, wave_launch_time=wave_chirp)
 #end
+
+@save "src/WPI/data/TOF_results.jld2" TOF_dipole TOF_tsyg E_grid ωs_dipole ωs_tsyg
 
 
 ## Make Figure

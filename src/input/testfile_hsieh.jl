@@ -14,8 +14,8 @@ V_t_perp = 0.1 * c₀
 β = 0.3
 
 ##
-K_grid = range(1e3 * eV_in_J, 300e3 * eV_in_J, length=300)  # [J]
-α_grid = range(1e-3, π/2, length=300)                          # [rad], avoid 0
+K_grid = range(1e3 * eV_in_J, 30e3 * eV_in_J, length=300)  # [J]
+α_grid = range(1e-3, deg2rad(90), length=300)                          # [rad], avoid 0
 
 K_2d = K_grid'              # 1 × n_K
 α_2d = collect(α_grid)      # n_α × 1
@@ -36,14 +36,14 @@ ax  = Axis(fig[1, 1];
     title  = "Hsieh 2022 F_EQ(K, α)"
 )
 
-hm2 = heatmap!(ax,
+hm = heatmap!(ax,
     collect(K_grid) ./ eV_in_J ./ 1e3,
     rad2deg.(α_grid),
-    F_Kα_log;
+    F_Kα_log';
     colormap   = :inferno,
     colorrange = clims
 )
 
-Colorbar(fig[1, 2], hm2; label="log₁₀(F_EQ)", tellheight=false)
-ylims!(0, 15)
+Colorbar(fig[1, 2], hm; label="log₁₀(F_EQ)", tellheight=false)
+#ylims!(0, 15)
 fig

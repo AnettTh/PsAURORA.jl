@@ -26,6 +26,22 @@ struct Spherical
 end
 
 
+function Spherical(r::Cartesian)
+    r_mag = norm(r)
+    λ     = asin(r.z / r_mag)
+    ϕ     = atan(r.y, r.x)
+    L     = r_mag / (RE * cos(λ)^2)
+    return Spherical(L, λ, ϕ)
+end
+
+function Cartesian(r::Spherical)
+    r_mag = r.L * RE * cos(r.λ)^2
+    x     = r_mag * cos(r.λ) * cos(r.ϕ)
+    y     = r_mag * cos(r.λ) * sin(r.ϕ)
+    z     = r_mag * sin(r.λ)
+    return Cartesian(x, y, z)
+end
+
 # Abstract magnetic field type
 abstract type AbstractMagneticField end
 

@@ -34,6 +34,7 @@ struct ParticleState{F}
     μ              :: Float64
     α0             :: Float64
     r0             :: SVector{3, Float64}   # TODO: Change this to Cartesian, and maybe add Spherical?
+    v0             :: SVector{3, Float64}
     B0             :: SVector{3, Float64}
     b̂              :: SVector{3, Float64}
     L              :: Float64
@@ -41,7 +42,7 @@ struct ParticleState{F}
     α_eq           :: Float64
     α_lc           :: Float64
     λ_ionosphere   :: Float64
-    magnetic_field :: F
+    magnetic_field :: F             # TODO: See if this can be done without storing the magnetic field here also
     γ              :: Float64
     ϕ              :: Float64
 end
@@ -71,7 +72,7 @@ position `r0` is used to determine the L-shell and all latitude-dependent quanti
 
 - A fully initialized `ParticleState`.
 """
-function ParticleState(E_eV, μ, r0::Cartesian, magnetic_field::AbstractMagneticField; relativistic::Bool=false)
+function ParticleState(E_eV, μ, r0::Cartesian, magnetic_field::AbstractMagneticField; relativistic::Bool=false, φ=deg2rad(0.0))
 
     # Check validity of initial position
     r_mag = norm((r0.x, r0.y, r0.z))
@@ -87,7 +88,16 @@ function ParticleState(E_eV, μ, r0::Cartesian, magnetic_field::AbstractMagnetic
 
     # Specify magnetic field
     B0 = magnetic_field(r0)
-    b̂, _, _, _ = magnetic_basis(B0)
+    b̂, e1, e2, _ = magnetic_basis(B0)
+
+    # Find initial velocity
+    v_par = v * μ
+    v_perp = v * sqrt(max(1 - γ^2, 0.0))
+    v0 = SVector{3}(        # TODO: This has some issue, figure out what sqrt of negative number
+        v_par .* b̂ .+
+        v_perp .* cos(φ) .* e1 .+
+        v_perp .* sin(φ) .* e2
+    )
 
     # Latitude of initial position and L-shell
     λ0 = asin(r0.z / r_mag)
@@ -119,6 +129,7 @@ function ParticleState(E_eV, μ, r0::Cartesian, magnetic_field::AbstractMagnetic
         μ,
         α0,
         SVector(r0.x, r0.y, r0.z),
+        v0,
         SVector{3}(B0),
         SVector{3}(b̂),
         L,

@@ -24,7 +24,7 @@ struct PlasmaState{M}
     ω_pe     :: Vector{Float64}
     ω_lb     :: Vector{Float64}
     ϕ        :: Float64
-    ne_model :: M
+    ne_model :: M                   # TODO: Check if it is clever to store this here
 end
 
 # TODO: change to take Spherical instead?
@@ -95,6 +95,7 @@ of Ω_e.
 # Arguments
 
 - `λ_grid`: Magnetic latitude grid [rad].
+- `ϕ`: Longitude [rad].
 - `ne_model`: Function for the position-dependent density model.
 - `magnetic_field`: Magnetic field function `f(L, λ)`.
 - `L`: L-shell number [RE].
