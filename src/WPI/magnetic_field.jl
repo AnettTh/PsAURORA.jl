@@ -156,8 +156,8 @@ function tsyganenko_field(
     time="2020-01-01T00:01:40",
     pdyn=2.0,
     dst=-87.0,
-    byimf=2.0,
-    bzimf=-5.0,
+    byimf=1.0,
+    bzimf=2.0,
     ps=-0.533585131,
     component="both",
 )
@@ -193,8 +193,8 @@ function tsyganenko_field(
     time="2020-01-01T00:01:40",
     pdyn=2.0,
     dst=-87.0,
-    byimf=2.0,
-    bzimf=-5.0,
+    byimf=1.0,
+    bzimf=2.0,
     ps=-0.533585131,
     component="both",
 )
@@ -220,8 +220,8 @@ function tsyganenko_field_spherical(
     time="2020-01-01T00:01:40",
     pdyn=2.0,
     dst=-87.0,
-    byimf=2.0,
-    bzimf=-5.0,
+    byimf=1.0,
+    bzimf=2.0,     # TODO: set to positive
     ps=-0.533585131,
     component="both"
 )

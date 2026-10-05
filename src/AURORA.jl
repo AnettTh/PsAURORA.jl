@@ -62,7 +62,7 @@ export minimal_resonance_energy
 
 include("WPI/make_magnetic_field.jl")
 export DipoleMagneticField, TsyganenkoMagneticField
-export Cartesian, Spherical
+export Cartesian, Spherical, AbstractMagneticField
 include("WPI/make_plasma.jl")
 export Ωe_at_λ, ωpe_at_λ, PlasmaState
 include("WPI/make_particle.jl")

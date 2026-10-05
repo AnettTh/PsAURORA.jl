@@ -36,7 +36,7 @@ ax  = Axis(fig[1, 1];
     title  = "Hsieh 2022 F_EQ(K, α)"
 )
 
-hm = heatmap!(ax,
+hm2 = heatmap!(ax,
     collect(K_grid) ./ eV_in_J ./ 1e3,
     rad2deg.(α_grid),
     F_Kα_log;

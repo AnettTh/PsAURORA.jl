@@ -5,13 +5,13 @@ using ProgressMeter
 
 
 ## Define magnetic field
-ϕ = 0.0
+ϕ = deg2rad(120.0)
 dipole = DipoleMagneticField()
 tsyganenko = TsyganenkoMagneticField(ϕ)
 
 ## Define the particles
-μ = -cos(deg2rad(3))       # Almost field-aligned
-L = 6.0
+μ = -cos(deg2rad(2))       # Almost field-aligned
+L = 6.5
 r0 = Cartesian(L*RE, 0.0, 0.0)
 
 E_grid = range(1e3, 40e3, length=100)
@@ -64,7 +64,8 @@ ax = Axis(
     fig[1,1],
     xlabel="time-of-flight [s]",
     ylabel="E [keV]",
-    title="Pitch-angle $(round(rad2deg(acos(abs(μ)))))",
+    title="Energy as a function of `time-of-flight`, "
+    * "α = $(round(rad2deg(acos(abs(μ))), digits=1)), ϕ = $(round(rad2deg(ϕ), digits = 1))",
     #yscale=log10
 )
 
@@ -102,3 +103,4 @@ Legend(fig[1,2], ax)
 #ylims!(ax, 100, 1000)
 
 #save("src/WPI/test_scripts/energies/tsyg_tof.png", fig)
+#save("src/WPI/test_scripts/energies/tsyg_tof_ϕ_$(round(rad2deg(ϕ), digits = 0)).png", fig)

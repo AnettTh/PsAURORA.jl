@@ -2,18 +2,17 @@ using AURORA
 using AURORA; c₀
 using CairoMakie
 
-
+# TODO: Figure out if the 'kink' in the tsyganenko-run is real or some mistake somewhere
 ## Define magnetic field
-ϕ = 0.0
-magnetic_field = DipoleMagneticField()
+ϕ = 120.0
+magnetic_field = TsyganenkoMagneticField(ϕ)
 
 ## Define the particle
-μ = -cos(deg2rad(3))       # Almost field-aligned
+μ = -cos(deg2rad(1))       # Almost field-aligned
 L = 6.0
-ϕ = 0.0
 r0 = Cartesian(L*RE, 0.0, 0.0)
 
-E = 3e4
+E = 30e3
 particle = ParticleState(E, μ, r0, magnetic_field; relativistic=true)
 
 ## Define the plasma
@@ -39,4 +38,4 @@ lines!(ax, (ω_grid.*2π) ./ 1e3, TOF_simple; linestyle=:solid,  label="Field-in
 axislegend(ax, position=:rb)
 
 ##
-#save("src/WPI/test_scripts/frequencies/several_omega_$(round(rad2deg(acos(abs(μ))))).png", fig)
+#save("src/WPI/test_scripts/frequencies/tsyg_several_omega_$(round(rad2deg(acos(abs(μ))))).png", fig)

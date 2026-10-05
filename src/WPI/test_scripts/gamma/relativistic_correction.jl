@@ -4,11 +4,11 @@ using CairoMakie
 
 
 ## Make magnetic field
-ϕ = 0.0
+ϕ = deg2rad(120.0)
 magnetic_field = TsyganenkoMagneticField(ϕ)
 
 ## Define the particles
-μ = -cos(deg2rad(3))       # Almost field-aligned
+μ = -cos(deg2rad(2))       # Almost field-aligned
 L = 6.0
 r0 = Cartesian(L*RE, 0.0, 0.0)
 
@@ -45,19 +45,26 @@ end
 
 ##
 fig = Figure(size=(1400, 500))
+Label(fig[0, 1:2],
+    "Energy as a function of `time-of-flight`,  " *
+    "α=$(round(rad2deg(acos(abs(μ))), digits=1))°, ϕ=$(round(rad2deg(ϕ), digits=1))°";
+    fontsize=16,
+    font=:bold,
+    tellwidth=false,
+    halign=:center)
 
 # Panel 1: Simple mode (field-independent), both classical and relativistic
 ax1 = Axis(fig[1, 1],
     xlabel = "time-of-flight [s]",
     ylabel = "E [keV]",
-    title  = "Tsyganenko model: Field-independent (α=$(round(rad2deg(acos(abs(μ)))))°)"
+    title  = "Field-independent"
 )
 
 # Panel 2: Field-dependent mode, both classical and relativistic
 ax2 = Axis(fig[1, 2],
     xlabel = "time-of-flight [s]",
     ylabel = "E [keV]",
-    title  = "Tsyganenko model: Field-dependent (α=$(round(rad2deg(acos(abs(μ)))))°)"
+    title  = "Field-dependent"
 )
 
 colors = [:blue, :red, :green, :orange, :purple]  # one per ω
@@ -86,3 +93,4 @@ Legend(fig[1, 3], ax2)
 ##
 #save("src/WPI/test_scripts/gamma/rel_vs_classic.png", fig)
 #save("src/WPI/test_scripts/gamma/tsyg_rel_vs_classic.png", fig)
+#save("src/WPI/test_scripts/gamma/tsyg_rel_vs_classic_MLT4.png", fig)

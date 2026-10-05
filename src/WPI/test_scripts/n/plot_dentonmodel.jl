@@ -3,15 +3,15 @@ using CairoMakie
 
 ##
 L_vals = [3, 4, 5, 6, 7, 8]
-ϕ = 0.0
-magnetic_field = DipoleMagneticField()
+ϕ = deg2rad(120.0)
+magnetic_field = TsyganenkoMagneticField(ϕ)
 colors = [:blue, :red, :green, :orange, :purple, :brown]
 
 fig = Figure()
 ax  = Axis(fig[1, 1];
     xlabel = "R [RE]",
     ylabel = "nₑ [m⁻³]",
-    title  = "Electron density vs radial distance",
+    title  = "Electron density vs radial distance for Tsyganenko field",
     yscale = log10
 )
 
@@ -28,7 +28,7 @@ for (L, color) in zip(L_vals, colors)
 end
 
 axislegend(ax, position=:rt)
-#save("src/WPI/diagnostic_figures/simple_denton_density.png", fig)
+save("src/WPI/diagnostic_figures/simple_denton_density_tsyg.png", fig)
 
 
 ##

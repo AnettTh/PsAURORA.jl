@@ -3,8 +3,8 @@ using AURORA; c₀
 using CairoMakie
 
 ## Make magnetic field
-ϕ = 0.0
-magnetic_field = DipoleMagneticField()
+ϕ = 120.0
+magnetic_field = TsyganenkoMagneticField(ϕ)
 
 ## Define the particles
 μ = -cos(deg2rad(3))       # Almost field-aligned

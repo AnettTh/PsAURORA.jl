@@ -78,5 +78,90 @@ Colorbar(fig[1, 2];
     tellheight = false
 )
 
-##
-xlims!(ax, 0, -7)
+
+# TODO: Verify this!
+## Magnetic field model
+ϕ_MLT  = deg2rad(120.0)   # 4 MLT
+B_tsyg = TsyganenkoMagneticField(ϕ_MLT)
+
+## Seed points at equator for different L-shells
+L_vals = range(2, 8, length=7)
+
+## Trace field lines in 3D, project onto meridional plane
+function trace_fieldline(B_model::AbstractMagneticField, x0, y0, z0;
+                          ds=RE*0.05, n_steps=500)
+    xs, ys, zs = [x0], [y0], [z0]
+    Bs = Float64[]
+
+    x, y, z = x0, y0, z0
+    for _ in 1:n_steps
+        B    = B_model(Cartesian(x, y, z))
+        Bmag = norm(B)
+        push!(Bs, Bmag)
+        iszero(Bmag) && break
+        Bx, By, Bz = B ./ Bmag
+        x += ds * Bx
+        y += ds * By
+        z += ds * Bz
+        push!(xs, x); push!(ys, y); push!(zs, z)
+        norm([x, y, z]) < RE       && break
+        norm([x, y, z]) > 10 * RE  && break
+    end
+    push!(Bs, Bs[end])
+
+    # Project onto meridional plane
+    r_perp = @. -sqrt(xs^2 + ys^2) / RE   # negative = nightside
+    z_plot = zs ./ RE
+    return r_perp, z_plot, Bs
+end
+
+## Collect field line data
+fieldline_data = map(L_vals) do L
+    x0 = L * RE * cos(ϕ_MLT)
+    y0 = L * RE * sin(ϕ_MLT)
+    z0 = 0.0
+
+    rp_f, zp_f, Bs_f = trace_fieldline(B_tsyg, x0, y0, z0; ds= RE*0.05)
+    rp_b, zp_b, Bs_b = trace_fieldline(B_tsyg, x0, y0, z0; ds=-RE*0.05)
+
+    r_perp = [reverse(rp_b); rp_f[2:end]]
+    z_plot = [reverse(zp_b); zp_f[2:end]]
+    Bs     = [reverse(Bs_b); Bs_f[2:end]]
+    return (; r_perp, z_plot, Bs)
+end
+
+## Colorrange
+all_Bs = vcat([log10.(d.Bs) for d in fieldline_data]...)
+clims  = extrema(filter(isfinite, all_Bs))
+
+## Plot
+fig = Figure(size=(700, 500))
+ax  = Axis(fig[1, 1];
+    xlabel = "R_⊥ [RE]",
+    ylabel = "Z [RE]",
+    title  = "Tsyganenko field lines — 4 MLT",
+    aspect = DataAspect()
+)
+
+# Earth
+θ = range(0, 2π, length=100)
+poly!(ax, Point2f.(cos.(θ), sin.(θ)); color=:black, strokecolor=:black, strokewidth=1)
+
+# Field lines
+for d in fieldline_data
+    lines!(ax, d.r_perp, d.z_plot;
+        color      = log10.(d.Bs),
+        colormap   = :turbo,
+        colorrange = clims,
+        linewidth  = 2
+    )
+end
+
+Colorbar(fig[1, 2];
+    colormap   = :turbo,
+    limits     = clims,
+    label      = "log₁₀(|B|) [T]",
+    tellheight = false
+)
+
+xlims!(ax, 0, -9)

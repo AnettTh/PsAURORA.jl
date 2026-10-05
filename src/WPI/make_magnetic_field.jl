@@ -54,8 +54,8 @@ function TsyganenkoMagneticField(ϕ;
     time      = DateTime("2020-01-01T00:01:40"),
     pdyn      = 2.0,
     dst       = -87.0,
-    byimf     = 2.0,
-    bzimf     = -5.0,
+    byimf     = 1.0,
+    bzimf     = 2.0,
     ps        = -0.533585131,
     component = "both"
 )
