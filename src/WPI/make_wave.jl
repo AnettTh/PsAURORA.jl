@@ -22,20 +22,53 @@ function MonochromaticWave(ω, θ, Bw=0.0)
 end
 
 struct ChirpWave <: AbstractWave
-    ω0      :: Float64   # Start frequency [rad/s]
-    ω1      :: Float64   # End frequency [rad/s]
-    t       :: Float64   # Duration of chirp [s]
-    θ       :: Float64   # Wave normal angle [rad]
-    Bw      :: Float64   # Wave magnetic amplitude [T]
-    E_field :: Any       # PLACEHOLDER
-    B_field :: Any       # PLACEHOLDER
+    ω0         :: Float64   # Start frequency [rad/s]
+    ω1         :: Float64   # End frequency [rad/s]
+    t_duration :: Float64   # Duration of chirp [s]
+    θ          :: Float64   # Wave normal angle [rad]
+    A_Bw       :: Float64   # Wave magnetic amplitude [T]
+    E_field    :: Any       # PLACEHOLDER
+    B_field    :: Any       # PLACEHOLDER
 end
 
-function ChirpWave(ω0, ω1, t, θ, Bw)
-    return ChirpWave(ω0, ω1, t, θ, Bw, (x, y, z) -> zeros(3), (x, y, z) -> zeros(3))
+function ChirpWave(ω0, ω1, t_duration, θ, A_Bw)
+    return ChirpWave(ω0, ω1, t_duration, θ, A_Bw,
+        (x, y, z) -> zeros(3),      # PLACEHOLDER
+        (x, y, z) -> zeros(3))      # PLACEHOLDER
+end
+
+
+struct DemekhovWave <: AbstractWave
+    ω0         :: Float64   # Start frequency [rad/s]
+    ω1         :: Float64   # End frequency [rad/s]
+    t_duration :: Float64   # Duration of chirp [s]
+    θ          :: Float64   # Wave normal angle [rad]
+    A_Bw       :: Float64   # Wave magnetic amplitude [T]
+    Ω2         :: Float64   # Trapping frequency [rad/s]
+    k          :: Float64   # Wave number
+    v_perp     :: Float64   # Perpendicular velocity
+    E_field    :: Any       # PLACEHOLDER
+    B_field    :: Any       # PLACEHOLDER
+end
+
+function DemekhovWave(ω0, ω1, t_duration, θ, A_Bw, k, v_perp)
+    Ω2 = qₑ * k * v_perp * A_Bw / mₑ    # TODO: Need to make k(z) and v_perp(z)!!
+    return DemekhovWave(ω0, ω1, t_duration, θ, A_Bw, Ω2, k, v_perp,
+        (x, y, z) -> zeros(3),      # PLACEHOLDER
+        (x, y, z) -> zeros(3))      # PLACEHOLDER
+end
+
+function wave_frequency(wave::MonochromaticWave, t)
+    frequency_drift_rate = 0
+    return wave.ω + frequency_drift_rate * t
 end
 
 function wave_frequency(wave::ChirpWave, t)
-    chirp_rate = (wave.ω1 - wave.ω1) / wave.t
-    return wave.ω0 + chirp_rate * t
+    frequency_drift_rate = (wave.ω1 - wave.ω0) / wave.t_duration
+    return clamp(wave.ω0 + frequency_drift_rate * t, wave.ω0, wave.ω1)
+end
+
+function wave_frequency(wave::DemekhovWave, t)
+    frequency_drift_rate = wave.Ω2 / 2π
+    return clamp(wave.ω0 + frequency_drift_rate * t, wave.ω0, wave.ω1)
 end

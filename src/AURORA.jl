@@ -68,6 +68,7 @@ export Ωe_at_λ, ωpe_at_λ, PlasmaState
 include("WPI/make_particle.jl")
 export ParticleState
 include("WPI/make_wave.jl")
+export AbstractWave, ChirpWave, wave_frequency, MonochromaticWave
 
 include("WPI/boris_mover.jl")
 export boris_mover_TOF
