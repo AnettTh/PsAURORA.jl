@@ -14,7 +14,7 @@ end
 
 # Constructors for Denton density model
 function DentonDensity(magnetic_field, L, ϕ)
-    R_max = find_R_max(magnetic_field, Float64(L), 0.0, ϕ)
+    R_max = find_R_max(magnetic_field, Float64(L), 0.0, ϕ)      # NOTE: should this be ϕ_eq?
     return DentonDensity(R_max, ϕ)
 end
 
