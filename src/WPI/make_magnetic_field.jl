@@ -9,8 +9,7 @@ struct Cartesian
 end
 
 
-# TODO: Check if the code runs without these now
-Base.iterate(r::Cartesian) = (r.x, 1)
+# TODO: Check if Cartesian) = (r.x, 1)
 Base.iterate(r::Cartesian, i) = i == 1 ? (r.y, 2) : i == 2 ? (r.z, 3) : nothing
 Base.length(::Cartesian) = 3
 Base.getindex(r::Cartesian, i::Int) = i == 1 ? r.x : i == 2 ? r.y : i == 3 ? r.z : throw(BoundsError(r, i))
@@ -69,7 +68,7 @@ end
 function TsyganenkoMagneticField(ϕ;
     time      = DateTime("2020-01-01T00:01:40"),
     pdyn      = 2.0,
-    dst       = -87.0,
+    dst       = -50.0,
     byimf     = 1.0,
     bzimf     = 2.0,
     ps        = -0.533585131,

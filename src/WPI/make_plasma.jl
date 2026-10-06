@@ -28,6 +28,7 @@ struct PlasmaState{M}
 end
 
 # TODO: change to take Spherical instead?
+# TODO: Check if accurate in a tsyganenko-field!
 """
     Ωe_at_λ(λ, L, ϕ, magnetic_field)
 
