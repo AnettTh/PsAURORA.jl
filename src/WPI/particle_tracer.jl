@@ -2,32 +2,39 @@ using AURORA
 using ProgressMeter
 
 """
+    boris_mover(
+    particle::ParticleState;
+    n_T::Int=100_000,
+    resolution::Int=10,
+    store_trajectory::Bool=false
+)
 
 Simulate the trajectory of a charged particle using the Boris mover.
 
+Uses the information about the particle given by `ParticleState` to numerically trace its
+gyromotion in a magnetic field. # TODO: Add more descriptions here as wave and such is added
+
 # Arguments
 
-- `magnetic_field`: function that takes position.
-- `electric_field`: function that takes position.
-- `n_T::Integer`: number of (initial) gyroperiods to simulate for.
-- `r0`: initial position.
-- `v0`: initial velocity.
-- `q`: particle charge.
-- `m`: particle mass.
+- `particle`: Struct holding the state of the particle.
 
 # Keyword Arguments
 
-- `resolution::Integer=10`: steps per gyroperiod.
-- `stop_at_ionosphere::Bool=true`: option to stop the simulation at the ionosphere.
+- `n_T`: Number of (initial) gyroperiods to simulate for, default is `100_000`.
+- `resolution`: Steps per gyroperiod, default is `10`.
+- `store_trajectory`: Option to store the trajectory, default is `false`.
 
 # Returns
 
-A named tuple containing `position`, `velocity`, `time` and `footpoint`
+- If the trajectroy is stored, a named tuple containing `position`, `velocity`, `time` and
+  `footpoint`, if not, only the time-of-flight `time` and the position of impact with the
+  ionsophere, `footpoint` is returned.
 """
 function boris_mover(
-    particle::ParticleState; #,
+    particle::ParticleState
     # plasma::PlasmaState,
-    #wave::AbstractWave;
+    # wave::AbstractWave
+    ;
     n_T::Int=100_000,
     resolution::Int=10,
     store_trajectory::Bool=false
@@ -35,7 +42,6 @@ function boris_mover(
 
     n_T > 0 || throw(ArgumentError("n_T must be positive"))
     resolution > 0 || throw(ArgumentError("resolution must be positive"))
-    #mₑ != 0 || throw(ArgumentError("particle mass must be nonzero"))
 
     # Define where the particle has hit the ionosphere
     r_ionosphere = RE + z_ionosphere
@@ -48,9 +54,6 @@ function boris_mover(
     #B0 = particle.magnetic_field(particle.r0...)
     #Ω_e0 = Ω_e[0]
     #T0 = 2π / ω_g0
-
-    # Make time-range based on resolution (samples per gyroperiod)
-    #dt = T_g0 / resolution
 
     if store_trajectory
         r_array = zeros(steps + 1, 3)
@@ -69,14 +72,24 @@ function boris_mover(
         t_array[1] = t_current
     end
 
+    # Precompute field interpolator # NOTE: This does not work yet, i think???
+    B_interpolated = particle.B_interpolated
+    #B_interpolated = isnothing(particle.B_interpolated) ?
+    #    get_magnetic_field(particle.magnetic_field, particle.L, particle.ϕ_eq) :
+    #    particle.B_interpolated
+    s = 0.0
+
     # Update particle
     for i in 2:(steps + 1)
         # TODO: Is it as simple as adding some function for δB and δE here?
-        Bx, By, Bz = particle.magnetic_field(Cartesian(x, y, z)) #.+ wave.δB
+        Bx, By, Bz = B_interpolated(s) #.+ wave.δB
         Ex, Ey, Ez = E0 #+ wave.δE
 
+        B_mag = sqrt(Bx^2 + By^2 + Bz^2)
+        b̂x, b̂y, b̂z = Bx/B_mag, By/B_mag, Bz/B_mag
+
         # Define cyclotron frequency and period for timestep
-        Ω_e = (norm([Bx, By, Bz]) * abs(qₑ)) / mₑ
+        Ω_e = (B_mag * abs(qₑ)) / mₑ
         T = 2π / Ω_e
 
         # Define adaptive timestep
@@ -118,8 +131,13 @@ function boris_mover(
         y += vy * dt
         z += vz * dt
 
+
         # Update stored values with current values
         t_current += dt
+
+        # NOTE: not sure if ds_step should be before or after t_current is updated
+        ds_step = abs((vx*b̂x + vy*b̂y + vz*b̂z) * dt)
+        s += ds_step
 
         if store_trajectory
             r_array[i, :] .= (x, y, z)
