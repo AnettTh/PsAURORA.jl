@@ -6,6 +6,7 @@ using CairoMakie
 # Shows that the ducted wave (θ=0°) can only scatter for the first and second harmonic
 ## Make magnetic field
 ϕ = deg2rad(120.0)
+ϕ_eq = deg2rad(120.0)
 #magnetic_field = DipoleMagneticField()
 magnetic_field = TsyganenkoMagneticField(ϕ)
 ## Define particle and plasma
@@ -14,7 +15,7 @@ E = 30e3
 μ = - cos(deg2rad(3))
 r0 = Cartesian(L*RE, 0.0, 0.0)
 
-particle = ParticleState(E, μ, r0, magnetic_field)
+particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq)
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)

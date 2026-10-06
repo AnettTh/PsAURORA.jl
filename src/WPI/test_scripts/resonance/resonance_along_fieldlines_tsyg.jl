@@ -4,7 +4,8 @@ using CairoMakie
 
 # NOTE: This does not work
 ## Make magnetic field
-ϕ = 0.0
+ϕ = deg2rad(120.0)
+ϕ_eq = deg2rad(120.0)
 magnetic_field = TsyganenkoMagneticField(ϕ)
 ## Make the data
 L_vals = [3, 4, 5, 6, 7, 8]
@@ -36,7 +37,7 @@ field_line_data = map(L_vals) do L
 
     # Starting position at 4 MLT
     r0 = Cartesian(RE*L * cos(ϕ), RE*L * sin(ϕ), 0.0)
-    particle = ParticleState(E_eV, μ, r0, magnetic_field; relativistic=true)
+    particle = ParticleState(E_eV, μ, r0, magnetic_field, ϕ_eq; relativistic=true)
 
     ## Trace field line from starting point
     xs_f, ys_f, zs_f, _ = trace_with_density(magnetic_field, DentonDensity(magnetic_field, L, ϕ), r0.x, r0.y, r0.z; ds= RE*0.02)

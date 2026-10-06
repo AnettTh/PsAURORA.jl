@@ -3,7 +3,8 @@ using CairoMakie
 
 # NOTE: This does not look right
 ## Make magnetic field
-ϕ = deg2rad(120.0)
+ϕ_eq = deg2rad(120.0)
+ϕ = deg2rad(120)
 tsyg_field = TsyganenkoMagneticField(ϕ)
 dipole_field = DipoleMagneticField()
 
@@ -14,8 +15,8 @@ L = 6.0
 r0 = Cartesian(L*RE, 0.0, 0.0)
 E = 30e3
 
-particle_tsyg = ParticleState(E, μ, r0, tsyg_field; relativistic=true)
-particle_dipole = ParticleState(E, μ, r0, dipole_field; relativistic=true)
+particle_tsyg = ParticleState(E, μ, r0, tsyg_field, ϕ_eq; relativistic=true)
+particle_dipole = ParticleState(E, μ, r0, dipole_field, ϕ_eq; relativistic=true)
 
 ## Make a plasma
 λ_grid = range(0.0, deg2rad(50), length=500)

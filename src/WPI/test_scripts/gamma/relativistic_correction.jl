@@ -5,6 +5,7 @@ using CairoMakie
 
 ## Make magnetic field
 ϕ = deg2rad(120.0)
+ϕ_eq = deg2rad(120.0)
 magnetic_field = TsyganenkoMagneticField(ϕ)
 
 ## Define the particles
@@ -14,8 +15,8 @@ r0 = Cartesian(L*RE, 0.0, 0.0)
 
 E_grid = range(1e3, 40e3, length=100)
 
-p_relativistic = [ParticleState(E, μ, r0, magnetic_field; relativistic=true) for E in E_grid]
-p_classical = [ParticleState(E, μ, r0, magnetic_field; relativistic=false) for E in E_grid]
+p_relativistic = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
+p_classical = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=false) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)

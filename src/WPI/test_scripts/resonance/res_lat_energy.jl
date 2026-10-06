@@ -3,7 +3,8 @@ using CairoMakie
 
 # NOTE: Look into why this is unstable at low energies
 ## Make magnetic field
-ϕ = 0.0
+ϕ = deg2rad(120.0)
+ϕ_eq = deg2rad(120.0)
 magnetic_field = TsyganenkoMagneticField(ϕ)
 
 ## Parameters
@@ -34,7 +35,7 @@ for (L, color) in zip(L_vals, colors)
     ω        = ω_frac * plasma_L.Ω_e[1]
 
     λ_res_grid = map(E_grid) do E
-        p     = ParticleState(E, μ, r0, magnetic_field; relativistic=true)
+        p     = ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true)
         λ_res = resonance_latitude(ω, p, plasma_L; n=n)
         isnan(λ_res) ? NaN : rad2deg(λ_res)
     end

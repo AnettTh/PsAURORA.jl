@@ -3,7 +3,8 @@ using CairoMakie
 
 # TODO: Change this to follow actual tsyganenko-fieldlines
 ## Make magnetic field
-ϕ = 0.0
+ϕ = deg2rad(120.0)
+ϕ_eq = deg2rad(120.0)
 magnetic_field = TsyganenkoMagneticField(ϕ)
 ## Make the data
 L_vals = [3, 4, 5, 6, 7, 8]
@@ -33,7 +34,7 @@ poly!(ax, Point2f.(cos.(Φ), sin.(Φ)); color=:black, strokecolor=:black, stroke
 ## Compute
 field_line_data = map(L_vals) do L
 
-    particle = ParticleState(E_eV, μ, Cartesian(RE*L, 0.0, 0.0), magnetic_field; relativistic=true)
+    particle = ParticleState(E_eV, μ, Cartesian(RE*L, 0.0, 0.0), magnetic_field, ϕ_eq; relativistic=true)
 
     λ_max    = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid_L = range(0.0, λ_max * 0.99, length=500)

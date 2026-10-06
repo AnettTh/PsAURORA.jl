@@ -7,18 +7,31 @@ using JLD2
 
 ## Define magnetic field
 ϕ = deg2rad(120.0)
+ϕ_eq = deg2rad(120.0)
 dipole = DipoleMagneticField()
 tsyganenko = TsyganenkoMagneticField(ϕ)
 
 ## Define the particles
-μ = -cos(deg2rad(2))       # Almost field-aligned
+μ = -cos(deg2rad(1))       # Almost field-aligned
 L = 6.5
-r0 = Cartesian(L*RE, 0.0, 0.0)
+r0 = Cartesian(Spherical(L, 0.0, ϕ))
 
-E_grid = range(1e3, 40e3, length=100)
+E_grid = range(10e3, 30e3, length=5)
 
-particle_dipole = [ParticleState(E, μ, r0, dipole; relativistic=true) for E in E_grid]
-particle_tsyg   = [ParticleState(E, μ, r0, tsyganenko; relativistic=true) for E in E_grid]
+##
+particle_dipole = [
+    ParticleState(
+        E,
+        μ,
+        r0,
+        dipole,
+        ϕ_eq;
+        relativistic=true,
+        precomputed_magnetic_field=true
+    )
+    for E in E_grid
+]
+particle_tsyg = [ParticleState(E, μ, r0, tsyganenko, ϕ_eq; relativistic=true, precomputed_magnetic_field=true) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
@@ -36,8 +49,9 @@ TOF_dipole = zeros(length(E_grid), length(ωs_dipole))  # [n_E × n_ω]
 TOF_tsyg   = zeros(length(E_grid), length(ωs_tsyg  ))
 
 
+
 @showprogress for (i, p) in enumerate(particle_dipole)
-    TOF_dipole[i, :] = WPI_TOF(ωs_dipole, p, plasma_dipole; field_dependent=true, wave_launch_time=wave_chirp)
+    TOF_dipole[i, :] = WPI_TOF(ωs_dipole, p, plasma_dipole; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
 end
 
 ### Check for bottleneck
@@ -48,7 +62,7 @@ end
 
 ##
 @showprogress for (i, p) in enumerate(particle_tsyg)
-    TOF_tsyg[i, :] = WPI_TOF(ωs_tsyg, p, plasma_tsyg; field_dependent=true, wave_launch_time=wave_chirp)
+    TOF_tsyg[i, :] = WPI_TOF(ωs_tsyg, p, plasma_tsyg; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
 end
 
 
@@ -82,22 +96,23 @@ ax = Axis(
 colors = [:blue, :red, :green, :orange, :purple]  # one per ω
 
 for (i, ω) in enumerate(ωs_dipole)
-    lines!(ax, TOF_dipole[:, i], E_grid ./ 1e3;
+    scatter!(ax, TOF_dipole[:, i], E_grid ./ 1e3;
         color=colors[i],
-        linestyle=:solid,
+        alpha=0.5,
+        #linestyle=:solid,
         label="ω = $(round(ω * 2π/1e3, digits=1)) kHz"
     )
 end
 for (i, ω) in enumerate(ωs_tsyg)
-    lines!(ax, TOF_tsyg[:, i], E_grid ./ 1e3;
+    scatter!(ax, TOF_tsyg[:, i], E_grid ./ 1e3;
         color=colors[i],
-        linestyle=:dash,
+        #linestyle=:dash,
         label="ω = $(round(ω * 2π/1e3, digits=1)) kHz"
     )
 end
 
-lines!(ax, [NaN], [NaN]; color=:black, linestyle=:solid, label="Dipole field")
-lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,  label="Tsyganenko")
+scatter!(ax, [NaN], [NaN], label="Dipole field"; color=:black, alpha=0.5)#, linestyle=:solid)
+scatter!(ax, [NaN], [NaN], label="Tsyganenko"; color=:black)# linestyle=:dash)
 
 Legend(fig[1,2], ax)
 

@@ -4,7 +4,8 @@ using CairoMakie
 
 # TODO: Figure out if the 'kink' in the tsyganenko-run is real or some mistake somewhere
 ## Define magnetic field
-ϕ = 120.0
+ϕ = deg2rad(120.0)
+ϕ_eq = deg2rad(120.0)
 magnetic_field = TsyganenkoMagneticField(ϕ)
 
 ## Define the particle
@@ -13,7 +14,7 @@ L = 6.0
 r0 = Cartesian(L*RE, 0.0, 0.0)
 
 E = 30e3
-particle = ParticleState(E, μ, r0, magnetic_field; relativistic=true)
+particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true)
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
