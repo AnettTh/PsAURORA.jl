@@ -43,7 +43,7 @@ export NeutralSpecies, MSISDensity, VectorDensity
 export N2Species, O2Species, OSpecies
 
 include("WPI/coordinates.jl")
-export r_to_λL, magnetic_basis, find_R_max
+export r_to_λL, magnetic_basis, find_R_max, longitude_to_MLT
 include("WPI/magnetic_field.jl")
 export dipole_field
 export tsyganenko_field, tsyganenko_field_spherical
@@ -63,6 +63,8 @@ export minimal_resonance_energy
 include("WPI/make_magnetic_field.jl")
 export DipoleMagneticField, TsyganenkoMagneticField
 export Cartesian, Spherical, AbstractMagneticField
+include("WPI/precompute_field.jl")
+export get_magnetic_field
 include("WPI/make_plasma.jl")
 export Ωe_at_λ, ωpe_at_λ, PlasmaState
 include("WPI/make_particle.jl")
@@ -73,7 +75,7 @@ export wave_frequency
 
 include("WPI/boris_mover.jl")
 export boris_mover_TOF
-include("WPI/time_of_flight.jl")
+include("WPI/zzzztime_of_flight.jl")
 export time_of_flight
 include("WPI/dispersion.jl")
 export dispersion_relation_whistler_branch, group_velocity_whistler_wave
