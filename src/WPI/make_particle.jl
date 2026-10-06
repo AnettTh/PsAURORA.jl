@@ -43,13 +43,17 @@ struct ParticleState{F}
     α_lc           :: Float64
     λ_ionosphere   :: Float64
     magnetic_field :: F             # TODO: See if this can be done without storing the magnetic field here also
+    B_interpolated :: Any
     γ              :: Float64
     ϕ              :: Float64
+    ϕ_eq           :: Float64
 end
 
 # TODO: Test this for non-equatorial r0, check that values makes sense physically
+# TODO: See if r0 actually is particle r0, or if it just represents the equatorial distance of the field-line in question
+# TODO: Separate between L and Spherical, need r instead!
 """
-    ParticleState(E_eV, μ, r0, magnetic_field; relativistic::Bool=false)
+    ParticleState(E_eV, μ, r0, magnetic_field, ϕ_eq; relativistic::Bool=false)
 
 Construct a `ParticleState` from initial conditions.
 
@@ -63,16 +67,28 @@ position `r0` is used to determine the L-shell and all latitude-dependent quanti
 - `μ`: Cosine of the pitch angle, between -1 and 1.
 - `r0`: Initial position vector in Cartesian coordinates [m].
 - `magnetic_field`: Magnetic field function `f(x, y, z)`.
+- `ϕ_eq`
 
 # Keyword Arguments
 
+- `precomputed_magnetic_field`: #TODO: describe
 - `relativistic`: Option to correct for relativistic effects, default is false.
+- `φ`: #TODO: describe
 
 # Returns
 
 - A fully initialized `ParticleState`.
 """
-function ParticleState(E_eV, μ, r0::Cartesian, magnetic_field::AbstractMagneticField; relativistic::Bool=false, φ=deg2rad(0.0))
+function ParticleState(
+    E_eV,
+    μ,
+    r0::Cartesian,
+    magnetic_field::AbstractMagneticField,
+    ϕ_eq;
+    precomputed_magnetic_field::Bool=false,
+    relativistic::Bool=false,
+    φ=deg2rad(0.0)
+)
 
     # Check validity of initial position
     r_mag = norm((r0.x, r0.y, r0.z))
@@ -123,6 +139,13 @@ function ParticleState(E_eV, μ, r0::Cartesian, magnetic_field::AbstractMagnetic
     # Latitude of the ionosphere based on the L-shell
     λ_ionosphere = acos(sqrt((RE + z_ionosphere) / (L * RE)))
 
+    # Pre-compute magnetic field
+    if precomputed_magnetic_field
+        B_interpolated, s_grid = get_magnetic_field(magnetic_field, L, ϕ)
+    else
+        B_interpolated, s_grid = get_magnetic_field(magnetic_field, L, ϕ)# = nothing
+    end
+
     return ParticleState(
         E_eV,
         v,
@@ -138,7 +161,9 @@ function ParticleState(E_eV, μ, r0::Cartesian, magnetic_field::AbstractMagnetic
         α_lc,
         λ_ionosphere,
         magnetic_field,
+        B_interpolated,
         γ,
-        ϕ
+        ϕ,
+        ϕ_eq
     )
 end
