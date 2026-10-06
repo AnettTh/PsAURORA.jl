@@ -93,9 +93,9 @@ end
     x::Real,
     y::Real,
     z::Real;
-    time="2020-01-01T00:01:40",
+    time="2020-01-01T02:00:00",
     pdyn=2.0,
-    dst=-87.0,
+    dst=-28.0,
     byimf=2.0,
     bzimf=-5.0,
     ps=-0.533585131,
@@ -104,9 +104,9 @@ end
 
     tsyganenko_field(
     r::AbstractVector;
-    time="2020-01-01T00:01:40",
+    time="2020-01-01T02:00:00",
     pdyn=2.0,
-    dst=-87.0,
+    dst=-28.0,
     byimf=2.0,
     bzimf=-5.0,
     ps=-0.533585131,
@@ -116,9 +116,9 @@ end
     tsyganenko_field(
     L::Real,
     λ::Real;
-    time="2020-01-01T00:01:40",
+    time="2020-01-01T02:00:00",
     pdyn=2.0,
-    dst=-87.0,
+    dst=-28.0,
     byimf=2.0,
     bzimf=-5.0,
     ps=-0.533585131,
@@ -134,7 +134,7 @@ end
 
 - `time`: Given as a string in ISO8601 format, default is '"2020-01-01T00:01:40"'.
 - `pdyn`: Solar wind dynamic pressure [nPa], default is `2.0`.
-- `dst`: Disturbance Storm Time index [nT], default is `-87.0`.
+- `dst`: Disturbance Storm Time index [nT], default is `-50.0`.
 - `byimf`: IMF By component [nT], default is `2.0`.
 - `bzimf`: IMF Bz component [nT], default is `-5.0`.
 - `ps`: Dipole tilt angle [rad], defautl is `-0.533585131`.
@@ -153,9 +153,9 @@ function tsyganenko_field(
     x::Real,
     y::Real,
     z::Real;
-    time="2020-01-01T00:01:40",
+    time="2020-01-01T02:00:00",
     pdyn=2.0,
-    dst=-87.0,
+    dst=-28.0,
     byimf=1.0,
     bzimf=2.0,
     ps=-0.533585131,
@@ -190,9 +190,9 @@ end
 
 function tsyganenko_field(
     r::AbstractVector;
-    time="2020-01-01T00:01:40",
+    time="2020-01-01T02:00:00",
     pdyn=2.0,
-    dst=-87.0,
+    dst=-28.0,
     byimf=1.0,
     bzimf=2.0,
     ps=-0.533585131,
@@ -217,9 +217,9 @@ function tsyganenko_field_spherical(
     L::Real,
     λ::Real,
     ϕ::Real;
-    time="2020-01-01T00:01:40",
+    time="2020-01-01T02:00:00",
     pdyn=2.0,
-    dst=-87.0,
+    dst=-28.0,
     byimf=1.0,
     bzimf=2.0,     # TODO: set to positive
     ps=-0.533585131,
