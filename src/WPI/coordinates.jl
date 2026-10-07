@@ -206,16 +206,6 @@ function find_R_max(
     end
 end
 
-function find_R_max(particle::ParticleState; kwargs...)
-    return find_R_max(
-        particle.magnetic_field,
-        particle.L,
-        0.0,
-        particle.ϕ_eq;
-        kwargs...
-    )
-end
-
 
 """
     longitude_to_MLT(ϕ; degrees::Bool=true)

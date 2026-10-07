@@ -107,18 +107,7 @@ function particle_transit(
     if use_boris
 
         # Find the initial position for the boris-mover, i.e. where the particle resonates
-        r_res  = Cartesian(Spherical(particle.L, λ_resonance, particle.ϕ_eq))   # NOTE: This choice of ϕ might be dodgy?
-        p_res  = ParticleState(
-            particle.E_eV,
-            particle.μ,
-            r_res,
-            particle.magnetic_field,
-            particle.ϕ_eq;
-            precomputed_magnetic_field=false
-        )
-        p_res_with_itp = @set p_res.B_interpolated = particle.B_interpolated
-
-        result = boris_mover(p_res_with_itp; store_trajectory=false)
+        result = boris_mover(particle; λ_start=λ_resonance, store_trajectory=false)
         return result.time
     end
 

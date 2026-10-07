@@ -42,51 +42,107 @@ include("physics/species.jl")
 export NeutralSpecies, MSISDensity, VectorDensity
 export N2Species, O2Species, OSpecies
 
-include("WPI/coordinates.jl")
-export r_to_λL, magnetic_basis, find_R_max, longitude_to_MLT
+#-----------
+#include("WPI/coordinates.jl")
+#export r_to_λL, magnetic_basis, find_R_max, longitude_to_MLT
+#include("WPI/magnetic_field.jl")
+#export dipole_field
+#export tsyganenko_field, tsyganenko_field_spherical
+#include("WPI/calculate_plasma_parameters.jl")
+#export velocity_from_kinetic_energy, get_v0_from_Eμ
+#export gyro_frequency, larmor_radius, gyrocenter
+#export losscone_angle, pitch_angle_at_λ
+#export quarter_bounceperiod, average_driftvelocity, total_drift
+#include("WPI/denton_density.jl")
+#export ne_denton, denton_density_model
+#include("WPI/density_model.jl")
+#export AbstractDensityModel, ConstantDensity, DentonDensity, electron_density
+#
+#include("WPI/analytical_results.jl")
+#export minimal_resonance_energy
+#
+#include("WPI/make_magnetic_field.jl")
+#export DipoleMagneticField, TsyganenkoMagneticField
+#export Cartesian, Spherical, AbstractMagneticField
+#include("WPI/precompute_field.jl")
+#export get_magnetic_field
+#include("WPI/make_plasma.jl")
+#export Ωe_at_λ, ωpe_at_λ, PlasmaState
+#include("WPI/make_particle.jl")
+#export ParticleState
+#include("WPI/make_wave.jl")
+#export AbstractWave, ChirpWave, MonochromaticWave, DemekhovWave
+#export wave_frequency
+#
+#include("WPI/boris_mover.jl")
+#export boris_mover_TOF
+#include("WPI/zzzztime_of_flight.jl")
+#export time_of_flight
+#include("WPI/dispersion.jl")
+#export dispersion_relation_whistler_branch, group_velocity_whistler_wave
+#include("WPI/WPI_dynamics.jl")
+#export  wave_transit, particle_transit, WPI_TOF
+#export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
+#export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
+#
+#include("WPI/particle_tracer.jl")
+#export boris_mover
+include("WPI/make_magnetic_field.jl")
+export DipoleMagneticField, TsyganenkoMagneticField
+export Cartesian, Spherical, AbstractMagneticField
+
 include("WPI/magnetic_field.jl")
 export dipole_field
 export tsyganenko_field, tsyganenko_field_spherical
+
+include("WPI/coordinates.jl")
+export r_to_λL, magnetic_basis, find_R_max, longitude_to_MLT
+
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
 export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
+
 include("WPI/denton_density.jl")
 export ne_denton, denton_density_model
+
 include("WPI/density_model.jl")
 export AbstractDensityModel, ConstantDensity, DentonDensity, electron_density
 
 include("WPI/analytical_results.jl")
 export minimal_resonance_energy
 
-include("WPI/make_magnetic_field.jl")
-export DipoleMagneticField, TsyganenkoMagneticField
-export Cartesian, Spherical, AbstractMagneticField
 include("WPI/precompute_field.jl")
 export get_magnetic_field
+
 include("WPI/make_plasma.jl")
 export Ωe_at_λ, ωpe_at_λ, PlasmaState
+
 include("WPI/make_particle.jl")
 export ParticleState
+
 include("WPI/make_wave.jl")
 export AbstractWave, ChirpWave, MonochromaticWave, DemekhovWave
 export wave_frequency
 
-include("WPI/boris_mover.jl")
-export boris_mover_TOF
-include("WPI/zzzztime_of_flight.jl")
-export time_of_flight
 include("WPI/dispersion.jl")
 export dispersion_relation_whistler_branch, group_velocity_whistler_wave
+
 include("WPI/WPI_dynamics.jl")
-export  wave_transit, particle_transit, WPI_TOF
+export wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
 
+include("WPI/boris_mover.jl")
+export boris_mover_TOF
+
+include("WPI/zzzztime_of_flight.jl")
+export time_of_flight
+
 include("WPI/particle_tracer.jl")
 export boris_mover
-
+#-------------
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid
 

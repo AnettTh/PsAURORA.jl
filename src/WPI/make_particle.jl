@@ -28,7 +28,7 @@ the magnetic field model.
 - `γ`: Lorentz factor.
 - `ϕ`: Longitude [rad].
 """
-struct ParticleState{F}
+struct ParticleState{F, I}
     E_eV           :: Float64
     v              :: Float64
     μ              :: Float64
@@ -43,7 +43,8 @@ struct ParticleState{F}
     α_lc           :: Float64
     λ_ionosphere   :: Float64
     magnetic_field :: F             # TODO: See if this can be done without storing the magnetic field here also
-    B_interpolated :: Any
+    B_interpolated :: I
+    s_grid         :: Any
     s0             :: Float64
     γ              :: Float64
     ϕ              :: Float64
@@ -157,6 +158,7 @@ function ParticleState(
         s0 = s_grid[argmin([norm(B_interpolated(s)) for s in s_grid])]
     else
         B_interpolated = nothing
+        s_grid = nothing
         s0 = 0.0
     end
 
@@ -176,6 +178,7 @@ function ParticleState(
         λ_ionosphere,
         magnetic_field,
         B_interpolated,
+        s_grid,
         s0,
         γ,
         ϕ,

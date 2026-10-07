@@ -35,6 +35,8 @@ function boris_mover(
     # plasma::PlasmaState,
     # wave::AbstractWave
     ;
+    λ_start=nothing,
+    φ0=0.0,
     n_T::Int=100_000,
     resolution::Int=10,
     store_trajectory::Bool=false
@@ -62,8 +64,33 @@ function boris_mover(
     end
 
     # Initial values
-    x, y, z = particle.r0
-    vx, vy, vz = particle.v0
+    if isnothing(λ_start)
+        x, y, z = particle.r0
+        vx, vy, vz = particle.v0
+    else
+        r_start = Cartesian(Spherical(particle.L, λ_start, particle.ϕ_eq))
+        x, y, z = r_start.x, r_start.y, r_start.z
+
+        B_at_λ = norm(particle.magnetic_field(Spherical(particle.L, λ_start, particle.ϕ_eq)))
+
+        if isnothing(particle.s_grid)
+            s = 0.0
+        else
+            B_vals = [norm(particle.B_interpolated(si)) for si in particle.s_grid]
+            s = particle.s_grid[argmin(abs.(B_vals .- B_at_λ))]
+        end
+
+        B_start = particle.magnetic_field(Spherical(particle.L, λ_start, particle.ϕ_eq))
+        b̂, e1, e2, B_mag = magnetic_basis(B_start)
+
+        α_start = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_start))
+        v_par   = particle.v * cos(α_start)
+        v_perp  = particle.v * sin(α_start)
+
+        vx, vy, vz = v_par .* b̂ .+ v_perp * cos(φ0) .* e1 .+ v_perp * sin(φ0) .* e2
+    end
+
+
     t_current = 0.0
 
     if store_trajectory
@@ -73,16 +100,21 @@ function boris_mover(
     end
 
     # Precompute field interpolator # NOTE: This does not work yet, i think???
-    B_interpolated = particle.B_interpolated
+    #B_interpolated = particle.B_interpolated
     #B_interpolated = isnothing(particle.B_interpolated) ?
     #    get_magnetic_field(particle.magnetic_field, particle.L, particle.ϕ_eq) :
     #    particle.B_interpolated
-    s = 0.0
+    s = particle.s0
 
     # Update particle
     for i in 2:(steps + 1)
         # TODO: Is it as simple as adding some function for δB and δE here?
-        Bx, By, Bz = B_interpolated(s) #.+ wave.δB
+        if isnothing(particle.B_interpolated)
+            B = particle.magnetic_field(Cartesian(x, y, z))
+            Bx, By, Bz = B[1], B[2], B[3]
+        else
+            Bx, By, Bz = particle.B_interpolated(s) #.+ wave.δB
+        end
         Ex, Ey, Ez = E0 #+ wave.δE
 
         B_mag = sqrt(Bx^2 + By^2 + Bz^2)
