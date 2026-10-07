@@ -44,9 +44,20 @@ struct ParticleState{F}
     λ_ionosphere   :: Float64
     magnetic_field :: F             # TODO: See if this can be done without storing the magnetic field here also
     B_interpolated :: Any
+    s0             :: Float64
     γ              :: Float64
     ϕ              :: Float64
     ϕ_eq           :: Float64
+end
+
+function find_R_max(particle::ParticleState; kwargs...)
+    return find_R_max(
+        particle.magnetic_field,
+        particle.L,
+        0.0,
+        particle.ϕ_eq;
+        kwargs...
+    )
 end
 
 # TODO: Test this for non-equatorial r0, check that values makes sense physically
@@ -142,8 +153,10 @@ function ParticleState(
     # Pre-compute magnetic field
     if precomputed_magnetic_field
         B_interpolated, s_grid = get_magnetic_field(magnetic_field, L, ϕ)
+        s0 = s_grid[argmin([norm(B_interpolated(s)) for s in s_grid])]
     else
         B_interpolated, s_grid = get_magnetic_field(magnetic_field, L, ϕ)# = nothing
+        s0 = 0.0
     end
 
     return ParticleState(
@@ -162,6 +175,7 @@ function ParticleState(
         λ_ionosphere,
         magnetic_field,
         B_interpolated,
+        s0,
         γ,
         ϕ,
         ϕ_eq
