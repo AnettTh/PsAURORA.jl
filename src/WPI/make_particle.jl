@@ -48,6 +48,7 @@ struct ParticleState{F}
     γ              :: Float64
     ϕ              :: Float64
     ϕ_eq           :: Float64
+    φ0             :: Float64
 end
 
 function find_R_max(particle::ParticleState; kwargs...)
@@ -98,7 +99,7 @@ function ParticleState(
     ϕ_eq;
     precomputed_magnetic_field::Bool=false,
     relativistic::Bool=false,
-    φ=deg2rad(0.0)
+    φ0=deg2rad(0.0)
 )
 
     # Check validity of initial position
@@ -119,11 +120,11 @@ function ParticleState(
 
     # Find initial velocity
     v_par = v * μ
-    v_perp = v * sqrt(max(1 - γ^2, 0.0))
+    v_perp = v * sqrt(max(1 - μ^2, 0.0))
     v0 = SVector{3}(        # TODO: This has some issue, figure out what sqrt of negative number
         v_par .* b̂ .+
-        v_perp .* cos(φ) .* e1 .+
-        v_perp .* sin(φ) .* e2
+        v_perp .* cos(φ0) .* e1 .+
+        v_perp .* sin(φ0) .* e2
     )
 
     # Latitude of initial position and L-shell
@@ -152,10 +153,10 @@ function ParticleState(
 
     # Pre-compute magnetic field
     if precomputed_magnetic_field
-        B_interpolated, s_grid = get_magnetic_field(magnetic_field, L, ϕ)
+        B_interpolated, s_grid = get_magnetic_field(magnetic_field, L, ϕ_eq)
         s0 = s_grid[argmin([norm(B_interpolated(s)) for s in s_grid])]
     else
-        B_interpolated, s_grid = get_magnetic_field(magnetic_field, L, ϕ)# = nothing
+        B_interpolated = nothing
         s0 = 0.0
     end
 
@@ -178,6 +179,21 @@ function ParticleState(
         s0,
         γ,
         ϕ,
-        ϕ_eq
+        ϕ_eq,
+        φ0
     )
+end
+
+# TODO: Fix this to something useful
+function Base.show(io::IO, p::ParticleState)
+    println(io, "ParticleState:")
+    println(io, "  E        = $(round(p.E_eV/1e3, digits=2)) keV")
+    println(io, "  α₀       = $(round(rad2deg(p.α0), digits=2))°")
+    println(io, "  α_eq     = $(round(rad2deg(p.α_eq), digits=2))°")
+    println(io, "  α_lc     = $(round(rad2deg(p.α_lc), digits=2))°")
+    println(io, "  L        = $(round(p.L, digits=2))")
+    println(io, "  ϕ_eq     = $(round(rad2deg(p.ϕ_eq), digits=1))° ($(round(longitude_to_MLT(p.ϕ_eq, degrees=false), digits=1)) MLT)")
+    println(io, "  γ        = $(round(p.γ, digits=4))")
+    println(io, "  B_field  = $(typeof(p.magnetic_field))")
+    print(io,   "  B_interp = $(isnothing(p.B_interpolated) ? "not precomputed" : "precomputed")")
 end
