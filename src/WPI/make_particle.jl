@@ -46,6 +46,9 @@ struct ParticleState{F, I}
     B_interpolated :: I
     s_grid         :: Any
     s0             :: Float64
+    xs_grid        :: Any
+    ys_grid        :: Any
+    zs_grid        :: Any
     γ              :: Float64
     ϕ              :: Float64
     ϕ_eq           :: Float64
@@ -120,7 +123,7 @@ function ParticleState(
     b̂, e1, e2, _ = magnetic_basis(B0)
 
     # Find initial velocity
-    v_par = v * μ
+    v_par = -v * μ
     v_perp = v * sqrt(max(1 - μ^2, 0.0))
     v0 = SVector{3}(        # TODO: This has some issue, figure out what sqrt of negative number
         v_par .* b̂ .+
@@ -133,7 +136,7 @@ function ParticleState(
     L = r_mag / (RE * cos(λ0)^2)
 
     # TODO: test this!!
-    ϕ = atan(r0.z, r0.x)
+    ϕ = atan(r0.y, r0.x)
 
     # Loss-cone angle at the equator
     # IDEA: Look into the definition of α from Hsieh 2022
@@ -146,20 +149,25 @@ function ParticleState(
 
     # Current position pitch-angle and equatorial pitch-angle
     α0 = acos(abs(μ))
-    B_eq = BE / L^3
+    B_eq = BE / L^3     # NOTE: Not true for Tsyganenko!
     α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq)
 
     # Latitude of the ionosphere based on the L-shell
     λ_ionosphere = acos(sqrt((RE + z_ionosphere) / (L * RE)))
 
     # Pre-compute magnetic field
+    # TODO: What does s0 represent?
     if precomputed_magnetic_field
-        B_interpolated, s_grid = get_magnetic_field(magnetic_field, L, ϕ_eq)
+        B_interpolated, s_grid, xs_grid, ys_grid, zs_grid = get_magnetic_field(magnetic_field, L, ϕ_eq)
         s0 = s_grid[argmin([norm(B_interpolated(s)) for s in s_grid])]
+
     else
         B_interpolated = nothing
         s_grid = nothing
         s0 = 0.0
+        xs_grid = nothing
+        ys_grid = nothing
+        zs_grid = nothing
     end
 
     return ParticleState(
@@ -180,6 +188,9 @@ function ParticleState(
         B_interpolated,
         s_grid,
         s0,
+        xs_grid,
+        ys_grid,
+        zs_grid,
         γ,
         ϕ,
         ϕ_eq,
