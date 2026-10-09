@@ -10,7 +10,6 @@ magnetic_field = TsyganenkoMagneticField(ϕ)
 ## Define the particles
 μ = -cos(deg2rad(3))       # Almost field-aligned
 L = 6.5
-ϕ = 0.0
 r0 = Cartesian(L*RE, 0.0, 0.0)
 
 E_grid = range(1e3, 40e3, length=100)
@@ -19,7 +18,7 @@ particles = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) 
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
-plasma = PlasmaState(λ_grid, ϕ, DentonDensity(magnetic_field, L, ϕ), magnetic_field, Float64(L))
+plasma = PlasmaState(λ_grid, ϕ_eq, DentonDensity(magnetic_field, L, ϕ_eq), magnetic_field, Float64(L))
 
 
 ## Define the wave
