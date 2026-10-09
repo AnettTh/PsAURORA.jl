@@ -5,10 +5,10 @@ using LinearAlgebra
 L = 6.5
 ϕ_eq = deg2rad(240.0)
 
-magnetic_field = TsyganenkoMagneticField(ϕ_eq)
-#magnetic_field = DipoleMagneticField()
+tsyg = TsyganenkoMagneticField(ϕ_eq)
+dipole = DipoleMagneticField()
 ##
-B_interp, s_grid = get_magnetic_field(magnetic_field, L, ϕ_eq)
+B_interp, s_grid = get_magnetic_field(tsyg, L, ϕ_eq)
 
 ## Compute B magnitude along field line
 B_vals = [norm(B_interp(s)) for s in s_grid]
@@ -35,8 +35,8 @@ fig
 fig = Figure(size=(800, 400))
 ax  = Axis(fig[1,1]; xlabel="Arc length [RE]", ylabel="|B| [T]", title="L=6.5")
 
-B_itp_dip,  s_dip  = get_magnetic_field(dipole,     L, ϕ_eq)
-B_itp_tsyg, s_tsyg = get_magnetic_field(tsyganenko, L, ϕ_eq)
+B_itp_dip,  s_dip  = get_magnetic_field(dipole, L, ϕ_eq)
+B_itp_tsyg, s_tsyg = get_magnetic_field(tsyg, L, ϕ_eq)
 
 lines!(ax, s_dip  ./ RE, [norm(B_itp_dip(s))  for s in s_dip];  label="Dipole")
 lines!(ax, s_tsyg ./ RE, [norm(B_itp_tsyg(s)) for s in s_tsyg]; label="Tsyganenko")
