@@ -1,11 +1,11 @@
 using AURORA
 using CairoMakie
 
-# NOTE: This does not look right
+
 ## Make magnetic field
-ϕ_eq = deg2rad(120.0)
-ϕ = deg2rad(120)
-tsyg_field = TsyganenkoMagneticField(ϕ)
+ϕ_eq = deg2rad(240.0)
+ϕ = deg2rad(240)
+tsyg_field = TsyganenkoMagneticField(ϕ_eq)
 dipole_field = DipoleMagneticField()
 
 
@@ -19,9 +19,9 @@ particle_tsyg = ParticleState(E, μ, r0, tsyg_field, ϕ_eq; relativistic=true)
 particle_dipole = ParticleState(E, μ, r0, dipole_field, ϕ_eq; relativistic=true)
 
 ## Make a plasma
-λ_grid = range(0.0, deg2rad(50), length=500)
-plasma_tsyg = PlasmaState(λ_grid, ϕ, DentonDensity(tsyg_field, L, ϕ), tsyg_field, Float64(L))
-plasma_dipole = PlasmaState(λ_grid, ϕ, DentonDensity(dipole_field, L, ϕ), dipole_field, Float64(L))
+λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
+plasma_tsyg = PlasmaState(λ_grid, ϕ_eq, DentonDensity(tsyg_field, L, ϕ_eq), tsyg_field, Float64(L))
+plasma_dipole = PlasmaState(λ_grid, ϕ_eq, DentonDensity(dipole_field, L, ϕ_eq), dipole_field, Float64(L))
 
 
 ## Make a wave

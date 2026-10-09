@@ -16,11 +16,12 @@ E_grid = range(1e3, 40e3, length=100)
 particles = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
 
 # Define the plasma
-λ_grid = range(0.0, deg2rad(50), length=500)
+λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
 plasma = PlasmaState(λ_grid, ϕ_eq, DentonDensity(magnetic_field, L, ϕ_eq), magnetic_field, Float64(L))
 
 # Define the wave
-ωs = range(plasma.Ω_e[1]*0.1, plasma.Ω_e[1]*0.4, length=5)
+Ω_e_eq = minimum(plasma.Ω_e)
+ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.4, length=5)
 
 
 ## Calculate TOF
