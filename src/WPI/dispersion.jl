@@ -31,7 +31,7 @@ both.
 """
 function dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
 
-    abs(θ) > 1 && throw(ArgumentError("Are you sure you are using radians for the WNA?"))
+    abs(θ) > 2π && throw(ArgumentError("Are you sure you are using radians for the WNA?"))
 
     any(ω .> abs.(0.5 .* Ω_e)) && throw(ArgumentError(
         "You are not in the LBC-range, sure this is right?"
@@ -80,6 +80,7 @@ function group_velocity_whistler_wave(ω, Ω_e, ω_pe)
 
     any(@. ω > Ω_e) && throw(ArgumentError("Not on whistler branch, check your frequencies!"))
 
+    Ω_e = abs.(Ω_e)
     a = @. (2 * c₀) / (ω_pe / Ω_e)
     b = @. (1 - (ω / Ω_e))^(3/2)
     c = @. (ω / Ω_e)^(1/2)
