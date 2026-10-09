@@ -63,24 +63,39 @@ function boris_mover(
         t_array = zeros(steps + 1)
     end
 
-    # Initial values
+    # Figure out where to start the particle from
     if isnothing(λ_start)
+        # Use default positions, usually in the equatorial plane
         x, y, z = particle.r0
         vx, vy, vz = particle.v0
+        s = particle.s0
     else
         r_start = Cartesian(Spherical(particle.L, λ_start, particle.ϕ_eq))
         x, y, z = r_start.x, r_start.y, r_start.z
 
         B_at_λ = norm(particle.magnetic_field(Spherical(particle.L, λ_start, particle.ϕ_eq)))
 
-        if isnothing(particle.s_grid)
-            s = 0.0
+        if !isnothing(particle.xs_grid)
+            # Find the point closest to the Earth
+            dists = sqrt.(
+                (particle.xs_grid .- x).^2 .+
+                (particle.ys_grid .- y).^2 .+
+                (particle.zs_grid .- z).^2
+            )
+            s = particle.s_grid[argmin(dists)]
         else
-            B_vals = [norm(particle.B_interpolated(si)) for si in particle.s_grid]
-            s = particle.s_grid[argmin(abs.(B_vals .- B_at_λ))]
+            throw(ArgumentError("Position grid from precomputed field not in use somehow??"))   # NOTE: This can be removed when the field works
+            #s = 0.0
         end
+        #if isnothing(particle.s_grid)
+        #    s = 0.0
+        #else
+        #    B_vals = [norm(particle.B_interpolated(si)) for si in particle.s_grid]
+        #    s = particle.s_grid[argmin(abs.(B_vals .- B_at_λ))]
+        #end
 
         B_start = particle.magnetic_field(Spherical(particle.L, λ_start, particle.ϕ_eq))
+
         b̂, e1, e2, B_mag = magnetic_basis(B_start)
 
         α_start = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_start))
@@ -128,10 +143,9 @@ function boris_mover(
         dt = T / resolution
 
         # Half electric acceleration
-        q_prime = dt * qₑ / 2mₑ
+        q_prime = dt * (-qₑ) / 2mₑ
 
         #-----------Core Boris-scheme-----------
-
         # Half electric acceleration
         vx_minus = vx + q_prime * Ex
         vy_minus = vy + q_prime * Ey
@@ -168,8 +182,9 @@ function boris_mover(
         t_current += dt
 
         # NOTE: not sure if ds_step should be before or after t_current is updated
-        ds_step = abs((vx*b̂x + vy*b̂y + vz*b̂z) * dt)
+        ds_step = (vx*b̂x + vy*b̂y + vz*b̂z) * dt
         s += ds_step
+        #s = clamp(s + ds_step, particle.s_grid[1], particle.s_grid[end])
 
         if store_trajectory
             r_array[i, :] .= (x, y, z)
