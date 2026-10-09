@@ -45,7 +45,6 @@ function get_magnetic_field(
 
     # Make unique name for the file
     # NOTE: Might also need to add more info, such as tsyg kwargs
-    # NOTE: Trying to account for floating-point error by rounding of L, may need to look into better solution?
     model = magnetic_field isa TsyganenkoMagneticField ? "tsyg" : "dipole"
     filename = joinpath(
         cache_dir,
@@ -56,7 +55,7 @@ function get_magnetic_field(
     if isfile(filename)
         @info "Loading precomputed $(model) field at L=$(round(L, digits=4))," *
         " ϕ=$(round(rad2deg(ϕ_eq), digits=1))° using n=$(n_points) points."
-        @load filename s_grid Bx_vals By_vals Bz_vals
+        @load filename s_grid Bx_vals By_vals Bz_vals xs_grid ys_grid zs_grid
     else
         @info "Computing magnetic field along field line..."
         mkpath(cache_dir)
@@ -75,18 +74,18 @@ function get_magnetic_field(
             )
             xs, ys, zs = trace.xs, trace.ys, trace.zs
 
-
+            # Calculate the magnetic field along the trace on a fine grid
             Bs = [magnetic_field(Cartesian(x, y, z)) for (x, y, z) in zip(xs, ys, zs)]
 
             Bx_fine = [B[1] for B in Bs]
             By_fine = [B[2] for B in Bs]
             Bz_fine = [B[3] for B in Bs]
 
-            # Compute the arc length, not uniform spacing
+            # Compute the arc length as we don't have uniform spacing
             ds_vals = sqrt.(diff(xs).^2 .+ diff(ys).^2 .+ diff(zs).^2)
             s_fine  = [0.0; cumsum(ds_vals)]
 
-            # Resample on defined grid with size n_points, uniform spacing
+            # Resample B on defined arc grid with size n_points, uniform spacing
             interpolated_Bx = linear_interpolation(s_fine, Bx_fine)
             interpolated_By = linear_interpolation(s_fine, By_fine)
             interpolated_Bz = linear_interpolation(s_fine, Bz_fine)
@@ -96,8 +95,16 @@ function get_magnetic_field(
             By_vals = interpolated_By.(s_grid)
             Bz_vals = interpolated_Bz.(s_grid)
 
+            # Resample positions also
+            itp_x = linear_interpolation(s_fine, xs)
+            itp_y = linear_interpolation(s_fine, ys)
+            itp_z = linear_interpolation(s_fine, zs)
 
-            @save filename s_grid Bx_vals By_vals Bz_vals
+            xs_grid = itp_x.(s_grid)
+            ys_grid = itp_y.(s_grid)
+            zs_grid = itp_z.(s_grid)
+
+            @save filename s_grid Bx_vals By_vals Bz_vals xs_grid ys_grid zs_grid
             @info "Saved to $(filename)"
 
         else
@@ -125,13 +132,21 @@ function get_magnetic_field(
             interpolated_By = linear_interpolation(s_fine, By_fine)
             interpolated_Bz = linear_interpolation(s_fine, Bz_fine)
 
-            s_grid  = collect(range(0.0, s_fine[end], length=n_points))
+            s_grid = collect(range(0.0, s_fine[end], length=n_points))
             Bx_vals = interpolated_Bx.(s_grid)
             By_vals = interpolated_By.(s_grid)
             Bz_vals = interpolated_Bz.(s_grid)
 
+            # Resample positions also
+            itp_x = linear_interpolation(s_fine, xs)
+            itp_y = linear_interpolation(s_fine, ys)
+            itp_z = linear_interpolation(s_fine, zs)
 
-            @save filename s_grid Bx_vals By_vals Bz_vals
+            xs_grid = itp_x.(s_grid)
+            ys_grid = itp_y.(s_grid)
+            zs_grid = itp_z.(s_grid)
+
+            @save filename s_grid Bx_vals By_vals Bz_vals xs_grid ys_grid zs_grid
             @info "Saved to $(filename)"
         end
     end
@@ -145,5 +160,5 @@ function get_magnetic_field(
         final_interpolated_Bx(s),
         final_interpolated_By(s),
         final_interpolated_Bz(s)
-        ], s_grid
+        ], s_grid, xs_grid, ys_grid, zs_grid
 end
