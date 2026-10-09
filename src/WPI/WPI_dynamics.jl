@@ -7,6 +7,11 @@ using Roots
 #===
 TODO: Several places in this file, the change in arc-length with latitude (ds/dλ) uses a
 dipole approximation, also for the Tsyganenko model. This must either be fixed or jusitfied!
+
+NOTE: When computing the resonance latitude, need to make sure that the wave propagation can
+be controlled. Right now, it is tested for waves propagating south, such that the resonance
+of particles precipitating in the northern hemisphere will resonate in the southern
+hemisphere, but want to let also the opposite be possible.
 ===#
 """
     wave_transit(
@@ -77,7 +82,7 @@ end
 
 # TODO: Make sure this traces from the southern resonance region to the norhtern hemisphere!
 """
-    particle_transit(particle, λ_resonance; z_ionosphere::Float64=600e3)
+    particle_transit(particle, λ_resonance; V_r=nothing z_ionosphere::Float64=600e3)
 
 Calculates the transit time of the particle from the resonance latitude to the ionosphere.
 
@@ -104,13 +109,13 @@ particle state (600 km altitude).
 function particle_transit(
     particle,
     λ_resonance;
+    V_r=nothing,
     field_dependent::Bool=true,
     use_boris::Bool=false
 )
 
     # If Boris-mover is to be used, shortcuts the function
     if use_boris
-
         # Find the initial position for the boris-mover, i.e. where the particle resonates
         result = boris_mover(particle; λ_start=λ_resonance, store_trajectory=false)
         return result.time
@@ -118,6 +123,13 @@ function particle_transit(
 
     # Position  in the equatorial plane
     R0 = particle.L * RE
+
+    # Decides which hemisphere the particle travels towards
+    λ_iono = if isnothing(V_r)
+        sign(λ_resonance) * particle.λ_ionosphere   # If non given, use λ at resonance
+    else
+        -sign(V_r) * particle.λ_ionosphere          # If given, base on velocity direction
+    end
 
     function f(λ)
         if field_dependent
@@ -144,7 +156,7 @@ function particle_transit(
     end
 
     # Integrate from the resonance region to the ionosphere and return
-    t_e, _ = quadgk(f, λ_resonance, particle.λ_ionosphere)
+    t_e, _ = quadgk(f, λ_resonance, λ_iono)  # NOTE: takes opposite hemisphere as default
     return abs.(t_e)
 end
 
@@ -234,8 +246,12 @@ function resonance_latitude(
     plasma::PlasmaState;
     θ::Float64=0.0,
     n::Int=1,
-    fast::Bool=false
+    fast::Bool=false,
+    wave_direction=-1       # NOTE: South???
 )
+    if abs(wave_direction) != 1
+        throw(ArgumentError("Wave direction needs to be `-1` for southward or `1` for nothward."))
+    end
 
     # Define the resonance condition (equation that should equal zero)
     function resonance_condition(λ; n=n, θ=θ, fast=fast)   # TODO: Add full spherical coordinates as an argument?
@@ -261,12 +277,12 @@ function resonance_latitude(
 
         # Find parallel component of wavenumber
         k = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
-        k_parallel = k * cos(θ)
+        k_parallel = wave_direction * k * cos(θ)
 
         # Find parallel velocity, keeping the sign of μ and returning NaN if mirrored
         α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_mag)
         isnothing(α) && return NaN
-        v_parallel = particle.v * cos(α) * sign(particle.μ)
+        v_parallel = particle.v * cos(α) * (-sign(particle.μ))
 
         # Return resonance condition for given λ (from for example eq.4 in Hsieh 2022)
         return ω - k_parallel * v_parallel - (n*Ω_e / particle.γ)
@@ -289,13 +305,14 @@ function resonance_latitude(
     # Figure out the latitude where the funciton changed sign, i.e. index `idx`
     λ_resonance = find_zero(resonance_condition, (λ_grid[idx], λ_grid[idx+1]))
 
-    # Find also the resonance velocity to decide the hemisphere of the resonant particles
+    # Find also the resonance velocity at this position to decide the hemisphere of the
+    # resonant particles
     i_res = searchsortedfirst(plasma.λ , λ_resonance)
     i_res = clamp(i_res, 1, length(plasma.Ω_e))
     Ω_e_res = plasma.Ω_e[i_res]
     ω_pe_res = plasma.ω_pe[i_res]
     k_res = dispersion_relation_whistler_branch(ω, θ, ω_pe_res, Ω_e_res)
-    k_par_res = k_res * cos(θ)
+    k_par_res = wave_direction * k_res * cos(θ)
     V_r = (ω - (n * Ω_e_res / particle.γ)) / k_par_res
 
     return λ_resonance, V_r
@@ -393,8 +410,8 @@ function WPI_TOF(
     if use_boris
         if isnothing(particle.B_interpolated)
             # TODO: remove this when non-precomputed B-field is removed
-            throw(ArgumentError("Trying to remove non-precomputed magnetic field..."))
-            #B_interp = get_magnetic_field(particle.magnetic_field, particle.L, particle.ϕ_eq)
+            #throw(ArgumentError("Trying to remove non-precomputed magnetic field..."))
+            B_interp = get_magnetic_field(particle.magnetic_field, particle.L, particle.ϕ_eq)
         else
             B_interp = particle.B_interpolated
         end
@@ -404,7 +421,7 @@ function WPI_TOF(
 
     # Loop over all frequencies as they have different resonance regions
     for (i, ω) in enumerate(ω_grid)
-        λ_res = tude(ω, particle, plasma; θ=θ, n=n, fast=fast)
+        λ_res, V_r = resonance_latitude(ω, particle, plasma; θ=θ, n=n, fast=fast)
 
         # For conbinations that don't resonate
         if isnothing(λ_res) || isnan(λ_res)
@@ -424,8 +441,9 @@ function WPI_TOF(
         t_e = particle_transit(
             particle,
             λ_res;
+            V_r=V_r,
             use_boris=use_boris,
-            field_dependent=field_dependent
+            field_dependent=field_dependent,
         )
 
         # Total time = wave-to-λ + particle-to-ionosphere + delay of current ω based on wave
