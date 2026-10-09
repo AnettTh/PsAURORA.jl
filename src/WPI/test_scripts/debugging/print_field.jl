@@ -26,12 +26,6 @@ p = ParticleState(
 
 
 ## Test the particle
-@show p.E_eV / 1e3           # should be 30 keV
-@show rad2deg(p.α0)          # should be 2°
-@show rad2deg(p.α_eq)        # should be ≈ α0 since we start at equator
-@show rad2deg(p.α_lc)        # should be ~3-5° for L=6.5
-@show p.α_eq < p.α_lc        # should be FALSE — particle outside loss cone
-@show p.L                    # should be 6.5
 @show p.B_eq * 1e9           # equatorial B in nT, should be ~100 nT for L=6.5
 @show norm(p.B0) * 1e9       # field at r0 in nT, should ≈ B_eq
 @show p.γ                    # Lorentz factor, ~1.06 for 30 keV
