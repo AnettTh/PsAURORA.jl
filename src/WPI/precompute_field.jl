@@ -42,7 +42,7 @@ function get_magnetic_field(
     cache_dir="src/WPI/data/field_cache",
     n_points=1000
 )
-
+    @info "get_magnetic_field called from:" stacktrace()[2:5]
     # Make unique name for the file
     # NOTE: Might also need to add more info, such as tsyg kwargs
     model = magnetic_field isa TsyganenkoMagneticField ? "tsyg" : "dipole"
@@ -66,9 +66,7 @@ function get_magnetic_field(
             # Trace the field-line
             _, trace = find_R_max(
                 magnetic_field,
-                L,
-                0.0,
-                ϕ_eq;
+                Spherical(L, 0.0, ϕ_eq);
                 ds=RE*0.001,
                 store_trace=true
             )
@@ -113,16 +111,16 @@ function get_magnetic_field(
             λ_grid_fine = range(-λ_max, λ_max, length=10*n_points)
 
             # Compute positions along dipole field line
-            xs = [L * RE * cos(λ)^3 for λ in λ_grid_fine]
-            ys = zeros(length(λ_grid_fine))
-            zs = [L * RE * cos(λ)^2 * sin(λ) for λ in λ_grid_fine]
+            xs = [L * RE * cos(λ)^2 * cos(λ) * cos(ϕ_eq) for λ in λ_grid_fine]
+            ys = [L * RE * cos(λ)^2 * cos(λ) * sin(ϕ_eq) for λ in λ_grid_fine]
+            zs = [L * RE * cos(λ)^2 * sin(λ)             for λ in λ_grid_fine]
 
             # Find the arc length
             ds_vals = sqrt.(diff(xs).^2 .+ diff(ys).^2 .+ diff(zs).^2)
             s_fine = [0.0; cumsum(ds_vals)]
 
             # Compute B analytically
-            Bs = [magnetic_field(Cartesian(x, 0.0, z)) for (x, z) in zip(xs, zs)]
+            Bs = [magnetic_field(Cartesian(x, y, z)) for (x, y, z) in zip(xs, ys, zs)]
             Bx_fine = [B[1] for B in Bs]
             By_fine = [B[2] for B in Bs]
             Bz_fine = [B[3] for B in Bs]
