@@ -28,12 +28,12 @@ the magnetic field model.
 - `γ`: Lorentz factor.
 - `ϕ`: Longitude [rad].
 """
-struct ParticleState{F, I}
+struct ParticleState{F}
     E_eV           :: Float64
     v              :: Float64
     μ              :: Float64
     α0             :: Float64
-    r0             :: SVector{3, Float64}   # TODO: Change this to Cartesian, and maybe add Spherical?
+    r0             :: SVector{3, Float64}
     v0             :: SVector{3, Float64}
     B0             :: SVector{3, Float64}
     b̂              :: SVector{3, Float64}
@@ -42,15 +42,9 @@ struct ParticleState{F, I}
     α_eq           :: Float64
     α_lc           :: Float64
     λ_ionosphere   :: Float64
-    magnetic_field :: F             # TODO: See if this can be done without storing the magnetic field here also
-    B_interpolated :: I
-    s_grid         :: Any
-    s0             :: Float64
-    xs_grid        :: Any
-    ys_grid        :: Any
-    zs_grid        :: Any
+    magnetic_field :: F
+    field_line     :: Union{FieldLine, Nothing}
     γ              :: Float64
-    ϕ              :: Float64
     ϕ_eq           :: Float64
     φ0             :: Float64
 end
@@ -58,16 +52,13 @@ end
 function find_R_max(particle::ParticleState; kwargs...)
     return find_R_max(
         particle.magnetic_field,
-        particle.L,
-        0.0,
-        particle.ϕ_eq;
+        Spherical(particle.L, 0.0, particle.ϕ_eq);
         kwargs...
     )
 end
 
 # TODO: Test this for non-equatorial r0, check that values makes sense physically
 # TODO: See if r0 actually is particle r0, or if it just represents the equatorial distance of the field-line in question
-# TODO: Separate between L and Spherical, need r instead!
 """
     ParticleState(E_eV, μ, r0, magnetic_field, ϕ_eq; relativistic::Bool=false)
 
@@ -83,13 +74,15 @@ position `r0` is used to determine the L-shell and all latitude-dependent quanti
 - `μ`: Cosine of the pitch angle, between -1 and 1.
 - `r0`: Initial position vector in Cartesian coordinates [m].
 - `magnetic_field`: Magnetic field function `f(x, y, z)`.
-- `ϕ_eq`
+- `ϕ_eq`: The longitudinal position of the particle at the equator [rad].
 
 # Keyword Arguments
 
-- `precomputed_magnetic_field`: #TODO: describe
-- `relativistic`: Option to correct for relativistic effects, default is false.
-- `φ`: #TODO: describe
+- `precomputed_magnetic_field`: Decide if the function should use a precomputed magnetic
+  field or leave the variables with `nothing`, resulting in it being evaluated each time
+  it is needed. The default it to not use the precomputed field, i.e. `false`.
+- `relativistic`: Option to correct for relativistic effects, default is `false`.
+- `φ0`: Initial gyrophase of the particle [rad].
 
 # Returns
 
@@ -124,51 +117,31 @@ function ParticleState(
 
     # Find initial velocity
     v_par = -v * μ
-    v_perp = v * sqrt(max(1 - μ^2, 0.0))
-    v0 = SVector{3}(        # TODO: This has some issue, figure out what sqrt of negative number
+    v_perp = v * sqrt(1 - μ^2)
+    v0 = SVector{3}(
         v_par .* b̂ .+
         v_perp .* cos(φ0) .* e1 .+
         v_perp .* sin(φ0) .* e2
     )
 
-    # Latitude of initial position and L-shell
-    λ0 = asin(r0.z / r_mag)
-    L = r_mag / (RE * cos(λ0)^2)
-
-    # TODO: test this!!
-    ϕ = atan(r0.y, r0.x)
+    # Find point of max R to use as L-shell
+    L = find_R_max(magnetic_field, r0) / RE
 
     # Loss-cone angle at the equator
-    # IDEA: Look into the definition of α from Hsieh 2022
-    if magnetic_field isa DipoleMagneticField
-        α_lc = losscone_angle(L)        # TODO: Test this for off-equatorial positions, to check for bugs! It should be larger than α_eq?
-    else
-        α_lc = NaN
-        # IDEA: Include also non-dipolar losscone, if not too expensive? Check what it is used for first
-    end
+    α_lc = losscone_angle(magnetic_field, L, ϕ_eq)
 
     # Current position pitch-angle and equatorial pitch-angle
     α0 = acos(abs(μ))
-    B_eq = BE / L^3     # NOTE: Not true for Tsyganenko!
-    α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq)
 
     # Latitude of the ionosphere based on the L-shell
     λ_ionosphere = acos(sqrt((RE + z_ionosphere) / (L * RE)))
 
     # Pre-compute magnetic field
-    # TODO: What does s0 represent?
-    if precomputed_magnetic_field
-        B_interpolated, s_grid, xs_grid, ys_grid, zs_grid = get_magnetic_field(magnetic_field, L, ϕ_eq)
-        s0 = s_grid[argmin([norm(B_interpolated(s)) for s in s_grid])]
+    field_line = precomputed_magnetic_field ? FieldLine(magnetic_field, L, ϕ_eq) : nothing
 
-    else
-        B_interpolated = nothing
-        s_grid = nothing
-        s0 = 0.0
-        xs_grid = nothing
-        ys_grid = nothing
-        zs_grid = nothing
-    end
+    # Find field-strength and pitch angle at the equator
+    B_eq = isnothing(field_line) ? BE / L^3 : field_line.B_eq
+    α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq)
 
     return ParticleState(
         E_eV,
@@ -185,20 +158,25 @@ function ParticleState(
         α_lc,
         λ_ionosphere,
         magnetic_field,
-        B_interpolated,
-        s_grid,
-        s0,
-        xs_grid,
-        ys_grid,
-        zs_grid,
+        field_line,
         γ,
-        ϕ,
         ϕ_eq,
         φ0
     )
 end
 
-# TODO: Fix this to something useful
+function ParticleState(
+    E_eV,
+    μ,
+    r0::Spherical,
+    magnetic_field::AbstractMagneticField,
+    ϕ_eq;
+    kwargs...
+)
+    return ParticleState(E_eV, μ, Cartesian(r0), magnetic_field, ϕ_eq; kwargs...)
+end
+
+
 function Base.show(io::IO, p::ParticleState)
     println(io, "ParticleState:")
     println(io, "  E        = $(round(p.E_eV/1e3, digits=2)) keV")
@@ -209,5 +187,5 @@ function Base.show(io::IO, p::ParticleState)
     println(io, "  ϕ_eq     = $(round(rad2deg(p.ϕ_eq), digits=1))° ($(round(longitude_to_MLT(p.ϕ_eq, degrees=false), digits=1)) MLT)")
     println(io, "  γ        = $(round(p.γ, digits=4))")
     println(io, "  B_field  = $(typeof(p.magnetic_field))")
-    print(io,   "  B_interp = $(isnothing(p.B_interpolated) ? "not precomputed" : "precomputed")")
+    print(io,   "  B_interp = $(isnothing(p.field_line) ? "not precomputed" : "precomputed")")
 end
