@@ -1,48 +1,5 @@
 using AURORA
 
-# NOTE: This isn't even used anywhere?
-"""
-    dipolar_r_to_λL(r::AbstractVector)
-    dipolar_r_to_λL(x::Real, y::Real, z::Real)
-
-Converts a position in a dipolar field from cartesian coordinates to magnetic latitude and
-L-shell.
-
-# Arguments
-
-- `r`: Cartesian position (vector format) [m].
-- `x, y, z`: Cartesian position (component format) [m].
-
-# Returns
-
-- `λ`: Position magnetic latitude [rad].
-- `L`: Position L-shell.
-
-# Throws
-
-- `ArgumentError`: If `r` don't have exactly three components.
-- `ArgumentError`: If `r` isn't in the x-z-plane.
-- `ArgumentError`: If `r` has zero magnitude.
-- `ArgumentError`: If `r` is inside Earth.
-"""
-function dipolar_r_to_λL(r::AbstractVector)
-    length(r) == 3 || throw(ArgumentError("r must have three components (Chartesian)."))
-    iszero(r[2]) || throw(ArgumentError("Assumes x-z-plane, your y is invalid. Check it!"))
-
-    r_mag = norm(r)
-
-    iszero(r_mag) && throw(ArgumentError("r must be nonzero"))
-
-    r_mag ≤ RE && throw(ArgumentError("r is inside Earth"))
-    λ = asin(r[3] / r_mag)
-    L = r_mag / (RE * cos(λ)^2)
-    return λ, L
-end
-
-function dipolar_r_to_λL(x::Real, y::Real, z::Real)
-    return dipolar_r_to_λL([x, y, z])
-end
-
 
 """
     magnetic_basis(B)
@@ -93,19 +50,15 @@ function magnetic_basis(B)
 end
 
 
-# NOTE: This might also need to take kwargs for tsyganenko-field, i.e. need to make struct!
+
 """
     find_R_max(
     magnetic_field,
-    L,
-    λ,
-    ϕ;
+    position::Spherical;
     ds=RE*0.01,
     n_steps=10_000,
     store_trace::Bool=false
 )
-
-    find_R_max(particle::ParticleState; kwargs...)
 
 Find maximum radial distance from the Earth along a magnetic field line.
 
@@ -135,21 +88,18 @@ directions. Then, it returns the largest value, as well as the trace if specifie
 """
 function find_R_max(
     magnetic_field::AbstractMagneticField,
-    L,
-    λ,
-    ϕ;
+    position::Cartesian;
     ds=RE*0.01,
     n_steps=10_000,
     store_trace::Bool=false
 )
 
-    # TODO: Change to take coordinates in either Spherical or Cartesian, skipping the extra calculations
     # Initial postition
-    r = L * RE * cos(λ)^2
-    x0 = r * cos(λ) * cos(ϕ)
-    y0 = r * cos(λ) * sin(ϕ)
-    z0 = r * sin(λ)
+    x0 = position.x
+    y0 = position.y
+    z0 = position.z
 
+    # Initial guess
     R_max = norm([x0, y0, z0])
 
     # If trace is to be returned, split it in forward and backward tracing
@@ -206,6 +156,9 @@ function find_R_max(
     end
 end
 
+function find_R_max(magnetic_field::AbstractMagneticField, position::Spherical; kwargs...)
+    return find_R_max(magnetic_field, Cartesian(position); kwargs...)
+end
 
 """
     longitude_to_MLT(ϕ; degrees::Bool=true)
