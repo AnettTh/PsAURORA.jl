@@ -45,7 +45,7 @@ field_line_data = map(L_vals) do L
     ω = ω_frac * plasma_L.Ω_e[1]
 
     V_R_grid = map(λ_grid_L) do λ
-        Ω_e   = Ωe_at_λ(λ, Float64(L), particle.ϕ, magnetic_field)
+        Ω_e   = Ωe_at_λ(λ, Float64(L), ϕ_eq, magnetic_field)
         ω_pe  = ωpe_at_λ(plasma_L.ne_model, Float64(L), λ)
         k     = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
         k_par = k * cos(θ)

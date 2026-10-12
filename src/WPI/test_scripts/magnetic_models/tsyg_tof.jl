@@ -16,9 +16,10 @@ tsyganenko = TsyganenkoMagneticField(ϕ)
 L = 4
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
-E_grid = range(10e3, 30e3, length=50)
-
 ##
+E_grid = range(10e3, 30e3, length=5)
+
+## TODO: Make this run without precomputed field entirely
 particle_dipole = [
     ParticleState(
         E,
@@ -27,7 +28,7 @@ particle_dipole = [
         dipole,
         ϕ_eq;
         relativistic=true,
-        precomputed_magnetic_field=true
+        precomputed_magnetic_field=false
     )
     for E in E_grid
 ]
@@ -45,7 +46,7 @@ particle_tsyg = [
 ]
 
 ## Define the plasma
-λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
+λ_grid = range(-deg2rad(50), deg2rad(50), length=100)#, length=500)
 plasma_dipole = PlasmaState(λ_grid, ϕ_eq, DentonDensity(dipole, L, ϕ_eq), dipole, Float64(L))
 plasma_tsyg = PlasmaState(λ_grid, ϕ_eq, DentonDensity(tsyganenko, L, ϕ_eq), tsyganenko, Float64(L))
 
@@ -53,9 +54,10 @@ plasma_tsyg = PlasmaState(λ_grid, ϕ_eq, DentonDensity(tsyganenko, L, ϕ_eq), t
 Ω_e_eq_dipole = minimum(plasma_dipole.Ω_e)
 Ω_e_eq_tsyg = minimum(plasma_tsyg.Ω_e)
 
-ωs_dipole = range(Ω_e_eq_dipole*0.1, Ω_e_eq_dipole*0.49, length=5)
-ωs_tsyg = range(Ω_e_eq_tsyg*0.1, Ω_e_eq_tsyg*0.49, length=5)
-
+#ωs_dipole = range(Ω_e_eq_dipole*0.1, Ω_e_eq_dipole*0.49, length=5)
+#ωs_tsyg = range(Ω_e_eq_tsyg*0.1, Ω_e_eq_tsyg*0.49, length=5)
+ωs_dipole = range(Ω_e_eq_dipole*0.2, Ω_e_eq_dipole*0.3, length=2)
+ωs_tsyg = range(Ω_e_eq_tsyg*0.2, Ω_e_eq_tsyg*0.3, length=2)
 
 
 ## Calculate TOF
@@ -63,11 +65,11 @@ TOF_dipole = zeros(length(E_grid), length(ωs_dipole))  # [n_E × n_ω]
 TOF_tsyg   = zeros(length(E_grid), length(ωs_tsyg  ))
 
 
-
+##
 @showprogress for (i, p) in enumerate(particle_dipole)
     TOF_dipole[i, :] = WPI_TOF(ωs_dipole, p, plasma_dipole; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
 end
-
+##
 @showprogress for (i, p) in enumerate(particle_tsyg)
     TOF_tsyg[i, :] = WPI_TOF(ωs_tsyg, p, plasma_tsyg; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
 end

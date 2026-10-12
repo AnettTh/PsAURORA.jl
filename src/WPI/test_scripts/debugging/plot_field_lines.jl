@@ -16,7 +16,7 @@ p_dipole = ParticleState(
     r0,
     DipoleMagneticField(),
     ϕ_eq;
-    precomputed_magnetic_field=true,
+    precomputed_magnetic_field=false,
     relativistic=true,
     φ0=deg2rad(0.0)
 )
@@ -27,7 +27,7 @@ p_tsyg = ParticleState(
     r0,
     TsyganenkoMagneticField(ϕ_eq),
     ϕ_eq;
-    precomputed_magnetic_field=true,
+    precomputed_magnetic_field=false,
     relativistic=true,
     φ0=deg2rad(0.0)
 )
@@ -211,5 +211,5 @@ xlims!(ax, -lim, 2)
 ylims!(ax, -lim, 2)
 zlims!(ax, -lim+3, lim-3)
 ## Refreshing the plot
-close(server)
+#close(server)
 server = Bonito.Server(Bonito.App(fig), "0.0.0.0", 8888)

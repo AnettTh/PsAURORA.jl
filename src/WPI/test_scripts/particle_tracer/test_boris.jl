@@ -13,7 +13,7 @@ E = 30e3
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))      # TODO: Make something that converts from spherical to cartesian
 
-particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq; precomputed_magnetic_field=true)
+particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq; precomputed_magnetic_field=false)
 
 
 ## Run Boris-mover
@@ -42,6 +42,6 @@ ax  = Axis3(fig[1,1],
 surface!(ax, x_earth, y_earth, z_earth, color = :blue, alpha = 0.5)
 lines!(ax, x./RE, y./RE, z./RE)
 
-## Display figure
+# Display figure
 app = Bonito.App(fig)
-#server = Bonito.Server(app, "0.0.0.0", 8888)
+server = Bonito.Server(app, "0.0.0.0", 8888)

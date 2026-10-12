@@ -26,7 +26,7 @@ p = ParticleState(
 
 
 ## Test the particle
-@show p.B_eq * 1e9           # equatorial B in nT, should be ~100 nT for L=6.5
+@show p.field_line.B_eq * 1e9           # equatorial B in nT, should be ~100 nT for L=6.5
 @show norm(p.B0) * 1e9       # field at r0 in nT, should ≈ B_eq
 @show p.γ                    # Lorentz factor, ~1.06 for 30 keV
 @show norm(p.v0) / p.v       # should be 1.0
@@ -34,17 +34,17 @@ p = ParticleState(
 
 ## Test the interpolated magnetic field
 B_direct = norm(magnetic_field(Spherical(L, 0.0, ϕ)))
-B_interp = norm(p.B_interpolated(p.s0))
+B_interp = norm(p.field_line.B_interpolated(p.field_line.s0))
 @show B_direct * 1e9   # nT
 @show B_interp * 1e9   # should match B_direct
 @show abs(B_direct - B_interp) / B_direct   # relative error, should be < 1%
 
 
 ## Test initial position at arc
-s_grid  = range(0, 1, length=100) .* (2 * p.s0)   # rough range
-B_along = [norm(p.B_interpolated(s)) for s in s_grid]
+s_grid  = range(0, 1, length=100) .* (2 * p.field_line.s0)   # rough range
+B_along = [norm(p.field_line.B_interpolated(s)) for s in s_grid]
 s_min   = s_grid[argmin(B_along)]
-@show p.s0 / RE        # arc length at equator in RE
+@show p.field_line.s0 / RE        # arc length at equator in RE
 @show s_min / RE       # should match p.s0
 
 
@@ -62,7 +62,7 @@ B_itp, s_grid = get_magnetic_field(magnetic_field, round(L, digits=4), ϕ)
 B_along = [norm(B_itp(s)) for s in s_grid]
 s_min   = s_grid[argmin(B_along)]
 
-@show p.s0 / RE         # where ParticleState thinks equator is
+@show p.field_line.s0 / RE         # where ParticleState thinks equator is
 @show s_min / RE        # where interpolator minimum is
 @show minimum(B_along) * 1e9   # minimum B in interpolator
 @show maximum(B_along) * 1e9   # maximum B in interpolator
