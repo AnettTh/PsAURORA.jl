@@ -233,6 +233,8 @@ northern hemisphere comes from latitudes in the southern hemisphere.
 - `n`: Resonance number, default is `1` (cyclotron resonance).
 - `fast`: Option to use pre-computed values to also decide field strength. Avoids evaluating
   the Tsyganenko model (i.e. is faster), but result is less smooth. Default is `false`.
+- `wave_direction`: Decides which direction the wave launces, default being `-1` which is
+  anti-parallel with the magnetic field.
 
 # Returns
 
@@ -247,14 +249,14 @@ function resonance_latitude(
     θ::Float64=0.0,
     n::Int=1,
     fast::Bool=false,
-    wave_direction=-1       # NOTE: South???
+    wave_direction=-1
 )
     if abs(wave_direction) != 1
         throw(ArgumentError("Wave direction needs to be `-1` for southward or `1` for nothward."))
     end
 
     # Define the resonance condition (equation that should equal zero)
-    function resonance_condition(λ; n=n, θ=θ, fast=fast)   # TODO: Add full spherical coordinates as an argument?
+    function resonance_condition(λ; n=n, θ=θ, fast=fast)
 
         if fast
             # Choose latitude that matches closest to the precomputed grid
@@ -281,6 +283,7 @@ function resonance_latitude(
 
         # Find parallel velocity, keeping the sign of μ and returning NaN if mirrored
         α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_mag)
+
         isnothing(α) && return NaN
         v_parallel = particle.v * cos(α) * (-sign(particle.μ))
 
@@ -397,23 +400,21 @@ function WPI_TOF(
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1,
-    fast=false
+    fast=false,
+    precomputed_magnetic_field=true
 )
 
     # Calculate wave-launch time based on given model
-    # NOTE: There should be kwargs here, but will have to make this into a struct anyways
-    t_l = wave_launch_time(ω_grid)
+    t_l = wave_launch_time(ω_grid; t=0.2)
 
     tof = zeros(length(ω_grid))
 
     # Precompute magnetic-field before frequency loop
     if use_boris
-        if isnothing(particle.B_interpolated)
-            # TODO: remove this when non-precomputed B-field is removed
-            #throw(ArgumentError("Trying to remove non-precomputed magnetic field..."))
-            B_interp = get_magnetic_field(particle.magnetic_field, particle.L, particle.ϕ_eq)
+        if use_precomputed && !isnothing(particle.field_line)
+            B_interp = particle.field_line.B_interpolated
         else
-            B_interp = particle.B_interpolated
+            B_interp = nothing   # ← use direct field in boris_mover
         end
     else
         B_interp = nothing
