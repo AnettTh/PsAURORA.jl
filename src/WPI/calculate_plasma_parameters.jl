@@ -2,21 +2,28 @@ using AURORA; dipole_field
 using LinearAlgebra: norm, dot, cross
 using StaticArrays
 
-# TODO: Change this to something that takes any field
 """
     losscone_angle(L; degree::Bool=false)
+    losscone_angle(
+    magnetic_field::AbstractMagneticField,
+    L,
+    ϕ_eq;
+    degrees::Bool=false
+    )
 
 Calculate the equatorial pitch angle for the loss cone.
 
-Using the defined magnetic field and the equatorial position, the function calculates the
-angle of the loss cone, i.e. the pitch angle a particle in this position will need to have
-for it to precipitate into the ionosphere.
+Using either the dipole approximation, or an arbitrary magnetic field funciton, as well as
+the equatorial position, the function calculates the angle of the loss cone, i.e. the pitch
+angle a particle in this position will need to have for it to precipitate into the
+ionosphere.
 
 # Arguments
 
-- `dipole_field`: Function describing the magnetic field, taking three positional values
-  as the argument.
 - `L`: L-shell for where to find the loss cone.
+- `magnetic_field`: Structure holding the magnetic field, doing the calculations without
+  using the dipole approximation.
+- `ϕ_eq`: Longitude of the field-line [rad].
 
 # Keyword Arguments
 
@@ -30,6 +37,7 @@ for it to precipitate into the ionosphere.
 # Throws
 
 - `ArgumentError`: If the equatorial distance is defined wrong.
+- `ArgumentError`: If `B_ratio` is non-physical.
 """
 function losscone_angle(L; degrees::Bool=false)
     r_mirror = RE + z_ionosphere
@@ -59,6 +67,32 @@ function losscone_angle(L; degrees::Bool=false)
     α = degrees ? rad2deg(α_rad) : α_rad
 
     return α
+end
+
+function losscone_angle(
+    magnetic_field::AbstractMagneticField,
+    L,
+    ϕ_eq;
+    degrees::Bool=false
+)
+    # Find point of lowest magnetic field strength, i.e. 'equator'
+    _, trace = find_R_max(magnetic_field, Spherical(L, 0.0, ϕ_eq); ds=RE*0.001, store_trace=true)
+
+    # Compute B along trace
+    Bs = [norm(magnetic_field(Cartesian(x, y, z)))
+          for (x, y, z) in zip(trace.xs, trace.ys, trace.zs)]
+
+    B_eq = minimum(Bs)
+    B_mirror = maximum(Bs)
+
+    B_ratio = B_eq / B_mirror
+
+    if !(0.0 < B_ratio ≤ 1.0)
+        throw(ArgumentError("Non-valid B_eq/B_mirror ratio: $B_ratio"))
+    end
+
+    α_rad = asin(sqrt(B_ratio))
+    return degrees ? rad2deg(α_rad) : α_rad
 end
 
 
