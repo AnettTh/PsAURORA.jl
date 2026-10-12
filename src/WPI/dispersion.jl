@@ -53,12 +53,12 @@ function dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
     return k
 end
 
-# NOTE: Might need a WNA here?
+
 """
     group_velocity_whistler_wave(ω, Ω_e, ω_pe)
 
 Calculates the group velocity `v_g` for the whistler mode chorus wave as a function of
-chorus angular frequency `ω`.
+chorus angular frequency `ω` for ducted waves (θ = 0°).
 
 This is valid assuming chorus frequencies `ω` ≫ ion gyro-frequencies (Chen 2020).
 
