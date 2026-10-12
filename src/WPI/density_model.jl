@@ -1,6 +1,5 @@
 using AURORA
 
-## TODO: Look into returning  magnetic_field and ϕ also from this, to avoid pushing it twice!
 abstract type AbstractDensityModel end
 
 struct ConstantDensity <: AbstractDensityModel
@@ -9,18 +8,18 @@ end
 
 struct DentonDensity <: AbstractDensityModel
     R_max :: Float64
-    ϕ     :: Float64
+    ϕ_eq  :: Float64
 end
 
 # Constructors for Denton density model
-function DentonDensity(magnetic_field, L, ϕ)
-    R_max = find_R_max(magnetic_field, Float64(L), 0.0, ϕ)      # NOTE: should this be ϕ_eq?
-    return DentonDensity(R_max, ϕ)
+function DentonDensity(magnetic_field, L, ϕ_eq)
+    R_max = find_R_max(magnetic_field, Spherical(L, 0.0, ϕ_eq))
+    return DentonDensity(R_max, ϕ_eq)
 end
 
-function DentonDensity(::typeof(dipole_field), L, ϕ)
+function DentonDensity(::typeof(dipole_field), L, ϕ_eq)
     R_max = Float64(L) * RE
-    return DentonDensity(R_max, ϕ)
+    return DentonDensity(R_max, ϕ_eq)
 end
 
 
@@ -30,7 +29,7 @@ function electron_density(model::ConstantDensity, L, λ)
 end
 
 function electron_density(model::DentonDensity, L, λ)
-    return denton_density_model(L, λ, model.ϕ, model.R_max)
+    return denton_density_model(Spherical(L, λ, model.ϕ_eq), model.R_max)
 end
 
 # Make both callable as functions
