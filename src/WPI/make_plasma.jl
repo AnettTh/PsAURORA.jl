@@ -3,7 +3,6 @@ using AURORA; mₑ, qₑ, ε₀
 using LinearAlgebra
 
 # IDEA: Figure out how to define λ_grid from the plasma state itself? Maybe use find_R_max to locate where the fieldline hits the ionosphere?
-# TODO: Make sure to define also the southern hemisphere! Needed for the tsyganenko-model
 """
     PlasmaState
 
@@ -25,12 +24,9 @@ struct PlasmaState{M}
     ω_pe     :: Vector{Float64}
     ω_lb     :: Vector{Float64}
     ϕ        :: Float64
-    ne_model :: M                   # TODO: Check if it is clever to store this here
+    ne_model :: M
 end
 
-# TODO: change to take Spherical instead?
-# TODO: Check if accurate in a tsyganenko-field!
-# TODO: Check if this (and the one below) is needed at all, suspect not.
 """
     Ωe_at_λ(λ, L, ϕ, magnetic_field)
 
@@ -138,16 +134,15 @@ function PlasmaState(
     return PlasmaState(collect(λ_grid), n_e, Ω_e, ω_pe, collect(ω_lb), ϕ, ne_model)
 end
 
-# TODO: Make this make sense
 function Base.show(io::IO, plasma::PlasmaState)
     println(io, "PlasmaState:")
-    println(io, "  λ range  = $(round(rad2deg(plasma.λ[1]), digits=1))° to $(round(rad2deg(plasma.λ[end]), digits=1))°")
-    println(io, "  n points = $(length(plasma.λ))")
-    println(io, "  ϕ        = $(round(rad2deg(plasma.ϕ), digits=1))° ($(round(longitude_to_MLT(plasma.ϕ, degrees=false), digits=1)) MLT)")
-    println(io, "  n_e      = $(round(minimum(plasma.n_e)/1e6, digits=2)) - $(round(maximum(plasma.n_e)/1e6, digits=2)) cm⁻³")
-    println(io, "  Ω_e(eq)  = $(round(plasma.Ω_e[1], digits=1)) rad/s")
-    println(io, "  ω_pe(eq) = $(round(plasma.ω_pe[1], digits=1)) rad/s")
-    println(io, "  ω_pe/Ω_e = $(round(plasma.ω_pe[1]/plasma.Ω_e[1], digits=2))")
-    println(io, "  ω_lb     = $(round(plasma.ω_lb[1], digits=1)) - $(round(plasma.ω_lb[end], digits=1)) rad/s")
-    print(io,   "  ne_model = $(typeof(plasma.ne_model))")
+    println(io, "  λ range   = $(round(rad2deg(plasma.λ[1]), digits=1))° to $(round(rad2deg(plasma.λ[end]), digits=1))°")
+    println(io, "  n points  = $(length(plasma.λ))")
+    println(io, "  ϕ         = $(round(rad2deg(plasma.ϕ), digits=1))° ($(round(longitude_to_MLT(plasma.ϕ, degrees=false), digits=1)) MLT)")
+    println(io, "  n_e range = $(round(minimum(plasma.n_e)/1e6, digits=2)) - $(round(maximum(plasma.n_e)/1e6, digits=2)) cm⁻³")
+    println(io, "  Ω_e(eq)   = $(round(plasma.Ω_e[1], digits=1)) rad/s")
+    println(io, "  ω_pe(eq)  = $(round(plasma.ω_pe[1], digits=1)) rad/s")
+    println(io, "  ω_pe/Ω_e  = $(round(plasma.ω_pe[1]/plasma.Ω_e[1], digits=2))")
+    println(io, "  ω_lb      = $(round(plasma.ω_lb[1], digits=1)) - $(round(plasma.ω_lb[end], digits=1)) rad/s")
+    print(io,   "  ne_model  = $(typeof(plasma.ne_model))")
 end
