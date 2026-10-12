@@ -105,7 +105,25 @@ function total_drift(L, E_eV, q, m, θ; degrees::Bool=false)
     return τ * v_d
 end
 
-""" # NOTE: From Khazanov 2015, needs documentation """
+"""
+    minimal_resonance_energy(ω, plasma, particle)
+
+Calculate the minimal resonance energy for the first-order cyclpotron resonance with chorus
+waves.
+
+Takes some wave frequencies ω, as well as the ambient magnetic field `B0` from the
+`ParticleState` and plasma parameters from `PlasmaState` to find the lowest possible energy
+that satisfy the resonance condition. Lower frequency whistler waves have a higher
+lower-limit, and vice versa. The equation is taken from Khazanov et al. (2015).
+
+# Arguments
+- `ω`: Wave frequency [rad/s].
+- `plasma`: Structure holding plasma parameters.
+- `particle`: Structure holding particle parameters.
+
+# Returns
+- The minimal energy the given frequency can resonate with.
+"""
 function minimal_resonance_energy(ω, plasma, particle)
 
     E_m = norm(particle.B0)^2 / (2 * μ₀ * plasma.n_e[1])
