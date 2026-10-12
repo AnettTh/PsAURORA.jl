@@ -221,7 +221,7 @@ function tsyganenko_field_spherical(
     pdyn=2.0,
     dst=-28.0,
     byimf=1.0,
-    bzimf=2.0,     # TODO: set to positive
+    bzimf=2.0,
     ps=-0.533585131,
     component="both"
 )
