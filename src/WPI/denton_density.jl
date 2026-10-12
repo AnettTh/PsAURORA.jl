@@ -26,36 +26,30 @@ L_α_vals  = [  8.1,   5.9,   4.8,   5.2,  6.4,  5.5,  4.8, 6.1]     # Scale len
 
 
 """
-    denton_density_model(L, λ, ϕ, R_max; SI::Bool=true)
+    denton_density_model(position::Cartesian, R_max; SI::Bool=true)
+    denton_density_model(position::Spherical, R_max; SI::Bool=true)
 
 Compute density along a fieldline, given some initial position.
 
-The model is implemented as described by Denton 2002. The initial position is given in the
-spherical coordinates `L, λ, ϕ` and a precomputed maximum radial distance `R_max` is found
-by evaluating the magnetic field model. The density is by default returned in SI units
-[m⁻³], but can also be given in #/cc [cm⁻³].
+The model is implemented as described by Denton 2002. The initial position is given either
+in spherical coordinates `L, λ, ϕ` or Cartesian coordinates `x, y, z` and a precomputed
+maximum radial distance `R_max` is found by evaluating the magnetic field model. The density
+is by default returned in SI units [m⁻³], but can also be given in #/cc [cm⁻³].
 
 # Agurments
 
-- `L`: L-shell of position.
-- `λ`: Latitude of position [rad].
-- `ϕ`: Longitude of position, i.e. MLT [rad].
+- `position`: Current position of type `Cartesian` or `Spherical`.
 - `R_max`: Maximal distance from the Earth along the current field line [m].
 
 # Keyword Arguments
 
 - `SI`: Return density in SI units or #/cc, default is `true`.
 """
-function denton_density_model(L, λ, ϕ, R_max; SI::Bool=true)
+function denton_density_model(position::Cartesian, R_max; SI::Bool=true)
 
-    # TODO: Add throws for values of λ and ϕ that don't go into cos/sin
-    # TODO: Add throws for invalid L
-    # Find current position
-    r  = @. L * RE * cos(λ)^2
-    x  = @. r * cos(λ) * cos(ϕ)
-    y  = @. r * cos(λ) * sin(ϕ)
-    z  = @. r * sin(λ)
-    R  = @. sqrt(x^2 + y^2 + z^2)
+    # Find current radius
+    R  = @. sqrt(position.x^2 + position.y^2 + position.z^2)
+    L = Spherical(position).L
 
     # Find correct bin
     i = max(1, searchsortedfirst(L_edges, L) - 1)
@@ -66,5 +60,8 @@ function denton_density_model(L, λ, ϕ, R_max; SI::Bool=true)
     α    = α_vals[i]
 
     return @. n_e0 * (R_max / R)^α
+end
 
+function denton_density_model(position::Spherical, R_max; SI::Bool=true)
+    return denton_density_model(Cartesian(position), R_max; SI=SI)
 end
