@@ -12,7 +12,7 @@ using ProgressMeter
 Simulate the trajectory of a charged particle using the Boris mover.
 
 Uses the information about the particle given by `ParticleState` to numerically trace its
-gyromotion in a magnetic field. # TODO: Add more descriptions here as wave and such is added
+gyromotion in a magnetic field.
 
 # Arguments
 
@@ -31,15 +31,13 @@ gyromotion in a magnetic field. # TODO: Add more descriptions here as wave and s
   ionsophere, `footpoint` is returned.
 """
 function boris_mover(
-    particle::ParticleState
-    # plasma::PlasmaState,
-    # wave::AbstractWave
-    ;
+    particle::ParticleState;
     λ_start=nothing,
     φ0=0.0,
     n_T::Int=100_000,
     resolution::Int=10,
-    store_trajectory::Bool=false
+    store_trajectory::Bool=false,
+    precomputed_magnetic_field=true
 )
 
     n_T > 0 || throw(ArgumentError("n_T must be positive"))
@@ -68,43 +66,34 @@ function boris_mover(
         # Use default positions, usually in the equatorial plane
         x, y, z = particle.r0
         vx, vy, vz = particle.v0
-        s = particle.s0
+        s = particle.field_line.s0
     else
+        # Get position of resonance
         r_start = Cartesian(Spherical(particle.L, λ_start, particle.ϕ_eq))
         x, y, z = r_start.x, r_start.y, r_start.z
 
-        B_at_λ = norm(particle.magnetic_field(Spherical(particle.L, λ_start, particle.ϕ_eq)))
-
-        if !isnothing(particle.xs_grid)
-            # Find the point closest to the Earth
-            dists = sqrt.(
-                (particle.xs_grid .- x).^2 .+
-                (particle.ys_grid .- y).^2 .+
-                (particle.zs_grid .- z).^2
-            )
-            s = particle.s_grid[argmin(dists)]
-        else
-            throw(ArgumentError("Position grid from precomputed field not in use somehow??"))   # NOTE: This can be removed when the field works
-            #s = 0.0
-        end
-        #if isnothing(particle.s_grid)
-        #    s = 0.0
-        #else
-        #    B_vals = [norm(particle.B_interpolated(si)) for si in particle.s_grid]
-        #    s = particle.s_grid[argmin(abs.(B_vals .- B_at_λ))]
-        #end
-
+        # Find v0 at resonance latitude: Evaluate the exact magnetic field once
         B_start = particle.magnetic_field(Spherical(particle.L, λ_start, particle.ϕ_eq))
+        b̂, e1, e2, B_start_mag = magnetic_basis(B_start)
 
-        b̂, e1, e2, B_mag = magnetic_basis(B_start)
-
-        α_start = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_start))
-        v_par   = particle.v * cos(α_start)
+        α_start = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_start_mag)
+        v_par   = - particle.v * cos(α_start) * sign(particle.μ)
         v_perp  = particle.v * sin(α_start)
 
         vx, vy, vz = v_par .* b̂ .+ v_perp * cos(φ0) .* e1 .+ v_perp * sin(φ0) .* e2
-    end
 
+        # Get first value of s to represent the start latitude
+        # If-else-logic can be removed once this tests successful
+        if !isnothing(particle.field_line)
+            # Find the point in s closest to the initial position
+            dists = sqrt.(
+                (particle.field_line.xs_grid .- x).^2 .+
+                (particle.field_line.ys_grid .- y).^2 .+
+                (particle.field_line.zs_grid .- z).^2
+            )
+            s = particle.field_line.s_grid[argmin(dists)]
+        end
+    end
 
     t_current = 0.0
 
@@ -114,21 +103,14 @@ function boris_mover(
         t_array[1] = t_current
     end
 
-    # Precompute field interpolator # NOTE: This does not work yet, i think???
-    #B_interpolated = particle.B_interpolated
-    #B_interpolated = isnothing(particle.B_interpolated) ?
-    #    get_magnetic_field(particle.magnetic_field, particle.L, particle.ϕ_eq) :
-    #    particle.B_interpolated
-    s = particle.s0
-
     # Update particle
     for i in 2:(steps + 1)
-        # TODO: Is it as simple as adding some function for δB and δE here?
-        if isnothing(particle.B_interpolated)
+        # TODO: Add some function for δB and δE here, for example Saito 2012 and Hsieh 2021
+        if isnothing(particle.field_line)
             B = particle.magnetic_field(Cartesian(x, y, z))
             Bx, By, Bz = B[1], B[2], B[3]
         else
-            Bx, By, Bz = particle.B_interpolated(s) #.+ wave.δB
+            Bx, By, Bz = particle.field_line.B_interpolated(s) #.+ wave.δB
         end
         Ex, Ey, Ez = E0 #+ wave.δE
 
@@ -181,10 +163,13 @@ function boris_mover(
         # Update stored values with current values
         t_current += dt
 
-        # NOTE: not sure if ds_step should be before or after t_current is updated
-        ds_step = (vx*b̂x + vy*b̂y + vz*b̂z) * dt
-        s += ds_step
-        #s = clamp(s + ds_step, particle.s_grid[1], particle.s_grid[end])
+        # Update current s with the one closest to the grid
+        if !isnothing(particle.field_line)
+            dists = sqrt.((particle.field_line.xs_grid .- x).^2 .+
+                          (particle.field_line.ys_grid .- y).^2 .+
+                          (particle.field_line.zs_grid .- z).^2)
+            s = particle.field_line.s_grid[argmin(dists)]
+        end
 
         if store_trajectory
             r_array[i, :] .= (x, y, z)
