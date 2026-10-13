@@ -115,7 +115,7 @@ function PlasmaState(
     magnetic_field::AbstractMagneticField,
     L;
     lb_low=0.25,
-    lb_high=0.5
+    lb_high=0.48
 )
 
     n_λ = length(λ_grid)
@@ -135,14 +135,18 @@ function PlasmaState(
 end
 
 function Base.show(io::IO, plasma::PlasmaState)
+    idx_eq  = argmin(plasma.Ω_e)   # magnetic equator (minimum B)
+    Ω_e_eq  = plasma.Ω_e[idx_eq]
+    ω_pe_eq = plasma.ω_pe[idx_eq]
+
     println(io, "PlasmaState:")
     println(io, "  λ range   = $(round(rad2deg(plasma.λ[1]), digits=1))° to $(round(rad2deg(plasma.λ[end]), digits=1))°")
     println(io, "  n points  = $(length(plasma.λ))")
     println(io, "  ϕ         = $(round(rad2deg(plasma.ϕ), digits=1))° ($(round(longitude_to_MLT(plasma.ϕ, degrees=false), digits=1)) MLT)")
     println(io, "  n_e range = $(round(minimum(plasma.n_e)/1e6, digits=2)) - $(round(maximum(plasma.n_e)/1e6, digits=2)) cm⁻³")
-    println(io, "  Ω_e(eq)   = $(round(plasma.Ω_e[1], digits=1)) rad/s")
-    println(io, "  ω_pe(eq)  = $(round(plasma.ω_pe[1], digits=1)) rad/s")
-    println(io, "  ω_pe/Ω_e  = $(round(plasma.ω_pe[1]/plasma.Ω_e[1], digits=2))")
+    println(io, "  Ω_e(eq)   = $(round(Ω_e_eq, digits=1)) rad/s")
+    println(io, "  ω_pe(eq)  = $(round(ω_pe_eq, digits=1)) rad/s")
+    println(io, "  ω_pe/Ω_e  = $(round(ω_pe_eq/Ω_e_eq, digits=2))")
     println(io, "  ω_lb      = $(round(plasma.ω_lb[1], digits=1)) - $(round(plasma.ω_lb[end], digits=1)) rad/s")
     print(io,   "  ne_model  = $(typeof(plasma.ne_model))")
 end
