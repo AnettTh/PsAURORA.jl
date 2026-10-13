@@ -400,8 +400,7 @@ function WPI_TOF(
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1,
-    fast=false,
-    precomputed_magnetic_field=true
+    fast=false
 )
 
     # Calculate wave-launch time based on given model
@@ -411,7 +410,7 @@ function WPI_TOF(
 
     # Precompute magnetic-field before frequency loop
     if use_boris
-        if use_precomputed && !isnothing(particle.field_line)
+        if !isnothing(particle.field_line)
             B_interp = particle.field_line.B_interpolated
         else
             B_interp = nothing   # ← use direct field in boris_mover
