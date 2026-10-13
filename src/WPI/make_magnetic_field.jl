@@ -41,7 +41,7 @@ struct DipoleMagneticField <: AbstractMagneticField end
 
 # Call it using given coordinate system
 (model::DipoleMagneticField)(r::Cartesian) = dipole_field(r.x, r.y, r.z)
-(model::DipoleMagneticField)(r::Spherical) = dipole_field(r.L, r.λ)
+(model::DipoleMagneticField)(r::Spherical) = dipole_field(Cartesian(r))
 
 
 # Make the tsyganenko model

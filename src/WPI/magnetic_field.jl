@@ -78,14 +78,23 @@ function dipole_field(r::AbstractVector)
 end
 
 
-function dipole_field(L::Real, λ::Real)
-
-    r = L * RE * cos(λ)^2
-    x = r * cos(λ)
-    z = r * sin(λ)
-
-    return dipole_field(x, 0.0, z)
+function dipole_field(pos::Cartesian)
+    return dipole_field(pos.x, pos.y, pos.z)
 end
+
+function dipole_field(pos::Spherical)
+    r = Cartesian(pos)
+    return dipole_field(r.x, r.y, r.z)
+end
+
+#function dipole_field(L::Real, λ::Real)
+#
+#    r = L * RE * cos(λ)^2
+#    x = r * cos(λ)
+#    z = r * sin(λ)
+#
+#    return dipole_field(x, 0.0, z)
+#end
 
 
 """
