@@ -6,20 +6,18 @@ using JLD2
 
 
 ## Define magnetic field
-ϕ = deg2rad(240.0)
 ϕ_eq = deg2rad(240.0)
 dipole = DipoleMagneticField()
-tsyganenko = TsyganenkoMagneticField(ϕ)
+tsyganenko = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
 μ = -cos(deg2rad(2))       # Almost field-aligned
-L = 4
+L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
 ##
-E_grid = range(10e3, 30e3, length=5)
+E_grid = range(10e3, 30e3, length=20)
 
-## TODO: Make this run without precomputed field entirely
 particle_dipole = [
     ParticleState(
         E,
@@ -40,7 +38,7 @@ particle_tsyg = [
         tsyganenko,
         ϕ_eq;
         relativistic=true,
-        precomputed_magnetic_field=true
+        precomputed_magnetic_field=false
     )
     for E in E_grid
 ]
@@ -54,10 +52,9 @@ plasma_tsyg = PlasmaState(λ_grid, ϕ_eq, DentonDensity(tsyganenko, L, ϕ_eq), t
 Ω_e_eq_dipole = minimum(plasma_dipole.Ω_e)
 Ω_e_eq_tsyg = minimum(plasma_tsyg.Ω_e)
 
-#ωs_dipole = range(Ω_e_eq_dipole*0.1, Ω_e_eq_dipole*0.49, length=5)
-#ωs_tsyg = range(Ω_e_eq_tsyg*0.1, Ω_e_eq_tsyg*0.49, length=5)
-ωs_dipole = range(Ω_e_eq_dipole*0.2, Ω_e_eq_dipole*0.3, length=2)
-ωs_tsyg = range(Ω_e_eq_tsyg*0.2, Ω_e_eq_tsyg*0.3, length=2)
+## TODO: Figure out why this won't run for 0.49*Ω_e
+ωs_dipole = range(Ω_e_eq_dipole*0.1, Ω_e_eq_dipole*0.3, length=5)
+ωs_tsyg = range(Ω_e_eq_tsyg*0.1, Ω_e_eq_tsyg*0.3, length=5)
 
 
 ## Calculate TOF
@@ -66,14 +63,36 @@ TOF_tsyg   = zeros(length(E_grid), length(ωs_tsyg  ))
 
 
 ##
-@showprogress for (i, p) in enumerate(particle_dipole)
-    TOF_dipole[i, :] = WPI_TOF(ωs_dipole, p, plasma_dipole; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
+progress = Progress(length(particle_dipole))
+Threads.@threads for i in eachindex(particle_dipole)
+    TOF_dipole[i, :] = WPI_TOF(ωs_dipole, particle_dipole[i], plasma_dipole; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
+    next!(progress)
 end
 ##
-@showprogress for (i, p) in enumerate(particle_tsyg)
-    TOF_tsyg[i, :] = WPI_TOF(ωs_tsyg, p, plasma_tsyg; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
+progress = Progress(length(particle_tsyg))
+Threads.@threads for i in eachindex(particle_tsyg)
+    TOF_tsyg[i, :] = WPI_TOF(ωs_tsyg, particle_tsyg[i], plasma_tsyg; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
+    next!(progress)
 end
 
+##
+#@save "src/WPI/data/TOF_results_L$(L)_alpha$(round(rad2deg(acos(abs(μ))), digits=1)).jld2" begin
+#    # Parameters
+#    L         = L
+#    μ         = μ
+#    ϕ_eq      = ϕ_eq
+#    E_grid    = collect(E_grid)
+#    ωs_dipole = collect(ωs_dipole)
+#    ωs_tsyg   = collect(ωs_tsyg)
+#
+#    # Results
+#    TOF_dipole = TOF_dipole
+#    TOF_tsyg   = TOF_tsyg
+#
+#    # Plasma parameters for reference
+#    Ω_e_eq_dipole = Ω_e_eq_dipole
+#    Ω_e_eq_tsyg   = Ω_e_eq_tsyg
+#end
 
 ## Make Figure
 fig = Figure(size=(900,500))
@@ -82,7 +101,7 @@ ax = Axis(
     xlabel="time-of-flight [s]",
     ylabel="E [keV]",
     title="Energy as a function of `time-of-flight`, "
-    * "α = $(round(rad2deg(acos(abs(μ))), digits=1)), ϕ = $(round(rad2deg(ϕ), digits = 1))",
+    * "α = $(round(rad2deg(acos(abs(μ))), digits=1)), ϕ = $(round(rad2deg(ϕ_eq), digits = 1))",
     #yscale=log10
 )
 

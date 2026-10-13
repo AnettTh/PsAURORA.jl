@@ -19,7 +19,7 @@ p = ParticleState(
     r0,
     magnetic_field,
     ϕ_eq;
-    precomputed_magnetic_field=true,
+    precomputed_magnetic_field=false,
     relativistic=true,
     φ0=deg2rad(0.0)
     )

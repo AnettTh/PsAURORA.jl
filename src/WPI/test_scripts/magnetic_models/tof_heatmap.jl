@@ -17,10 +17,10 @@ r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
 E_grid = range(10e3, 40e3, length=50)
 
-particle = [ParticleState(E, μ, r0, tsyganenko, ϕ_eq; relativistic=true, precomputed_magnetic_field=true) for E in E_grid]
+particle = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true, precomputed_magnetic_field=false) for E in E_grid]
 
 ## Define the plasma
-λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
+λ_grid = range(-deg2rad(50), deg2rad(50), length=200)
 plasma = PlasmaState(λ_grid, ϕ_eq, DentonDensity(magnetic_field, L, ϕ_eq), magnetic_field, Float64(L))
 
 # Define the wave
@@ -30,7 +30,7 @@ plasma = PlasmaState(λ_grid, ϕ_eq, DentonDensity(magnetic_field, L, ϕ_eq), ma
 
 ## Calculate TOF
 TOF = zeros(length(E_grid), length(ωs))
-use_boris = false
+use_boris = true
 
 @showprogress for (i, p) in enumerate(particle)
     TOF[i, :] = WPI_TOF(
@@ -64,4 +64,4 @@ Colorbar(fig[1,2], hm; label="TOF [s]")
 #xlims!(ax, 0.8, 1.0)
 #ylims!(ax, 100, 1000)
 
-save("src/WPI/test_scripts/magnetic_models/tof_heatmap_integr.png", fig)
+save("src/WPI/test_scripts/magnetic_models/tof_heatmap_corrected.png", fig)

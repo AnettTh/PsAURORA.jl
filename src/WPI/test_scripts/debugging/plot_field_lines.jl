@@ -211,5 +211,5 @@ xlims!(ax, -lim, 2)
 ylims!(ax, -lim, 2)
 zlims!(ax, -lim+3, lim-3)
 ## Refreshing the plot
-#close(server)
+close(server)
 server = Bonito.Server(Bonito.App(fig), "0.0.0.0", 8888)
