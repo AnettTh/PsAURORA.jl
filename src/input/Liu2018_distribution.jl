@@ -1,36 +1,6 @@
 using AURORA
 
 
-## IDEA: Add option for several subtractions
-function subtracted_bimaxwellian_Liu(
-    v_parallel,
-    v_perp,
-    N::Float64,
-    T_parallel::Float64,
-    A::Float64,
-    Δ::Float64,
-    β::Float64
-)
-
-    a2_parallel = 2 * T_parallel * eV_in_J / mₑ
-    a2_perp = a2_parallel * (A + 1)
-    v2_parallel = v_parallel.^2
-    v2_perp = v_perp.^2
-
-    prefactor = N / (π^(3/2) * a2_perp * sqrt(a2_parallel))
-
-    exp_parallel = @. exp(- (v2_parallel)/(a2_parallel))
-
-    exp_perp1 = @. exp(- (v2_perp) / (a2_perp))
-    exp_perp2 = @. exp(- (v2_perp) / (a2_perp * β))
-
-    frac = (1 - Δ) / (1 - β)
-
-    return @. prefactor * exp_parallel * (Δ * exp_perp1 + frac * (exp_perp1 - exp_perp2))
-
-end
-
-
 function subtracted_bimaxwellian(
     v_parallel,
     v_perp,
@@ -59,7 +29,7 @@ function subtracted_bimaxwellian(
     end
 
     v_dj = @. (5 * range(-M, M) * a_parallel) / (M)
-    aj_perp = v_dj .* atan(α_lc)
+    aj_perp = v_dj .* tan(α_lc)
     aj_parallel = fill(r * (v_dj[2] - v_dj[1]), length(-M:M))
     Njs, _, _, _ = compute_Nj(M, a_parallel, sqrt(a2_perp), α_lc, Δ, N, r)
 
@@ -105,4 +75,21 @@ function compute_Nj(M, a_par, a_perp, α_LC, Δ, N, r)
     Njs[M+1] = 0.0
 
     return Njs, vdjs, a_par_js, a_perp_js
+end
+
+
+function distribution_weight(
+    particle::ParticleState,
+    N::Float64,
+    T_parallel::Float64,
+    A::Float64,
+    α_lc::Float64,
+    Δ::Float64,
+    r::Float64,
+    M::Int
+)
+    v_par = particle.v * cos(particle.α_lc)
+    v_perp = particle.v * sin(particle.α_lc)
+
+    return subtracted_bimaxwellian(v_par, v_perp, N, T_parallel, A, α_lc, Δ, r, M)
 end
