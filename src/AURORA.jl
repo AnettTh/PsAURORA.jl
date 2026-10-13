@@ -99,6 +99,7 @@ export time_of_flight
 
 include("WPI/particle_tracer.jl")
 export boris_mover
+
 #-------------
 include("model.jl")
 export AuroraModel, make_altitude_grid, make_energy_grid
@@ -111,7 +112,7 @@ export AbstractSpectrum, FlatSpectrum, GaussianSpectrum, MaxwellianSpectrum, Fil
 export SubtractedBiMaxwellianSpectrum
 
 include("input/Liu2018_distribution.jl")
-export subtracted_bimaxwellian_Liu, subtracted_bimaxwellian
+export subtracted_bimaxwellian, distribution_weight
 
 include("input/Hsieh2022_distribution.jl")
 export subtracted_bimaxwellian_Hsieh
