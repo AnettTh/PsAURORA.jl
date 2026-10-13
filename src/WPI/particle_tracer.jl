@@ -36,8 +36,7 @@ function boris_mover(
     φ0=0.0,
     n_T::Int=100_000,
     resolution::Int=10,
-    store_trajectory::Bool=false,
-    precomputed_magnetic_field=true
+    store_trajectory::Bool=false
 )
 
     n_T > 0 || throw(ArgumentError("n_T must be positive"))
@@ -86,12 +85,12 @@ function boris_mover(
         # If-else-logic can be removed once this tests successful
         if !isnothing(particle.field_line)
             # Find the point in s closest to the initial position
-            dists = sqrt.(
+            dists2 = (
                 (particle.field_line.xs_grid .- x).^2 .+
                 (particle.field_line.ys_grid .- y).^2 .+
                 (particle.field_line.zs_grid .- z).^2
             )
-            s = particle.field_line.s_grid[argmin(dists)]
+            s = particle.field_line.s_grid[argmin(dists2)]
         end
     end
 
