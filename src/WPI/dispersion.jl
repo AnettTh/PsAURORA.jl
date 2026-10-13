@@ -33,9 +33,9 @@ function dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
 
     abs(θ) > 2π && throw(ArgumentError("Are you sure you are using radians for the WNA?"))
 
-    any(ω .> abs.(0.5 .* Ω_e)) && throw(ArgumentError(
-        "You are not in the LBC-range, sure this is right?"
-        ))
+    #ω > 0.5 * minimum(abs.(Ω_e)) && throw(ArgumentError(
+    #    "You are not in the LBC-range, sure this is right? ω = $(ω), 0.5Ωₑ = $(0.5 * minimum(abs.(Ω_e))) "
+    #    ))
 
     X = @. ω_pe^2 / ω^2
     Y = @. Ω_e / ω
