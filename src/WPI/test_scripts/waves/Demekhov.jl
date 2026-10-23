@@ -1,20 +1,19 @@
 using AURORA
 
 ## Define a magnetic field
-ϕ = deg2rad(120.0)
-ϕ_eq = deg2rad(120.0)
-magnetic_field = TsyganenkoMagneticField(ϕ)
+ϕ_eq = deg2rad(240.0)
+magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define a particle
 E = 30e3
 μ = -cos(deg2rad(2))
 L = 6.5
-r0 = Cartesian(L*RE, 0.0, 0.0)      # TODO: Make something that converts from spherical to cartesian
+r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
 particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq)
 
 ## Define a plasma
-λ_grid = range(deg2rad(0.0), deg2rad(20.0), length=100)
+λ_grid = range(deg2rad(-20.0), deg2rad(20.0), length=100)
 ne_model = DentonDensity(magnetic_field, L, ϕ)
 
 plasma = PlasmaState(λ_grid, ϕ, ne_model, magnetic_field, L)

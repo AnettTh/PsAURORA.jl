@@ -4,19 +4,18 @@ using Profile
 using ProgressMeter
 using JLD2
 
-
+# Running this with E_grid = range(1e3, 40e3, length=50) takes ∼20 minutes
 ## Define magnetic field
 ϕ_eq = deg2rad(240.0)
 dipole = DipoleMagneticField()
 tsyganenko = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
-μ = -cos(deg2rad(2))       # Almost field-aligned
+μ = -cos(deg2rad(2))
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
-##
-E_grid = range(10e3, 30e3, length=20)
+E_grid = range(1e3, 40e3, length=50)
 
 particle_dipole = [
     ParticleState(
@@ -44,81 +43,62 @@ particle_tsyg = [
 ]
 
 ## Define the plasma
-λ_grid = range(-deg2rad(50), deg2rad(50), length=100)#, length=500)
-plasma_dipole = PlasmaState(λ_grid, ϕ_eq, DentonDensity(dipole, L, ϕ_eq), dipole, Float64(L))
-plasma_tsyg = PlasmaState(λ_grid, ϕ_eq, DentonDensity(tsyganenko, L, ϕ_eq), tsyganenko, Float64(L))
+λ_grid = range(-deg2rad(50), deg2rad(50), length=1000)
+lb_low, lb_high = 0.1, 0.5
+plasma_dipole = PlasmaState(λ_grid, ϕ_eq, DentonDensity(dipole, L, ϕ_eq), dipole, Float64(L); lb_low=lb_low, lb_high=lb_high)
+plasma_tsyg = PlasmaState(λ_grid, ϕ_eq, DentonDensity(tsyganenko, L, ϕ_eq), tsyganenko, Float64(L); lb_low=lb_low, lb_high=lb_high)
 
-# Define the wave
-Ω_e_eq_dipole = minimum(plasma_dipole.Ω_e)
-Ω_e_eq_tsyg = minimum(plasma_tsyg.Ω_e)
-
-## TODO: Figure out why this won't run for 0.49*Ω_e
-ωs_dipole = range(Ω_e_eq_dipole*0.1, Ω_e_eq_dipole*0.3, length=5)
-ωs_tsyg = range(Ω_e_eq_tsyg*0.1, Ω_e_eq_tsyg*0.3, length=5)
-
+## Define the wave
+ωs_dipole = range(plasma_dipole.ω_lb[1], plasma_dipole.ω_lb[end], length=5)
+ωs_tsyg = range(plasma_tsyg.ω_lb[1], plasma_tsyg.ω_lb[end], length=5)
 
 ## Calculate TOF
-TOF_dipole = zeros(length(E_grid), length(ωs_dipole))  # [n_E × n_ω]
-TOF_tsyg   = zeros(length(E_grid), length(ωs_tsyg  ))
+TOF_dipole = zeros(length(E_grid), length(ωs_dipole))
+TOF_tsyg = zeros(length(E_grid), length(ωs_tsyg))
 
-
-##
 progress = Progress(length(particle_dipole))
 Threads.@threads for i in eachindex(particle_dipole)
     TOF_dipole[i, :] = WPI_TOF(ωs_dipole, particle_dipole[i], plasma_dipole; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
     next!(progress)
 end
-##
+
 progress = Progress(length(particle_tsyg))
 Threads.@threads for i in eachindex(particle_tsyg)
     TOF_tsyg[i, :] = WPI_TOF(ωs_tsyg, particle_tsyg[i], plasma_tsyg; use_boris=true, field_dependent=true, wave_launch_time=wave_chirp)
     next!(progress)
 end
 
-##
-#@save "src/WPI/data/TOF_results_L$(L)_alpha$(round(rad2deg(acos(abs(μ))), digits=1)).jld2" begin
-#    # Parameters
-#    L         = L
-#    μ         = μ
-#    ϕ_eq      = ϕ_eq
-#    E_grid    = collect(E_grid)
-#    ωs_dipole = collect(ωs_dipole)
-#    ωs_tsyg   = collect(ωs_tsyg)
-#
-#    # Results
-#    TOF_dipole = TOF_dipole
-#    TOF_tsyg   = TOF_tsyg
-#
-#    # Plasma parameters for reference
-#    Ω_e_eq_dipole = Ω_e_eq_dipole
-#    Ω_e_eq_tsyg   = Ω_e_eq_tsyg
-#end
 
-## Make Figure
-fig = Figure(size=(900,500))
+## Save the data
+#@save "src/WPI/data/TOF_results_L$(L)_alpha$(round(rad2deg(acos(abs(μ))), digits=1)).jld2" TOF_dipole TOF_tsyg E_grid ωs_dipole ωs_tsyg L μ ϕ_eq lb_low lb_high
+
+## Make the figure
+fig = Figure(size=(900, 500))
 ax = Axis(
     fig[1,1],
-    xlabel="time-of-flight [s]",
+    xlabel="TOF [s]",
     ylabel="E [keV]",
-    title="Energy as a function of `time-of-flight`, "
-    * "α = $(round(rad2deg(acos(abs(μ))), digits=1)), ϕ = $(round(rad2deg(ϕ_eq), digits = 1))",
+    title="Energy as a function of time-of-flight at $(longitude_to_MLT(ϕ_eq; degrees=false)) MLT with pitch-angle $(round(rad2deg(acos(abs(μ))), digits=1))°"
     #yscale=log10
 )
 
 colors = [:blue, :red, :green, :orange, :purple]  # one per ω
 
+ω_norm_dipole = range(lb_low, lb_high, length=length(ωs_dipole))
+ω_norm_tsyg   = range(lb_low, lb_high, length=length(ωs_tsyg))
+
 for (i, ω) in enumerate(ωs_dipole)
     lines!(ax, TOF_dipole[:, i], E_grid ./ 1e3;
-        color=colors[i],
-        linestyle=:solid,
-        label="ω = $(round(ω * 2π/1e3, digits=1)) kHz"
+        color     = colors[i],
+        linestyle = :solid,
+        label     = "ω/Ωₑ = $(round(ω_norm_dipole[i], digits=2))"
     )
 end
+
 for (i, ω) in enumerate(ωs_tsyg)
     lines!(ax, TOF_tsyg[:, i], E_grid ./ 1e3;
         color=colors[i],
-        linestyle=:dash,
-        label="ω = $(round(ω * 2π/1e3, digits=1)) kHz"
+        linestyle=:dash
     )
 end
 
@@ -132,4 +112,4 @@ Legend(fig[1,2], ax)
 #ylims!(ax, 100, 1000)
 
 #save("src/WPI/test_scripts/energies/tsyg_tof.png", fig)
-#save("src/WPI/test_scripts/energies/tsyg_tof_ϕ_$(round(rad2deg(ϕ), digits = 0)).png", fig)
+save("src/WPI/test_scripts/energies/tsyg_tof_ϕ_$(round(rad2deg(ϕ), digits = 0)).png", fig)

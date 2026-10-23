@@ -4,16 +4,16 @@ using CairoMakie
 
 
 ## Make magnetic field
-ϕ = deg2rad(240.0)
 ϕ_eq = deg2rad(240.0)
-magnetic_field = TsyganenkoMagneticField(ϕ)
+magnetic_field = TsyganenkoMagneticField(ϕ_eq)
+magnetic_field = DipoleMagneticField()
 
 ## Define the particles
 μ = -cos(deg2rad(2))       # Almost field-aligned
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
-E_grid = range(1e3, 40e3, length=100)
+E_grid = range(1e3, 40e3, length=200)
 
 p_relativistic = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
 p_classical = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=false) for E in E_grid]
@@ -27,7 +27,7 @@ plasma = PlasmaState(λ_grid, ϕ, DentonDensity(magnetic_field, L, ϕ), magnetic
 ωs = range(plasma.ω_lb[1], plasma.ω_lb[end], length=5)
 
 ## Calculate TOF
-TOF_matrix_relativistic = zeros(length(E_grid), length(ωs))  # [n_E × n_ω]
+TOF_matrix_relativistic = zeros(length(E_grid), length(ωs))
 TOF_simple_relativistic = zeros(length(E_grid), length(ωs))
 
 for (i, p) in enumerate(p_relativistic)
@@ -36,7 +36,7 @@ for (i, p) in enumerate(p_relativistic)
 end
 
 ##
-TOF_matrix_classical = zeros(length(E_grid), length(ωs))  # [n_E × n_ω]
+TOF_matrix_classical = zeros(length(E_grid), length(ωs))
 TOF_simple_classical = zeros(length(E_grid), length(ωs))
 
 for (i, p) in enumerate(p_classical)

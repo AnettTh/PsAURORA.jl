@@ -11,7 +11,7 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 E = 30e3
 μ = -cos(deg2rad(2))
 L = 6.5
-r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))      # TODO: Make something that converts from spherical to cartesian
+r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
 particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq; precomputed_magnetic_field=false)
 
