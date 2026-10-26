@@ -1,4 +1,5 @@
 using AURORA
+using StaticArrays
 
 # TODO: Finish and test this!
 abstract type AbstractWave end
@@ -72,4 +73,55 @@ function wave_frequency(wave::DemekhovWave, t)
     frequency_drift_rate = (qₑ * k * v_g * wave.A_Bw) / (2π * mₑ)
 
     return clamp(ω0 + frequency_drift_rate * t, ω0, wave.plasma.ω_lb[end])
+end
+
+
+abstract type AbstractAmplitude end
+
+struct ConstantAmplitude <: AbstractAmplitude
+    Bw :: Float64
+end
+
+# TODO: Add also Gaussian-like amplitude from Chen 2020
+
+amplitude(a::ConstantAmplitude, t, s) = a.Bw    # Is the same no matter the time t and the position s
+
+# TODO: Dispatch also Gaussian-like amplitude when implemented
+
+
+
+function wave_fields(
+    wave::AbstractWave,
+    amplitude_model::AbstractAmplitude,
+    t::Float64,
+    s::Float64,
+    Ψ::Float64,
+    B0::SVector{3, Float64},
+    plasma::PlasmaState,
+    λ::Float64
+)
+
+    # Get the frequency- and amplitude evolution of the wave based on the given models
+    ω = wave_frequency(wave, t)
+    Bw = amplitude(amplitude_model, t, s)
+
+    b̂, e1, e2, B_mag = magnetic_basis(B0)
+
+    # Find the latitude (and thus plasma parameters) in the λ_grid of the plasma closest to the one we're looking for
+    i = searchsortedfirst(plasma.λ, λ)
+    i = clamp(i, 1, length(plasma.Ω_e))
+    Ω_e = plasma.Ω_e[i]
+    ω_pe = plasma.ω_pe[i]
+
+    # Use the dispersion relation to find the wave number of this position
+    k = dispersion_relation_whistler_branch(ω, 0.0, ω_pe, Ω_e)
+
+    # Find the field perturbations from equations 10 and 11 in Saito 2012
+    # TODO: Check polarization and directions compared to the paper!
+    δB = Bw * (cos(Ψ) .* e1 .- sin(Ψ) .* e2)
+
+    Ew = (ω/k) * Bw   # From the cold plasma approximation
+    δE = Ew * (-sin(Ψ) .* e1 .- cos(Ψ) .* e2)
+
+    return δB, δE
 end
