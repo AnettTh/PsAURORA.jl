@@ -4,19 +4,18 @@ using CairoMakie
 
 ## Make magnetic field
 ϕ_eq = deg2rad(240.0)
-ϕ = deg2rad(240)
 tsyg_field = TsyganenkoMagneticField(ϕ_eq)
 dipole_field = DipoleMagneticField()
 
 
 ## Make a particle
 μ = -cos(deg2rad(3))
-L = 6.0
+L = 7.1
 r0 = Cartesian(L*RE, 0.0, 0.0)
-E = 30e3
 
-particle_tsyg = ParticleState(E, μ, r0, tsyg_field, ϕ_eq; relativistic=true)
-particle_dipole = ParticleState(E, μ, r0, dipole_field, ϕ_eq; relativistic=true)
+# NOTE: This only uses the position of the particle, so the energy is irrelevant
+particle_tsyg = ParticleState(1e4, μ, r0, tsyg_field, ϕ_eq; relativistic=true)
+particle_dipole = ParticleState(1e4, μ, r0, dipole_field, ϕ_eq; relativistic=true)
 
 ## Make a plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
@@ -25,8 +24,8 @@ plasma_dipole = PlasmaState(λ_grid, ϕ_eq, DentonDensity(dipole_field, L, ϕ_eq
 
 
 ## Make a wave
-ω_tsyg = range(plasma_tsyg.Ω_e[1]*0.1, plasma_tsyg.Ω_e[1]*0.4, length=100)
-ω_dipole = range(plasma_dipole.Ω_e[1]*0.1, plasma_dipole.Ω_e[1]*0.4, length=100)
+ω_tsyg = range(minimum(plasma_tsyg.Ω_e)*0.1, minimum(plasma_tsyg.Ω_e)*0.5, length=100)
+ω_dipole = range(minimum(plasma_dipole.Ω_e)*0.1, minimum(plasma_dipole.Ω_e)*0.5, length=100)
 
 
 ## Find minimal resonance energy
@@ -43,4 +42,4 @@ lines!(ax, ω_dipole, E_min_dipole / eV_in_J / 1e3, label="Dipole")
 axislegend(ax; position=:rt)
 
 
-#save("src/WPI/test_scripts/energies/Emin_phi_$(round(rad2deg(ϕ), digits=1)).png", fig)
+save("src/WPI/test_scripts/energies/Emin_phi_$(round(rad2deg(ϕ), digits=1)).png", fig)
