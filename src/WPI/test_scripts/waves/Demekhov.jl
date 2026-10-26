@@ -1,4 +1,5 @@
 using AURORA
+using CairoMakie
 
 ## Define a magnetic field
 ϕ_eq = deg2rad(240.0)
@@ -14,22 +15,28 @@ particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq)
 
 ## Define a plasma
 λ_grid = range(deg2rad(-20.0), deg2rad(20.0), length=100)
-ne_model = DentonDensity(magnetic_field, L, ϕ)
+ne_model = DentonDensity(magnetic_field, L, ϕ_eq)
 
-plasma = PlasmaState(λ_grid, ϕ, ne_model, magnetic_field, L)
+plasma = PlasmaState(λ_grid, ϕ_eq, ne_model, magnetic_field, L; lb_low=0.1, lb_high=0.5)
 
 
 ## Define a wave
-θ = deg2rad(0.0)
-t_duration = 1.0
-A_Bw = 1e-12
-wave = DemekhovWave(plasma, t_duration, θ, A_Bw)
-time = range(0.0, t_duration, length=length(plasma.ω_lb))
+modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+amplitude = ConstantAmplitude(100e-12)                      # 100 pT
+wave = WaveState(modulation, amplitude, plasma)
+
+
+## Make a wave field
+time = 0.0:1:10     # Current time
+s = 1.0             # Current position
+Ψ = 0.0             # Current wave phase
+
+B0 = particle.B0    # Initial position magnetic field
+λ = deg2rad(0.0)    # Latitude
 
 
 ##
-fig = Figure()
-ax = Axis(fig[1, 1], xlabel="Time [s]", ylabel="Frequency [rad/s]")
-
-lines!(ax, time, [wave_frequency(wave, t) for t in time])
-fig
+for t in time
+    δB, δE = wave_fields(wave, t, s, Ψ, B0, λ)
+    @show δB, δE
+end
