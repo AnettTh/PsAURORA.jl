@@ -32,6 +32,7 @@ gyromotion in a magnetic field.
 """
 function boris_mover(
     particle::ParticleState;
+    #wave::Union{WaveState, Nothing}=nothing,
     λ_start=nothing,
     φ0=0.0,
     n_T::Int=100_000,
@@ -51,7 +52,7 @@ function boris_mover(
     # Find initial E-field, B-field and gyroperiods
     E0 = [0.0, 0.0, 0.0]
     #B0 = particle.magnetic_field(particle.r0...)
-    #Ω_e0 = Ω_e[0]
+    #Ω_e0 = Ω_e[1]
     #T0 = 2π / ω_g0
 
     if store_trajectory
@@ -82,7 +83,7 @@ function boris_mover(
         vx, vy, vz = v_par .* b̂ .+ v_perp * cos(φ0) .* e1 .+ v_perp * sin(φ0) .* e2
 
         # Get first value of s to represent the start latitude
-        # If-else-logic can be removed once this tests successful
+        # NOTE: If-else-logic can be removed once this tests successful
         if !isnothing(particle.field_line)
             # Find the point in s closest to the initial position
             dists2 = (
@@ -104,7 +105,7 @@ function boris_mover(
 
     # Update particle
     for i in 2:(steps + 1)
-        # TODO: Add some function for δB and δE here, for example Saito 2012 and Hsieh 2021
+        # TODO: Add some function for δB and δE here, for example Saito 2012 and Hsieh 2022
         if isnothing(particle.field_line)
             B = particle.magnetic_field(Cartesian(x, y, z))
             Bx, By, Bz = B[1], B[2], B[3]
@@ -124,7 +125,7 @@ function boris_mover(
         dt = T / resolution
 
         # Half electric acceleration
-        q_prime = dt * (-qₑ) / 2mₑ
+        q_prime = dt * (-qₑ) / 2mₑ      # NOTE: qₑ here is signed, should this be done in the constant-file instead? Check consistency!
 
         #-----------Core Boris-scheme-----------
         # Half electric acceleration
