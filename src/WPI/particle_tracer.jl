@@ -32,7 +32,7 @@ gyromotion in a magnetic field.
 """
 function boris_mover(
     particle::ParticleState;
-    #wave::Union{WaveState, Nothing}=nothing,
+    wave::Union{WaveState, Nothing}=nothing,
     λ_start=nothing,
     φ0=0.0,
     n_T::Int=100_000,
@@ -103,16 +103,47 @@ function boris_mover(
         t_array[1] = t_current
     end
 
+    # Initialize phase if wave is to be considered
+    Ψ = isnothing(wave) ? 0.0 : wave.Ψ0
+
     # Update particle
     for i in 2:(steps + 1)
-        # TODO: Add some function for δB and δE here, for example Saito 2012 and Hsieh 2022
+
+        # Background fields
         if isnothing(particle.field_line)
             B = particle.magnetic_field(Cartesian(x, y, z))
             Bx, By, Bz = B[1], B[2], B[3]
         else
-            Bx, By, Bz = particle.field_line.B_interpolated(s) #.+ wave.δB
+            Bx, By, Bz = particle.field_line.B_interpolated(s)
         end
-        Ex, Ey, Ez = E0 #+ wave.δE
+
+        Ex, Ey, Ez = E0
+
+        # Add wave perturbation at current time-step
+        if !isnothing(wave)
+            r_mag = sqrt(x^2 + y^2 + z^2)
+            λ_current = asin(z / r_mag)
+
+            # Compute current s
+            if !isnothing(particle.field_line)
+                dists = sqrt.((particle.field_line.xs_grid .- x).^2 .+
+                              (particle.field_line.ys_grid .- y).^2 .+
+                              (particle.field_line.zs_grid .- z).^2)
+                s_current = particle.field_line.s_grid[argmin(dists)]
+            else
+                s_current = 0.0   # placeholder — only matters for amplitude models that depend on s
+            end
+
+            δB, δE = wave_fields(wave, t_current, s_current, Ψ, SVector(Bx, By, Bz), λ_current)
+
+            Bx += δB[1]
+            By += δB[2]
+            Bz += δB[3]
+
+            Ex += δE[1]
+            Ey += δE[2]
+            Ez += δE[3]
+        end
 
         B_mag = sqrt(Bx^2 + By^2 + Bz^2)
         b̂x, b̂y, b̂z = Bx/B_mag, By/B_mag, Bz/B_mag
@@ -151,14 +182,25 @@ function boris_mover(
         vy_plus = vy_minus + (uz_prime * sx - ux_prime * sz)
         vz_plus = vz_minus + (ux_prime * sy - uy_prime * sx)
 
+        # Update velocity
         vx = vx_plus + q_prime * Ex
         vy = vy_plus + q_prime * Ey
         vz = vz_plus + q_prime * Ez
 
+        # Update position
         x += vx * dt
         y += vy * dt
         z += vz * dt
 
+        # Update phase
+        if !isnothing(wave)
+            ω_t = wave_frequency(wave.modulation, wave, t_current)
+            i = searchsortedfirst(wave.plasma.λ, λ_current)
+            i = clamp(i, 1, length(wave.plasma.Ω_e))
+            k_parallel = dispersion_relation_whistler_branch(ω_t, 0.0, wave.plasma.ω_pe[i], wave.plasma.Ω_e[i])
+            v_parallel = vx*b̂x + vy*b̂y + vz*b̂z
+            Ψ += k_parallel * v_parallel * dt - ω_t * dt + wave.Ψ0
+        end
 
         # Update stored values with current values
         t_current += dt
