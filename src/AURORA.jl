@@ -82,6 +82,7 @@ export ParticleState
 include("WPI/make_wave.jl")
 export AbstractWave, ChirpWave, MonochromaticWave, DemekhovWave
 export wave_frequency
+export AbstractAmplitude, ConstantAmplitude, amplitude, wave_fields
 
 include("WPI/dispersion.jl")
 export dispersion_relation_whistler_branch, group_velocity_whistler_wave
@@ -91,7 +92,7 @@ export wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
 
-include("WPI/boris_mover.jl")
+include("WPI/zzzzboris_mover.jl")
 export boris_mover_TOF
 
 include("WPI/zzzztime_of_flight.jl")
