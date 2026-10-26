@@ -1,6 +1,6 @@
 using AURORA
 
-# TODO: This also has opposite behavior, figure out why
+
 function lorentz_factor(V_r, α_h)
     return c₀ / sqrt(c₀^2 - (V_r^2 * (sec(α_h))^2))
 end
