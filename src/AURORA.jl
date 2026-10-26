@@ -80,9 +80,12 @@ include("WPI/make_particle.jl")
 export ParticleState
 
 include("WPI/make_wave.jl")
-export AbstractWave, ChirpWave, MonochromaticWave, DemekhovWave
+export AbstractModulation, Chirp, Monochromatic, Demekhov
 export wave_frequency
-export AbstractAmplitude, ConstantAmplitude, amplitude, wave_fields
+export AbstractAmplitude, ConstantAmplitude
+export wave_amplitude
+export WaveState
+export wave_fields
 
 include("WPI/dispersion.jl")
 export dispersion_relation_whistler_branch, group_velocity_whistler_wave
