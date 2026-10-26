@@ -7,11 +7,6 @@ using Roots
 #===
 TODO: Several places in this file, the change in arc-length with latitude (ds/dλ) uses a
 dipole approximation, also for the Tsyganenko model. This must either be fixed or jusitfied!
-
-NOTE: When computing the resonance latitude, need to make sure that the wave propagation can
-be controlled. Right now, it is tested for waves propagating south, such that the resonance
-of particles precipitating in the northern hemisphere will resonate in the southern
-hemisphere, but want to let also the opposite be possible.
 ===#
 """
     wave_transit(
@@ -80,7 +75,6 @@ function wave_transit(
 end
 
 
-# TODO: Make sure this traces from the southern resonance region to the norhtern hemisphere!
 """
     particle_transit(particle, λ_resonance; V_r=nothing z_ionosphere::Float64=600e3)
 
@@ -156,12 +150,12 @@ function particle_transit(
     end
 
     # Integrate from the resonance region to the ionosphere and return
-    t_e, _ = quadgk(f, λ_resonance, λ_iono)  # NOTE: takes opposite hemisphere as default
+    t_e, _ = quadgk(f, λ_resonance, λ_iono)
     return abs.(t_e)
 end
 
 
-# TODO: Use AbstractWave instead of this
+# TODO: Use AbstractModulation instead of this
 """
     wave_chirp(ω::AbstractVector; t::Real=0.2)
 
