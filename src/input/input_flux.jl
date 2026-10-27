@@ -288,16 +288,16 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
         0.0,
         r_top * sind(69)
     ]
-
-    t_ref = time_of_flight(
-        E_centers[end],
-        μ_center[flux.beams[1]],
-        z_distance;
-        propagation=flux.propagation,
-        magnetic_field=dipole_field,
-        r0=r0,
-        r_source=r_source,
-    )
+    t_ref = 0.0 # NOTE: Placeholder!
+    #t_ref = time_of_flight(
+    #    E_centers[end],
+    #    μ_center[flux.beams[1]],
+    #    z_distance;
+    #    propagation=flux.propagation,
+    #    magnetic_field=dipole_field,
+    #    r0=r0,
+    #    r_source=r_source,
+    #)
 
     # Field-aligned (vertical) normalization: pin the vertical energy flux to IeE_tot
     # TODO: Ask Etienne if this is still valid in my approximation
@@ -319,15 +319,16 @@ function compute_flux(flux::InputFlux{<:AbstractSpectrum}, model::AuroraModel, t
             flux_base = Φ_spectrum[iE] * beam_fraction * ΔE[iE]
 
             # Travel time for electrons of this energy and pitch angle
-            t_travel = time_of_flight(
-                E_centers[iE],
-                μ_center[i_μ],
-                z_distance;
-                propagation=flux.propagation,
-                magnetic_field=dipole_field,
-                r0=r0,
-                r_source=r_source
-            )
+            t_travel = 0.0  # NOTE: Placeholder
+            #t_travel = time_of_flight(
+            #    E_centers[iE],
+            #    μ_center[i_μ],
+            #    z_distance;
+            #    propagation=flux.propagation,
+            #    magnetic_field=dipole_field,
+            #    r0=r0,
+            #    r_source=r_source
+            #)
 
             # Time-shifted grid: subtract travel time difference relative to reference
             t_shifted = t .- (t_travel - t_ref)
