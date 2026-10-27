@@ -25,14 +25,18 @@ plasma = PlasmaState(λ_grid, ϕ, DentonDensity(magnetic_field, L, ϕ), magnetic
 
 ## Define the wave
 ωs = range(plasma.ω_lb[1], plasma.ω_lb[end], length=5)
+# NOTE: I do not think this is correct anymore
+modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+amplitude = ConstantAmplitude(100e-12)                      # 100 pT
+wave = WaveState(modulation, amplitude, plasma)
 
 ## Calculate TOF
 TOF_matrix_relativistic = zeros(length(E_grid), length(ωs))
 TOF_simple_relativistic = zeros(length(E_grid), length(ωs))
 
 for (i, p) in enumerate(p_relativistic)
-    TOF_matrix_relativistic[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=true, wave_launch_time=wave_chirp)
-    TOF_simple_relativistic[i, :]  = WPI_TOF(ωs, p, plasma; field_dependent=false, wave_launch_time=wave_chirp)
+    TOF_matrix_relativistic[i, :] = WPI_TOF(ωs, p, plasma, wave; field_dependent=true  )
+    TOF_simple_relativistic[i, :]  = WPI_TOF(ωs, p, plasma, wave; field_dependent=false)
 end
 
 ##
@@ -40,8 +44,8 @@ TOF_matrix_classical = zeros(length(E_grid), length(ωs))
 TOF_simple_classical = zeros(length(E_grid), length(ωs))
 
 for (i, p) in enumerate(p_classical)
-    TOF_matrix_classical[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=true, wave_launch_time=wave_chirp)
-    TOF_simple_classical[i, :]  = WPI_TOF(ωs, p, plasma; field_dependent=false, wave_launch_time=wave_chirp)
+    TOF_matrix_classical[i, :] = WPI_TOF(ωs, p, plasma, wave; field_dependent=true  )
+    TOF_simple_classical[i, :]  = WPI_TOF(ωs, p, plasma, wave; field_dependent=false)
 end
 
 

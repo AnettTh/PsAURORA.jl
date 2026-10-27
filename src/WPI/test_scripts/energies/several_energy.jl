@@ -19,9 +19,16 @@ particles = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) 
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
 plasma = PlasmaState(λ_grid, ϕ_eq, DentonDensity(magnetic_field, L, ϕ_eq), magnetic_field, Float64(L))
 
-# Define the wave
+## Define the wave
+# NOTE: I do not think this is correct anymore
 Ω_e_eq = minimum(plasma.Ω_e)
 ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.4, length=5)
+
+# Define a wave
+modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+amplitude = ConstantAmplitude(100e-12)                      # 100 pT
+wave = WaveState(modulation, amplitude, plasma)
+
 
 
 ## Calculate TOF
@@ -30,8 +37,8 @@ TOF_simple = zeros(length(E_grid), length(ωs))
 
 
 for (i, p) in enumerate(particles)
-    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=true , wave_launch_time=wave_chirp)
-    TOF_simple[i, :] = WPI_TOF(ωs, p, plasma; field_dependent=false, wave_launch_time=wave_chirp)
+    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma, wave; field_dependent=true )
+    TOF_simple[i, :] = WPI_TOF(ωs, p, plasma, wave; field_dependent=false)
 end
 
 for (i, ω) in enumerate(ωs)

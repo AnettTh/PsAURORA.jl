@@ -1,20 +1,20 @@
 using AURORA
 using AURORA; c₀
 using CairoMakie
+using ProgressMeter
 
 ## Make magnetic field
-ϕ = deg2rad(120.0)
-ϕ_eq = deg2rad(120.0)
-magnetic_field = TsyganenkoMagneticField(ϕ)
+ϕ_eq = deg2rad(240.0)
+magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
-μ = -cos(deg2rad(3))       # Almost field-aligned
+μ = -cos(deg2rad(1))       # Almost field-aligned
 L = 6.5
-r0 = Cartesian(L*RE, 0.0, 0.0)
+r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
-E_grid = range(1e3, 40e3, length=100)
+E_grid = range(10e3, 40e3, length=100)
 
-particles = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
+particles = @showprogress [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
@@ -25,16 +25,21 @@ plasma = PlasmaState(λ_grid, ϕ_eq, DentonDensity(magnetic_field, L, ϕ_eq), ma
 Ωe_frac = range(0.1, 0.5, length=5)
 ωs = plasma.Ω_e[1] .* Ωe_frac
 
+# NOTE: I do not think this is correct anymore
+modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+amplitude = ConstantAmplitude(100e-12)                      # 100 pT
+wave = WaveState(modulation, amplitude, plasma)
+
 ##
 TOF_n1 = zeros(length(E_grid), length(ωs))
 TOF_n2 = zeros(length(E_grid), length(ωs))
 ##
-
-for (i, p) in enumerate(particles)
-    TOF_n1[i, :] = WPI_TOF(ωs, p, plasma; n=1, wave_launch_time=wave_chirp)
-    TOF_n2[i, :] = WPI_TOF(ωs, p, plasma; n=2, wave_launch_time=wave_chirp)
+@showprogress for (i, p) in enumerate(particles)
+    TOF_n1[i, :] = WPI_TOF(ωs, p, plasma, wave; n=1, use_boris=true)
+    TOF_n2[i, :] = WPI_TOF(ωs, p, plasma, wave; n=2, use_boris=true)
 end
 
+# NOTE: The resonance here is at positive latitudes. Is this some old hardcoded bug or due to n=2 being used?
 
 ##
 fig = Figure(size=(1200, 500))
@@ -77,7 +82,7 @@ Label(fig[1, 3],
     tellwidth  = false,
     tellheight = false,
     halign     = :left,
-    valign     = :bottom  # ← bottom of the same cell as legend
+    valign     = :bottom
 )
 
 # Link axes so they share the same limits

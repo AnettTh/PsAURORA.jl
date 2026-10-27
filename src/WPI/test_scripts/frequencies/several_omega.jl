@@ -33,9 +33,14 @@ plasma = PlasmaState(
 ## Get group velocity
 ω_grid=range(plasma.ω_lb[1], plasma.ω_lb[end], length=500)
 
+# NOTE: I do not think this is correct anymore
+modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+amplitude = ConstantAmplitude(100e-12)                      # 100 pT
+wave = WaveState(modulation, amplitude, plasma)
+
 ## Calculate TOF
-TOF_fd     = WPI_TOF(ω_grid, particle, plasma; wave_launch_time=wave_chirp, field_dependent=true)
-TOF_simple = WPI_TOF(ω_grid, particle, plasma; wave_launch_time=wave_chirp, field_dependent=false)
+TOF_fd     = WPI_TOF(ω_grid, particle, plasma, wave; field_dependent=true)
+TOF_simple = WPI_TOF(ω_grid, particle, plasma, wave; field_dependent=false)
 
 
 ## Make Figure

@@ -27,6 +27,10 @@ plasma = PlasmaState(λ_grid, ϕ_eq, DentonDensity(magnetic_field, L, ϕ_eq), ma
 Ω_e_eq = minimum(plasma.Ω_e)
 ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.49, length=50)
 
+# NOTE: I do not think this is correct anymore
+modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+amplitude = ConstantAmplitude(100e-12)                      # 100 pT
+wave = WaveState(modulation, amplitude, plasma)
 
 ## Calculate TOF
 TOF = zeros(length(E_grid), length(ωs))
@@ -36,10 +40,11 @@ use_boris = true
     TOF[i, :] = WPI_TOF(
         ωs,
         p,
-        plasma;
+        plasma,
+        wave;
         use_boris=use_boris,
         field_dependent=true,
-        wave_launch_time=wave_chirp
+        #wave_launch_time=wave_chirp
     )
 end
 
