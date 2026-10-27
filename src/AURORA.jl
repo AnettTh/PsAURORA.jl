@@ -88,6 +88,7 @@ include("WPI/dispersion.jl")
 export dispersion_relation_whistler_branch, group_velocity_whistler_wave
 
 include("WPI/WPI_dynamics.jl")
+export wave_launch_time
 export wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
