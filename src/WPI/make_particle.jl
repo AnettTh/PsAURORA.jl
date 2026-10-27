@@ -44,7 +44,6 @@ struct ParticleState{F}
     α_lc           :: Float64
     λ_ionosphere   :: Float64
     magnetic_field :: F
-    field_line     :: Union{FieldLine, Nothing}
     γ              :: Float64
     ϕ_eq           :: Float64
     φ0             :: Float64
@@ -79,9 +78,6 @@ position `r0` is used to determine the L-shell and all latitude-dependent quanti
 
 # Keyword Arguments
 
-- `precomputed_magnetic_field`: Decide if the function should use a precomputed magnetic
-  field or leave the variables with `nothing`, resulting in it being evaluated each time
-  it is needed. The default it to not use the precomputed field, i.e. `false`.
 - `relativistic`: Option to correct for relativistic effects, default is `false`.
 - `φ0`: Initial gyrophase of the particle [rad].
 
@@ -95,7 +91,6 @@ function ParticleState(
     r0::Cartesian,
     magnetic_field::AbstractMagneticField,
     ϕ_eq;
-    precomputed_magnetic_field::Bool=false,
     relativistic::Bool=false,
     φ0=deg2rad(0.0)
 )
@@ -140,11 +135,9 @@ function ParticleState(
     # Latitude of the ionosphere based on the L-shell
     λ_ionosphere = acos(sqrt((RE + z_ionosphere) / (L * RE)))
 
-    # Pre-compute magnetic field
-    field_line = precomputed_magnetic_field ? FieldLine(magnetic_field, L, ϕ_eq) : nothing
-
     # Find field-strength and pitch angle at the equator
-    B_eq = isnothing(field_line) ? BE / L^3 : field_line.B_eq
+    # TODO: These are not correct for the tsyganenko-model, look into how to handle it
+    B_eq = BE / L^3
     α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq)
 
     return ParticleState(
@@ -163,7 +156,6 @@ function ParticleState(
         α_lc,
         λ_ionosphere,
         magnetic_field,
-        field_line,
         γ,
         ϕ_eq,
         φ0
@@ -181,7 +173,7 @@ function ParticleState(
     return ParticleState(E_eV, μ, Cartesian(r0), magnetic_field, ϕ_eq; kwargs...)
 end
 
-
+# TODO: Update to something useful
 function Base.show(io::IO, p::ParticleState)
     println(io, "ParticleState:")
     println(io, "  E        = $(round(p.E_eV/1e3, digits=2)) keV")
@@ -192,5 +184,4 @@ function Base.show(io::IO, p::ParticleState)
     println(io, "  ϕ_eq     = $(round(rad2deg(p.ϕ_eq), digits=1))° ($(round(longitude_to_MLT(p.ϕ_eq, degrees=false), digits=1)) MLT)")
     println(io, "  γ        = $(round(p.γ, digits=4))")
     println(io, "  B_field  = $(typeof(p.magnetic_field))")
-    print(io,   "  B_interp = $(isnothing(p.field_line) ? "not precomputed" : "precomputed")")
 end
