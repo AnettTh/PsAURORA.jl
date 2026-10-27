@@ -51,7 +51,7 @@ function boris_mover(
 
     # Find initial E-field, B-field and gyroperiods
     E0 = [0.0, 0.0, 0.0]
-    #B0 = particle.magnetic_field(particle.r0...)
+    B0 = particle.B0
     #Ω_e0 = Ω_e[1]
     #T0 = 2π / ω_g0
 
@@ -59,6 +59,7 @@ function boris_mover(
         r_array = zeros(steps + 1, 3)
         v_array = zeros(steps + 1, 3)
         t_array = zeros(steps + 1)
+        α_array = zeros(steps + 1)
     end
 
     # Figure out where to start the particle from
@@ -101,13 +102,14 @@ function boris_mover(
         r_array[1, :] .= (x, y, z)
         v_array[1, :] .= (vx, vy, vz)
         t_array[1] = t_current
+        α_array[1] = acos(abs(particle.μ))
     end
 
     # Initialize phase if wave is to be considered
     Ψ = isnothing(wave) ? 0.0 : wave.Ψ0
 
     # Update particle
-    for i in 2:(steps + 1)
+    @showprogress for i in 2:(steps + 1)
 
         # Background fields
         if isnothing(particle.field_line)
@@ -126,10 +128,10 @@ function boris_mover(
 
             # Compute current s
             if !isnothing(particle.field_line)
-                dists = sqrt.((particle.field_line.xs_grid .- x).^2 .+
-                              (particle.field_line.ys_grid .- y).^2 .+
-                              (particle.field_line.zs_grid .- z).^2)
-                s_current = particle.field_line.s_grid[argmin(dists)]
+                dists2 = (particle.field_line.xs_grid .- x).^2 .+
+                         (particle.field_line.ys_grid .- y).^2 .+
+                         (particle.field_line.zs_grid .- z).^2
+                s_current = particle.field_line.s_grid[argmin(dists2)]
             else
                 s_current = 0.0   # placeholder — only matters for amplitude models that depend on s
             end
@@ -195,11 +197,11 @@ function boris_mover(
         # Update phase
         if !isnothing(wave)
             ω_t = wave_frequency(wave.modulation, wave, t_current)
-            i = searchsortedfirst(wave.plasma.λ, λ_current)
-            i = clamp(i, 1, length(wave.plasma.Ω_e))
-            k_parallel = dispersion_relation_whistler_branch(ω_t, 0.0, wave.plasma.ω_pe[i], wave.plasma.Ω_e[i])
+            j = searchsortedfirst(wave.plasma.λ, λ_current)
+            j = clamp(j, 1, length(wave.plasma.Ω_e))
+            k_parallel = dispersion_relation_whistler_branch(ω_t, 0.0, wave.plasma.ω_pe[j], wave.plasma.Ω_e[j])
             v_parallel = vx*b̂x + vy*b̂y + vz*b̂z
-            Ψ += k_parallel * v_parallel * dt - ω_t * dt + wave.Ψ0
+            Ψ += k_parallel * v_parallel * dt - ω_t * dt
         end
 
         # Update stored values with current values
@@ -217,14 +219,20 @@ function boris_mover(
             r_array[i, :] .= (x, y, z)
             v_array[i, :] .= (vx, vy, vz)
             t_array[i] = t_current
+
+            v_mag = sqrt(vx^2 + vy^2 + vz^2)
+            v_par = vx*b̂x + vy*b̂y + vz*b̂z
+            α_array[i] = acos(clamp(abs(v_par) / v_mag, 0.0, 1.0))
         end
 
         if x^2 + y^2 + z^2 ≤ r_ionosphere^2
+            println("Precipitation!")
             if store_trajectory
                 return (
                     position=r_array[1:i, :],
                     velocity=v_array[1:i, :],
                     time=t_array[1:i],
+                    α=α_array[1:i],
                     footpoint=(x, y, z)
                 )
             else
@@ -233,8 +241,15 @@ function boris_mover(
         end
     end
 
+    println("Bouncing...")
     if store_trajectory
-        return (position=r_array, velocity=v_array, time=t_array, footpoint=nothing)
+        return (
+            position=r_array,
+            velocity=v_array,
+            time=t_array,
+            α=α_array,
+            footpoint=nothing
+        )
     else
         return (time=t_current, footpoint=nothing)
     end
