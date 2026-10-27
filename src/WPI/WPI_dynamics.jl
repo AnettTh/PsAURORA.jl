@@ -111,7 +111,7 @@ function particle_transit(
     # If Boris-mover is to be used, shortcuts the function
     if use_boris
         # Find the initial position for the boris-mover, i.e. where the particle resonates
-        result = boris_mover(particle; λ_start=λ_resonance, store_trajectory=false)
+        result = boris_mover(particle; λ_start=λ_resonance, store_trajectory=false, stop_when_bouncing=true)
         return result.time
     end
 
@@ -152,36 +152,6 @@ function particle_transit(
     # Integrate from the resonance region to the ionosphere and return
     t_e, _ = quadgk(f, λ_resonance, λ_iono)
     return abs.(t_e)
-end
-
-
-# TODO: Use AbstractModulation instead of this
-"""
-    wave_chirp(ω::AbstractVector; t::Real=0.2)
-
-Compute the chorus wave launch time profile t₀(ω) at the magnetic equator.
-
-Returns the time at which a wave of angular frequency ω is launched from the equatorial
-source region, assuming a linear frequency chirp (rising tone), as modeled in Chen 2020. The
-default parameter of rise-time in 0.2 s correspond to Chen 2020, and the start- and end
-frequencies is the start- and end point of the frequency range.
-
-# Arguments
-
-- `ω`: Angular frequency at which to evaluate t₀ [rad/s].
-
-# Keyword Arguments
-
-- `t`: Duration of the chorus element [s], default is 0.2 s, similar to what is used in Chen
-  2021.
-
-# Returns
-
-- A function for release time of each ω.
-"""
-function wave_chirp(ω::AbstractVector; t::Real=0.2)
-    chirp_rate = (ω[1] - ω[end]) / t
-    return (ω .- ω[1]) ./ chirp_rate
 end
 
 
@@ -388,9 +358,9 @@ keyword arguments, else, it is assumed instant at all frequencies.
 function WPI_TOF(
     ω_grid::AbstractVector,
     particle::ParticleState,
-    plasma::PlasmaState;
+    plasma::PlasmaState,
+    wave::WaveState;
     use_boris::Bool=false,
-    wave_launch_time=wave_chirp,
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1,
@@ -398,7 +368,7 @@ function WPI_TOF(
 )
 
     # Calculate wave-launch time based on given model
-    t_l = wave_launch_time(ω_grid; t=0.2)
+    t_l = wave_launch_time(wave, ω_grid)
 
     tof = zeros(length(ω_grid))
 
@@ -437,6 +407,6 @@ function WPI_TOF(
 end
 
 # Also allows for single frequencies
-function WPI_TOF(ω::Real, particle, plasma; kwargs...)
-    return WPI_TOF([ω], particle, plasma; kwargs...)[1]
+function WPI_TOF(ω::Real, particle, plasma, wave; kwargs...)
+    return WPI_TOF([ω], particle, plasma, wave; kwargs...)[1]
 end
