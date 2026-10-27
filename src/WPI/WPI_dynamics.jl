@@ -254,8 +254,8 @@ function resonance_latitude(
 
         if fast
             # Choose latitude that matches closest to the precomputed grid
-            i   = searchsortedfirst(plasma.λ, λ)
-            i   = clamp(i, 1, length(plasma.Ω_e))
+            i = searchsortedfirst(plasma.λ, λ)
+            i = clamp(i, 1, length(plasma.Ω_e))
             Ω_e = plasma.Ω_e[i]
             ω_pe = plasma.ω_pe[i]
 
@@ -401,17 +401,6 @@ function WPI_TOF(
     t_l = wave_launch_time(ω_grid; t=0.2)
 
     tof = zeros(length(ω_grid))
-
-    # Precompute magnetic-field before frequency loop
-    if use_boris
-        if !isnothing(particle.field_line)
-            B_interp = particle.field_line.B_interpolated
-        else
-            B_interp = nothing   # ← use direct field in boris_mover
-        end
-    else
-        B_interp = nothing
-    end
 
     # Loop over all frequencies as they have different resonance regions
     for (i, ω) in enumerate(ω_grid)
