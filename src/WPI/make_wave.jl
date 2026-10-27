@@ -77,6 +77,27 @@ function wave_frequency(wave::WaveState, t)
     return wave_frequency(wave.modulation, wave, t)
 end
 
+
+# All frequencies launch at the same time
+function wave_launch_time(modulation::Monochromatic, ω_grid)
+    return zeros(length(ω_grid))
+end
+
+function wave_launch_time(modulation::Chirp, ω_grid)
+    chirp_rate = (modulation.ω1 - modulation.ω0) / modulation.t_duration
+    return [(ω - modulation.ω0) / chirp_rate for ω in ω_grid]
+end
+
+function wave_launch_time(modulation::Demekhov, ω_grid)
+    throw("Demekhov wave is not fully implemented yet...")
+end
+
+function wave_launch_time(wave::WaveState, ω_grid)
+    return wave_launch_time(wave.modulation, ω_grid)
+end
+
+
+
 function wave_fields(
     wave::WaveState,
     t::Float64,
