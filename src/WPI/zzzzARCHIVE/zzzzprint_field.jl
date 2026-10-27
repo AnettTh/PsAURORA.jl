@@ -1,0 +1,55 @@
+using AURORA
+using LinearAlgebra
+using JLD2
+
+## Make magnetic field
+ϕ_eq = deg2rad(240.0)
+magnetic_field = TsyganenkoMagneticField(ϕ_eq)
+
+## Make particle
+L = 6.5
+ϕ = deg2rad(240.0)
+μ = -cos(deg2rad(2.0))
+E = 30e3
+r0 = Cartesian(Spherical(L, 0.0, ϕ))
+
+p = ParticleState(
+    E,
+    μ,
+    r0,
+    magnetic_field,
+    ϕ_eq;
+    relativistic=true,
+    φ0=deg2rad(0.0)
+    )
+
+
+## Test the particle
+@show p.field_line.B_eq * 1e9           # equatorial B in nT, should be ~100 nT for L=6.5
+@show norm(p.B0) * 1e9       # field at r0 in nT, should ≈ B_eq
+@show p.γ                    # Lorentz factor, ~1.06 for 30 keV
+@show norm(p.v0) / p.v       # should be 1.0
+
+
+## Test the interpolated magnetic field
+B_direct = norm(magnetic_field(Spherical(L, 0.0, ϕ)))
+B_interp = norm(p.field_line.B_interpolated(p.field_line.s0))
+@show B_direct * 1e9   # nT
+@show B_interp * 1e9   # should match B_direct
+@show abs(B_direct - B_interp) / B_direct   # relative error, should be < 1%
+
+
+## Test initial position at arc
+s_grid  = range(0, 1, length=100) .* (2 * p.field_line.s0)   # rough range
+B_along = [norm(p.field_line.B_interpolated(s)) for s in s_grid]
+s_min   = s_grid[argmin(B_along)]
+@show p.field_line.s0 / RE        # arc length at equator in RE
+@show s_min / RE       # should match p.s0
+
+
+## Test v0
+b̂ = p.b̂
+v_par  = dot(p.v0, b̂)          # parallel component
+v_perp = norm(p.v0 - v_par*b̂)  # perpendicular component
+@show v_par / p.v               # should be ≈ cos(α0) ≈ cos(3°) ≈ 0.999
+@show v_perp / p.v              # should be ≈ sin(α0) ≈ sin(3°) ≈ 0.052
