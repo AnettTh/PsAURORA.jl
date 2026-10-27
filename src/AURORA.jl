@@ -92,12 +92,6 @@ export wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
 
-#include("WPI/zzzzARCHIVE//zzzzboris_mover.jl")
-#export boris_mover_TOF
-#
-#include("WPI/zzzzARCHIVE/zzzztime_of_flight.jl")
-#export time_of_flight
-
 include("WPI/particle_tracer.jl")
 export boris_mover
 
