@@ -47,7 +47,7 @@ function WaveState(modulation, amplitude, plasma; Ψ0=2π*rand(), wave_direction
     return WaveState(modulation, amplitude, plasma, Ψ0, wave_direction)
 end
 
-
+# TODO: Wave already store modulation, should this be changed?
 function wave_frequency(modulation::Chirp, wave::WaveState, t)
     frequency_drift_rate = (modulation.ω1 - modulation.ω0) / modulation.t_duration
     return clamp(modulation.ω0 + frequency_drift_rate * t, modulation.ω0, modulation.ω1)
@@ -60,13 +60,21 @@ end
 # TODO: This is now frequency as a function of time at one location, need time as a function of frequency
 function wave_frequency(modulation::Demekhov, wave::WaveState, t)
     ω0 = wave.plasma.ω_lb[1]
-    k = dispersion_relation_whistler_branch(ω0, wave.θ, wave.plasma.ω_pe[1], wave.plasma.Ω_e[1])
-    v_g = group_velocity_whistler_wave(ω0, wave.plasma.Ω_e[1], wave.plasma.ω_pe[1])
+
+    # Find the wave-vector for the lowest density
+    i = argmin(wave.plasma.Ω_e)
+    k = dispersion_relation_whistler_branch(ω0, wave.θ, wave.plasma.ω_pe[i], wave.plasma.Ω_e[i])
+
+    v_perp = 1.0  #TODO: figure out how to get this
 
     Bw = amplitude(wave.amplitude_model, 0.0, 0.0)
-    frequency_drift_rate = (qₑ * k * v_g * Bw) / (2π * mₑ)
+    frequency_drift_rate = (abs(qₑ) * k * v_perp * Bw) / (2π * mₑ)
 
     return clamp(ω0 + frequency_drift_rate * t, ω0, wave.plasma.ω_lb[end])
+end
+
+function wave_frequency(wave::WaveState, t)
+    return wave_frequency(wave.modulation, wave, t)
 end
 
 function wave_fields(
@@ -79,7 +87,7 @@ function wave_fields(
 )
 
     # Get the frequency- and amplitude evolution of the wave based on the given models
-    ω = wave_frequency(wave.modulation, wave, t)
+    ω = wave_frequency(wave, t)
     Bw = wave_amplitude(wave.amplitude, t, s)
 
     b̂, e1, e2, B_mag = magnetic_basis(B0)
