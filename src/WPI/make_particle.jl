@@ -36,6 +36,7 @@ struct ParticleState{F}
     r0             :: SVector{3, Float64}
     v0             :: SVector{3, Float64}
     B0             :: SVector{3, Float64}
+    E0             :: SVector{3, Float64}
     b̂              :: SVector{3, Float64}
     L              :: Float64
     B_eq           :: Float64
@@ -115,6 +116,9 @@ function ParticleState(
     B0 = magnetic_field(r0)
     b̂, e1, e2, _ = magnetic_basis(B0)
 
+    # Add also an electric field, for consistency
+    E0 = 0.0, 0.0, 0.0
+
     # Find initial velocity
     v_par = -v * μ
     v_perp = v * sqrt(1 - μ^2)
@@ -151,6 +155,7 @@ function ParticleState(
         SVector(r0.x, r0.y, r0.z),
         v0,
         SVector{3}(B0),
+        SVector{3}(E0),
         SVector{3}(b̂),
         L,
         B_eq,
