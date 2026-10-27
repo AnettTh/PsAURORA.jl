@@ -16,7 +16,6 @@ p_dipole = ParticleState(
     r0,
     DipoleMagneticField(),
     ϕ_eq;
-    precomputed_magnetic_field=false,
     relativistic=true,
     φ0=deg2rad(0.0)
 )
@@ -27,7 +26,6 @@ p_tsyg = ParticleState(
     r0,
     TsyganenkoMagneticField(ϕ_eq),
     ϕ_eq;
-    precomputed_magnetic_field=false,
     relativistic=true,
     φ0=deg2rad(0.0)
 )
