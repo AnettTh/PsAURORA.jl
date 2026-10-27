@@ -17,7 +17,7 @@ r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
 E_grid = range(10e3, 40e3, length=50)
 
-particle = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true, precomputed_magnetic_field=false) for E in E_grid]
+particle = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=200)

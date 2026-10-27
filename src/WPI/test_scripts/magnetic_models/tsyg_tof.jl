@@ -24,8 +24,7 @@ particle_dipole = [
         r0,
         dipole,
         ϕ_eq;
-        relativistic=true,
-        precomputed_magnetic_field=false
+        relativistic=true
     )
     for E in E_grid
 ]
@@ -36,8 +35,7 @@ particle_tsyg = [
         r0,
         tsyganenko,
         ϕ_eq;
-        relativistic=true,
-        precomputed_magnetic_field=false
+        relativistic=true
     )
     for E in E_grid
 ]
