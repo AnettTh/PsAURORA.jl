@@ -70,9 +70,6 @@ export AbstractDensityModel, ConstantDensity, DentonDensity, electron_density
 include("WPI/analytical_results.jl")
 export minimal_resonance_energy
 
-include("WPI/precompute_field.jl")
-export get_magnetic_field
-
 include("WPI/make_plasma.jl")
 export Ωe_at_λ, ωpe_at_λ, PlasmaState
 
@@ -95,11 +92,11 @@ export wave_transit, particle_transit, WPI_TOF
 export parallel_velocity, WPI_TOF_field_dependent, t0, resonance_latitude
 export wave_transit, electron_transit, parallel_wavenumber, wave_chirp
 
-include("WPI/zzzzboris_mover.jl")
-export boris_mover_TOF
-
-include("WPI/zzzztime_of_flight.jl")
-export time_of_flight
+#include("WPI/zzzzARCHIVE//zzzzboris_mover.jl")
+#export boris_mover_TOF
+#
+#include("WPI/zzzzARCHIVE/zzzztime_of_flight.jl")
+#export time_of_flight
 
 include("WPI/particle_tracer.jl")
 export boris_mover
