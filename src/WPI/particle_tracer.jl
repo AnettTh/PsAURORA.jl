@@ -72,7 +72,6 @@ function boris_mover(
         # Use default positions, usually in the equatorial plane
         x, y, z = particle.r0
         vx, vy, vz = particle.v0
-        s = particle.field_line.s0
     else
         @info "\nUsing latitude λ=$(round(rad2deg(λ_start), digits=1))° as initial position"
         # Get position of resonance
@@ -89,18 +88,6 @@ function boris_mover(
         v_perp  = particle.v * sin(α_start)
 
         vx, vy, vz = v_par .* b̂ .+ v_perp * cos(φ0) .* e1 .+ v_perp * sin(φ0) .* e2
-
-        # Get first value of s to represent the start latitude
-        # NOTE: If-else-logic can be removed once this tests successful
-        if !isnothing(particle.field_line)
-            # Find the point in s closest to the initial position
-            dists2 = (
-                (particle.field_line.xs_grid .- x).^2 .+
-                (particle.field_line.ys_grid .- y).^2 .+
-                (particle.field_line.zs_grid .- z).^2
-            )
-            s = particle.field_line.s_grid[argmin(dists2)]
-        end
     end
 
     t_current = 0.0
@@ -124,30 +111,20 @@ function boris_mover(
     @showprogress for i in 2:(steps + 1)
 
         # Background fields
-        if isnothing(particle.field_line)
-            B = particle.magnetic_field(Cartesian(x, y, z))
-            Bx, By, Bz = B[1], B[2], B[3]
-        else
-            Bx, By, Bz = particle.field_line.B_interpolated(s)
-        end
-
+        B = particle.magnetic_field(Cartesian(x, y, z))
+        Bx, By, Bz = B[1], B[2], B[3]
         Ex, Ey, Ez = particle.E0
 
-        # Add wave perturbation at current time-step
+        # Add wave perturbation at current time-step, if a wave exists
         if !isnothing(wave)
+            # TODO: This is a dipole approximation, is there a better way?
             r_mag = sqrt(x^2 + y^2 + z^2)
             λ_current = asin(z / r_mag)
 
-            # Compute current s
-            if !isnothing(particle.field_line)
-                dists2 = (particle.field_line.xs_grid .- x).^2 .+
-                         (particle.field_line.ys_grid .- y).^2 .+
-                         (particle.field_line.zs_grid .- z).^2
-                s_current = particle.field_line.s_grid[argmin(dists2)]
-            else
-                s_current = 0.0   # placeholder — only matters for amplitude models that depend on s
-            end
+            # TODO: Placeholder, this only matters if the amplitude of the wave depends on the position
+            s_current = 0.0
 
+            # Find perturbation and update the current field
             δB, δE = wave_fields(wave, t_current, s_current, Ψ, SVector(Bx, By, Bz), λ_current)
 
             Bx += δB[1]
@@ -232,14 +209,6 @@ function boris_mover(
             v_par_previous = v_par_current
         end
 
-        #if count_bounces
-        #    v_par_current = vx*b̂x + vy*b̂y + vz*b̂z
-        #    if sign(v_par_previous) != sign(v_par_current)
-        #        n_bounces += 1
-        #    end
-        #    v_par_previous = v_par_current
-        #end
-
         # Update position
         x += vx * dt
         y += vy * dt
@@ -247,7 +216,7 @@ function boris_mover(
 
         # Update phase
         if !isnothing(wave)
-            ω_t = wave_frequency(wave.modulation, wave, t_current)
+            ω_t = wave_frequency(wave, t_current)
             j = searchsortedfirst(wave.plasma.λ, λ_current)
             j = clamp(j, 1, length(wave.plasma.Ω_e))
             k_parallel = dispersion_relation_whistler_branch(ω_t, 0.0, wave.plasma.ω_pe[j], wave.plasma.Ω_e[j])
@@ -257,14 +226,6 @@ function boris_mover(
 
         # Update stored values with current values
         t_current += dt
-
-        # Update current s with the one closest to the grid
-        if !isnothing(particle.field_line)
-            dists = sqrt.((particle.field_line.xs_grid .- x).^2 .+
-                          (particle.field_line.ys_grid .- y).^2 .+
-                          (particle.field_line.zs_grid .- z).^2)
-            s = particle.field_line.s_grid[argmin(dists)]
-        end
 
         if store_trajectory
             r_array[i, :] .= (x, y, z)
