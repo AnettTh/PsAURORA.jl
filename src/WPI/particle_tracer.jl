@@ -7,6 +7,8 @@ using ProgressMeter
     n_T::Int=100_000,
     resolution::Int=10,
     store_trajectory::Bool=false
+    count_bounces::Bool=false,
+    stop_when_bouncing::Bool=false
 )
 
 Simulate the trajectory of a charged particle using the Boris mover.
@@ -23,12 +25,17 @@ gyromotion in a magnetic field.
 - `n_T`: Number of (initial) gyroperiods to simulate for, default is `100_000`.
 - `resolution`: Steps per gyroperiod, default is `10`.
 - `store_trajectory`: Option to store the trajectory, default is `false`.
+- `count_bounces`: Option to track how many bounces are done before timing out (or
+  precipitating), default is `false`.
+- `stop_when_bouncing`: Option to stop the simulation if the particle bounces, default is
+  `false`.
 
 # Returns
 
-- If the trajectroy is stored, a named tuple containing `position`, `velocity`, `time` and
+- If the trajectroy is stored, a named tuple containing `position`, `velocity`, `time`, `α`,
   `footpoint`, if not, only the time-of-flight `time` and the position of impact with the
-  ionsophere, `footpoint` is returned.
+  ionsophere, `footpoint` is returned. Also returns number of bounces conducted, if
+  counting, else this is just an empty variable.
 """
 function boris_mover(
     particle::ParticleState;
@@ -37,7 +44,9 @@ function boris_mover(
     φ0=0.0,
     n_T::Int=100_000,
     resolution::Int=10,
-    store_trajectory::Bool=false
+    store_trajectory::Bool=false,
+    count_bounces::Bool=false,
+    stop_when_bouncing::Bool=false
 )
 
     n_T > 0 || throw(ArgumentError("n_T must be positive"))
@@ -49,13 +58,8 @@ function boris_mover(
     # Find total number of steps reqired
     steps = Int(n_T * resolution)
 
-    # Find initial E-field, B-field and gyroperiods
-    E0 = [0.0, 0.0, 0.0]
-    B0 = particle.B0
-    #Ω_e0 = Ω_e[1]
-    #T0 = 2π / ω_g0
-
     if store_trajectory
+        @info "\nStoring trajectory"
         r_array = zeros(steps + 1, 3)
         v_array = zeros(steps + 1, 3)
         t_array = zeros(steps + 1)
@@ -64,12 +68,15 @@ function boris_mover(
 
     # Figure out where to start the particle from
     if isnothing(λ_start)
+        @info "\nUsing equatorial position as initial position"
         # Use default positions, usually in the equatorial plane
         x, y, z = particle.r0
         vx, vy, vz = particle.v0
         s = particle.field_line.s0
     else
+        @info "\nUsing latitude λ=$(round(rad2deg(λ_start), digits=1))° as initial position"
         # Get position of resonance
+        # TODO: Using ϕ_eq here is just temporary, figure out the accurate position?
         r_start = Cartesian(Spherical(particle.L, λ_start, particle.ϕ_eq))
         x, y, z = r_start.x, r_start.y, r_start.z
 
@@ -98,6 +105,11 @@ function boris_mover(
 
     t_current = 0.0
 
+    if count_bounces || stop_when_bouncing
+        n_bounces = 0
+        v_par_previous = vx*b̂[1] + vy*b̂[2] + vz*b̂[3]
+    end
+
     if store_trajectory
         r_array[1, :] .= (x, y, z)
         v_array[1, :] .= (vx, vy, vz)
@@ -119,7 +131,7 @@ function boris_mover(
             Bx, By, Bz = particle.field_line.B_interpolated(s)
         end
 
-        Ex, Ey, Ez = E0
+        Ex, Ey, Ez = particle.E0
 
         # Add wave perturbation at current time-step
         if !isnothing(wave)
@@ -189,6 +201,45 @@ function boris_mover(
         vy = vy_plus + q_prime * Ey
         vz = vz_plus + q_prime * Ez
 
+        if stop_when_bouncing || count_bounces
+            v_par_current = vx*b̂x + vy*b̂y + vz*b̂z
+            if sign(v_par_previous) != sign(v_par_current)
+
+                if count_bounces
+                    n_bounces += 1
+                end
+
+                if stop_when_bouncing
+                    @info "\nBounced (and told to stop at that), no footpoint detected"
+                    if store_trajectory
+                        return (
+                            position=r_array[1:i, :],
+                            velocity=v_array[1:i, :],
+                            time=t_array[1:i],
+                            α=α_array[1:i],
+                            footpoint=nothing,
+                            n_bounces=count_bounces ? n_bounces : nothing
+                        )
+                    else
+                        return (
+                            time=t_current,
+                            footpoint=nothing,
+                            n_bounces=count_bounces ? n_bounces : nothing
+                        )
+                    end
+                end
+            end
+            v_par_previous = v_par_current
+        end
+
+        #if count_bounces
+        #    v_par_current = vx*b̂x + vy*b̂y + vz*b̂z
+        #    if sign(v_par_previous) != sign(v_par_current)
+        #        n_bounces += 1
+        #    end
+        #    v_par_previous = v_par_current
+        #end
+
         # Update position
         x += vx * dt
         y += vy * dt
@@ -226,31 +277,40 @@ function boris_mover(
         end
 
         if x^2 + y^2 + z^2 ≤ r_ionosphere^2
-            println("Precipitation!")
+            @info "\nPrecipitation!"
             if store_trajectory
                 return (
                     position=r_array[1:i, :],
                     velocity=v_array[1:i, :],
                     time=t_array[1:i],
                     α=α_array[1:i],
-                    footpoint=(x, y, z)
+                    footpoint=(x, y, z),
+                    n_bounces=count_bounces ? n_bounces : nothing
                 )
             else
-                return (time=t_current, footpoint=(x, y, z))
+                return (
+                    time=t_current,
+                    footpoint=(x, y, z),
+                    n_bounces=count_bounces ? n_bounces : nothing
+                )
             end
         end
     end
 
-    println("Bouncing...")
+    @info "\nBouncing..."
     if store_trajectory
         return (
             position=r_array,
             velocity=v_array,
             time=t_array,
             α=α_array,
-            footpoint=nothing
+            footpoint=nothing,
+            n_bounces=count_bounces ? n_bounces : nothing
         )
     else
-        return (time=t_current, footpoint=nothing)
+        return (
+            time=t_current,
+            footpoint=nothing,
+            n_bounces=count_bounces ? n_bounces : nothing)
     end
 end
