@@ -108,7 +108,7 @@ function boris_mover(
     Ψ = isnothing(wave) ? 0.0 : wave.Ψ0
 
     # Update particle
-    @showprogress for i in 2:(steps + 1)
+    for i in 2:(steps + 1)
 
         # Background fields
         B = particle.magnetic_field(Cartesian(x, y, z))
