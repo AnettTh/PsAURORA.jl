@@ -3,7 +3,6 @@ using TsyganenkoModels
 using StaticArrays
 using LinearAlgebra
 
-# Check if it is possible to use only a spherical coordinate system throughout the whole program, converting when necessary
 """
     dipole_field(x, y, z)
     dipole_field(r)
@@ -68,7 +67,6 @@ function dipole_field(x::Real, y::Real, z::Real)
     return SVector(Bx, By, Bz)
 end
 
-
 function dipole_field(r::AbstractVector)
     length(r) == 3 || throw(
         ArgumentError("Position vector needs to have three cartesian components, whats up?")
@@ -76,7 +74,6 @@ function dipole_field(r::AbstractVector)
 
     return dipole_field(r...)
 end
-
 
 function dipole_field(pos::Cartesian)
     return dipole_field(pos.x, pos.y, pos.z)
@@ -87,21 +84,9 @@ function dipole_field(pos::Spherical)
     return dipole_field(r.x, r.y, r.z)
 end
 
-#function dipole_field(L::Real, λ::Real)
-#
-#    r = L * RE * cos(λ)^2
-#    x = r * cos(λ)
-#    z = r * sin(λ)
-#
-#    return dipole_field(x, 0.0, z)
-#end
-
-
 """
     tsyganenko_field(
-    x::Real,
-    y::Real,
-    z::Real;
+    x::Real, y::Real, z::Real;
     time="2020-01-01T02:00:00",
     pdyn=2.0,
     dst=-28.0,
@@ -110,34 +95,14 @@ end
     ps=-0.533585131,
     component="both",
 )
-
-    tsyganenko_field(
-    r::AbstractVector;
-    time="2020-01-01T02:00:00",
-    pdyn=2.0,
-    dst=-28.0,
-    byimf=2.0,
-    bzimf=-5.0,
-    ps=-0.533585131,
-    component="both",
-)
-
-    tsyganenko_field(
-    L::Real,
-    λ::Real;
-    time="2020-01-01T02:00:00",
-    pdyn=2.0,
-    dst=-28.0,
-    byimf=2.0,
-    bzimf=-5.0,
-    ps=-0.533585131,
-    component="both",
-)
+    tsyganenko_field(r::AbstractVector; kwargs...)
+    tsyganenko_field(position::Spherical; kwargs...)
+    tsyganenko_field(position::Cartesian; kwargs...)
 
 # Arguments
 - `x, y, z`: Cartesian position components [m].
 - `r`: Cartesian position vector [m].
-- `L, λ, ϕ`: Position as L-shell, latitude and longitude [-, rad, rad].
+- `position`: Position as `Cartesian(x, y, z)` [m] or `Spherical(L, λ, ϕ)` [RE, rad, rad].
 
 # Keyword Arguments
 
@@ -147,8 +112,8 @@ end
 - `byimf`: IMF By component [nT], default is `2.0`.
 - `bzimf`: IMF Bz component [nT], default is `-5.0`.
 - `ps`: Dipole tilt angle [rad], defautl is `-0.533585131`.
-- `component`: String to chose which component of the field to return; either external `ext`
-  , internal `int` or the total field `both`, default is `"both"`.
+- `component`: String to chose which component of the field to return; either external
+  `ext`, internal `int` or the total field `both`, default is `"both"`.
 
 # Returns
 
@@ -197,56 +162,18 @@ function tsyganenko_field(
     return [Bx, By, Bz]
 end
 
-function tsyganenko_field(
-    r::AbstractVector;
-    time="2020-01-01T02:00:00",
-    pdyn=2.0,
-    dst=-28.0,
-    byimf=1.0,
-    bzimf=2.0,
-    ps=-0.533585131,
-    component="both",
-)
+function tsyganenko_field(r::AbstractVector; kwargs...)
     length(r) == 3 || throw(
         ArgumentError("Position vector needs to have three cartesian components, whats up?")
     )
-
-    return tsyganenko_field(r...;
-    time=time,
-    pdyn=pdyn,
-    dst=dst,
-    byimf=byimf,
-    bzimf=bzimf,
-    ps=ps,
-    component=component,
-)
+    return tsyganenko_field(r...; kwargs...)
 end
 
-function tsyganenko_field_spherical(
-    L::Real,
-    λ::Real,
-    ϕ::Real;
-    time="2020-01-01T02:00:00",
-    pdyn=2.0,
-    dst=-28.0,
-    byimf=1.0,
-    bzimf=2.0,
-    ps=-0.533585131,
-    component="both"
-)
+function tsyganenko_field(position::Spherical; kwargs...)
+    pos = Cartesian(position)
+    return tsyganenko_field(pos.x, pos.y, pos.z; kwargs...)
+end
 
-    r = L * RE * cos(λ)^2
-    x = r * cos(λ) * cos(ϕ)
-    y = r * cos(λ) * sin(ϕ)
-    z = r * sin(λ)
-
-    return tsyganenko_field(x, y, z;
-    time=time,
-    pdyn=pdyn,
-    dst=dst,
-    byimf=byimf,
-    bzimf=bzimf,
-    ps=ps,
-    component=component,
-)
+function tsyganenko_field(position::Cartesian; kwargs...)
+    return tsyganenko_field(position.x, position.y, position.z; kwargs...)
 end
