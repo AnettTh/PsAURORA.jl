@@ -137,9 +137,16 @@ function PlasmaState(
     return PlasmaState(collect(λ_grid), n_e, Ω_e, ω_pe, collect(ω_lb), ϕ, ne_model)
 end
 
+function PlasmaState(λ_grid, ϕ_eq, magnetic_field::AbstractMagneticField, L; kwargs...)
+    ne_model = DentonDensity(magnetic_field, L, ϕ_eq)
+    return PlasmaState(λ_grid, ϕ_eq, ne_model, magnetic_field, Float64(L); kwargs...)
+end
+
+
 function Base.show(io::IO, plasma::PlasmaState)
     # Plasma frequency corresponding to λ of the lowest Ω_e (not stored in the struct)
-    idx_eq  = argmin(plasma.Ω_e)
+    idx_eq = argmin(plasma.Ω_e)
+    Ω_e_eq = plasma.Ω_e[idx_eq]
     ω_pe_eq = plasma.ω_pe[idx_eq]
 
     println(io, "PlasmaState:")
@@ -149,9 +156,9 @@ function Base.show(io::IO, plasma::PlasmaState)
                 "($(round(longitude_to_MLT(plasma.ϕ, degrees=false), digits=1)) MLT)")
     println(io, "  n_e range = $(round(minimum(plasma.n_e)/1e6, digits=2)) - " *
                 "$(round(maximum(plasma.n_e)/1e6, digits=2)) cm⁻³")
-    println(io, "  Ω_e(eq)   = $(round(Ω_eq, digits=1)) rad/s")
+    println(io, "  Ω_e(eq)   = $(round(Ω_e_eq, digits=1)) rad/s")
     println(io, "  ω_pe(eq)  = $(round(ω_pe_eq, digits=1)) rad/s")
-    println(io, "  ω_pe/Ω_e  = $(round(ω_pe_eq/Ω_eq, digits=2))")
+    println(io, "  ω_pe/Ω_e  = $(round(ω_pe_eq/Ω_e_eq, digits=2))")
     println(io, "  ω_lb      = $(round(plasma.ω_lb[1], digits=1)) - " *
                 "$(round(plasma.ω_lb[end], digits=1)) rad/s")
     print(io,   "  ne_model  = $(typeof(plasma.ne_model))")
