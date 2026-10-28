@@ -1,21 +1,60 @@
 using AURORA
 
+# Density models for plasma electron number density along field lines.
+# Implements AbstractDensityModel interface with ConstantDensity and DentonDensity.
+
+"""
+    AbstractDensityModel
+
+Abstract type for electron density models along magnetic field lines.
+"""
 abstract type AbstractDensityModel end
 
+
+"""
+    ConstantDensity(n_e)
+
+Constant electron density model.
+"""
 struct ConstantDensity <: AbstractDensityModel
-    n_e :: Float64
+    n_e::Float64    # Electron number density [m⁻³]
 end
 
+"""
+    DentonDensity
+
+Density model along a magnetic field line, as described by Denton et al. (2002).
+"""
 struct DentonDensity <: AbstractDensityModel
-    R_max :: Float64
-    ϕ_eq  :: Float64
+    R_max::Float64      # Maximum radial distance along field line [m].
+    ϕ_eq::Float64       # Equatorial longitude [rad].
 end
 
-# Constructors for Denton density model
+
+"""
+    DentonDensity(magnetic_field, L, ϕ_eq)
+    DentonDensity(::typeof(dipole_field), L, ϕ_eq)
+
+Constructor for running the Denton density model with either arbitrary magnetic field, or
+using an analytical solution for a dipole field.
+
+# Arguments
+
+- `magnetic field`: Arbitrary magnetic field function that can take either
+  `Spherical(L, λ, ϕ)` or `Cartesian(x, y, z)`.
+- `L`: L-shell of initial position.
+- `ϕ_eq`: Longitude of position at equator [rad].
+
+# Returns
+
+- A `struct` holding the necessary information to run the Denton density model.
+
+"""
 function DentonDensity(magnetic_field, L, ϕ_eq)
     R_max = find_R_max(magnetic_field, Spherical(L, 0.0, ϕ_eq))
     return DentonDensity(R_max, ϕ_eq)
 end
+
 
 function DentonDensity(::typeof(dipole_field), L, ϕ_eq)
     R_max = Float64(L) * RE
@@ -23,7 +62,21 @@ function DentonDensity(::typeof(dipole_field), L, ϕ_eq)
 end
 
 
-# Evaluate the methods
+"""
+    electron_density(model::AbstractDensityModel, L, λ)
+
+Compute electron number density at a given L-shell and latitude.
+
+# Arguments
+
+- `model`: Density model used for the computation.
+- `L`: L-shell of current position.
+- `λ`: Magnetic latitude of current position [rad].
+
+# Returns
+
+- Electron number densoty [m⁻³].
+"""
 function electron_density(model::ConstantDensity, L, λ)
     return model.n_e
 end
