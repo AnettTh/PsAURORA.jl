@@ -110,7 +110,7 @@ function find_R_max(
     # Trace along fieldlines in both direcitons
     for sign in [1, -1]
         x, y, z = x0, y0, z0
-        for _ in 1:n_steps
+        for step in 1:n_steps
             # Find the current magnetic field direction
             B = magnetic_field(Cartesian(x, y, z))
             B_mag = norm(B)
@@ -136,7 +136,10 @@ function find_R_max(
             end
 
             # Stop at the ionosphere or above 10 RE
-            R_current ≤ RE + z_ionosphere && break
+            #R_current ≤ RE + z_ionosphere && break
+            if step > 10
+                R_current ≤ RE + z_ionosphere && break
+            end
             R_current > 10 * RE && break
         end
     end
@@ -156,4 +159,62 @@ end
 
 function find_R_max(magnetic_field::AbstractMagneticField, position::Spherical; kwargs...)
     return find_R_max(magnetic_field, Cartesian(position); kwargs...)
+end
+
+# TODO: Make this make sense
+function find_L_shell(
+    magnetic_field::AbstractMagneticField,
+    lat::Float64,
+    lon::Float64;
+    ds::Float64=RE*0.005,
+    n_steps::Int=100_000,
+)
+    # Radius of the ionsphere with Earth in center
+    r_iono = RE + z_ionosphere
+
+    x0 = r_iono * cos(lat) * cos(lon)
+    y0 = r_iono * cos(lat) * sin(lon)
+    z0 = r_iono * sin(lat)
+
+    function trace_fieldline(x0, y0, z0)
+        xs, ys, zs = [x0], [y0], [z0]
+        x, y, z = x0, y0, z0
+
+        # Determine outward direction
+        B0 = magnetic_field(Cartesian(x0, y0, z0))
+        b̂0 = B0 ./ norm(B0)
+        r̂0 = [x0, y0, z0] ./ norm([x0, y0, z0])
+        sign = dot(b̂0, r̂0) < 0 ? -1 : 1
+
+        for _ in 1:n_steps
+            B     = magnetic_field(Cartesian(x, y, z))
+            B_mag = norm(B)
+            bx, by, bz = B ./ B_mag
+
+            x += sign * ds * bx
+            y += sign * ds * by
+            z += sign * ds * bz
+
+            push!(xs, x); push!(ys, y); push!(zs, z)
+
+            sqrt(x^2 + y^2 + z^2) > 10 * RE && break
+        end
+        return xs, ys, zs
+    end
+
+    xs, ys, zs = trace_fieldline(x0, y0, z0)
+
+    # Find magnetic field at every point
+    Bs = zeros(length(xs))
+    for (i, (x, y, z)) in enumerate(zip(xs, ys, zs))
+        Bs[i] = norm(magnetic_field(Cartesian(x, y, z)))
+    end
+
+
+    # Find point with lowest fieldstrength
+    idx_eq = argmin(Bs)
+    r_eq = sqrt(xs[idx_eq]^2 + ys[idx_eq]^2 + zs[idx_eq]^2)
+    L = r_eq / RE
+
+    return L
 end
