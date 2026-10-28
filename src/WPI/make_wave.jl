@@ -3,24 +3,24 @@ using StaticArrays
 
 # TODO: Finish and test this!
 # Define different models for the modulation of the wave
-abstract type AbstractModulation end
+abstract type AbstractWaveModulation end
 abstract type AbstractAmplitude end
 
 
 # Wave with constant frequency
-struct Monochromatic <: AbstractModulation
+struct Monochromatic <: AbstractWaveModulation
     ω                :: Float64    # Wave frequency [rad/s]
 end
 
 # Chirp wave with a linear increase/decrease in frequency
-struct Chirp <: AbstractModulation
+struct Chirp <: AbstractWaveModulation
     ω0         :: Float64   # Start frequency [rad/s]
     ω1         :: Float64   # End frequency [rad/s]
     t_duration :: Float64   # Duration of chirp [s]
 end
 
 # Chirp wave as described by Demekhov 2016
-struct Demekhov <: AbstractModulation end
+struct Demekhov <: AbstractWaveModulation end
 
 
 # Define different models for the amplitude of the wave
@@ -34,7 +34,7 @@ wave_amplitude(a::ConstantAmplitude, t, s) = a.Bw    # Is the same no matter the
 
 
 # Collect everything to define the wave state
-struct WaveState{M<:AbstractModulation, A<:AbstractAmplitude}
+struct WaveState{M<:AbstractWaveModulation, A<:AbstractAmplitude}
     modulation     :: M
     amplitude      :: A
     plasma         :: PlasmaState      # Used for dispersion
@@ -96,6 +96,11 @@ function wave_launch_time(wave::WaveState, ω_grid)
     return wave_launch_time(wave.modulation, ω_grid)
 end
 
+# NOTE: Temporary solution to no wave
+function wave_launch_time(wave::Nothing, ω_grid; t_duration=0.2)
+    chirp_rate = (ω_grid[end] - ω_grid[1]) / t_duration
+    return [(ω - ω_grid[1]) / chirp_rate for ω in ω_grid]
+end
 
 
 function wave_fields(
