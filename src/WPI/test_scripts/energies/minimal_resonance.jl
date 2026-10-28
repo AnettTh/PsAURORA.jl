@@ -11,7 +11,7 @@ dipole_field = DipoleMagneticField()
 ## Make a particle
 μ = -cos(deg2rad(3))
 L = 7.1
-r0 = Cartesian(L*RE, 0.0, 0.0)
+r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
 # NOTE: This only uses the position of the particle, so the energy is irrelevant
 particle_tsyg = ParticleState(1e4, μ, r0, tsyg_field, ϕ_eq; relativistic=true)
@@ -34,7 +34,12 @@ E_min_dipole = minimal_resonance_energy(ω_dipole, plasma_dipole, particle_dipol
 
 ## Make the figure
 fig = Figure()
-ax = Axis(fig[1, 1], xlabel="ω [rad/s]", ylabel="Eₘᵢₙ [keV]", title="Threshold for cyclotron resonance, ϕ = $(round(rad2deg(ϕ), digits=1))")
+ax = Axis(
+    fig[1, 1],
+    xlabel="ω [rad/s]",
+    ylabel="Eₘᵢₙ [keV]",
+    title="Threshold for cyclotron resonance, ϕ = $(round(rad2deg(ϕ_eq), digits=1))"
+)
 
 lines!(ax, ω_tsyg, E_min_tsyg / eV_in_J / 1e3, label="Tsyganenko")
 lines!(ax, ω_dipole, E_min_dipole / eV_in_J / 1e3, label="Dipole")
@@ -42,4 +47,4 @@ lines!(ax, ω_dipole, E_min_dipole / eV_in_J / 1e3, label="Dipole")
 axislegend(ax; position=:rt)
 
 
-save("src/WPI/test_scripts/energies/Emin_phi_$(round(rad2deg(ϕ), digits=1)).png", fig)
+#save("src/WPI/test_scripts/energies/Emin_phi_$(round(rad2deg(ϕ), digits=1)).png", fig)
