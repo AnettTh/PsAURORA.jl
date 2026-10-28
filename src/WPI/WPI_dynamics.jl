@@ -103,6 +103,7 @@ particle state (600 km altitude).
 function particle_transit(
     particle,
     λ_resonance;
+    wave::Union{WaveState, Nothing}=nothing,
     V_r=nothing,
     field_dependent::Bool=true,
     use_boris::Bool=false
@@ -111,8 +112,16 @@ function particle_transit(
     # If Boris-mover is to be used, shortcuts the function
     if use_boris
         # Find the initial position for the boris-mover, i.e. where the particle resonates
-        result = boris_mover(particle; λ_start=λ_resonance, store_trajectory=false, stop_when_bouncing=true)
-        return result.time
+        result = boris_mover(
+            particle;
+            wave=wave,
+            λ_start=λ_resonance,
+            store_trajectory=false,
+            stop_when_bouncing=true
+        )
+
+        # If the particle precipitates, return the TOF
+        return isnothing(result.footpoint) ? nothing : result.time
     end
 
     # Position  in the equatorial plane
@@ -358,8 +367,8 @@ keyword arguments, else, it is assumed instant at all frequencies.
 function WPI_TOF(
     ω_grid::AbstractVector,
     particle::ParticleState,
-    plasma::PlasmaState,
-    wave::WaveState;
+    plasma::PlasmaState;
+    wave::Union{WaveState, Nothing}=nothing,
     use_boris::Bool=false,
     field_dependent::Bool=true,
     θ::Float64=0.0,
@@ -394,14 +403,18 @@ function WPI_TOF(
         t_e = particle_transit(
             particle,
             λ_res;
+            wave=wave,
             V_r=V_r,
             use_boris=use_boris,
             field_dependent=field_dependent,
         )
 
         # Total time = wave-to-λ + particle-to-ionosphere + delay of current ω based on wave
-        tof[i] = t_w + t_e + t_l[i]
-
+        if !isnothing(t_e)
+            tof[i] = t_w + t_e + t_l[i]
+        else
+            tof[i] = 0.0
+        end
     end
     return tof
 end
