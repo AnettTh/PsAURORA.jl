@@ -86,6 +86,15 @@ Collecting modulation and amplitude to define a complete wave state.
 - `plasma`: Struct holding information about the plasma state, used for dispersion relation.
 - `Ψ0`: Initial wave phase [rad].
 - `wave_direction`: Decides the propagation direction, `1` is northward and `-1` southward.
+
+Can be constructed like this, for example:
+    WaveState(
+    modulation::AbstractWaveModulation,
+    amplitude:AbstractAmplitude,
+    plasma::PlasmaState;
+    Ψ0=2π*rand(),
+    wave_direction=-1
+    )
 """
 struct WaveState{M<:AbstractWaveModulation, A<:AbstractAmplitude}
     modulation     :: M
