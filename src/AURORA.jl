@@ -53,7 +53,7 @@ include("WPI/magnetic_field.jl")
 export dipole_field, tsyganenko_field
 
 include("WPI/field_line.jl")
-export magnetic_basis, find_R_max
+export magnetic_basis, find_R_max, find_L_shell
 
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
