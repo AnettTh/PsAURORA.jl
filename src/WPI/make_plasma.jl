@@ -15,6 +15,7 @@ Cold plasma parameters along a magnetic field line, as a function of magnetic la
 - `Ω_e`: Electron gyrofrequency grid [rad/s].
 - `ω_pe`: Electron plasma frequency grid [rad/s].
 - `ω_lb`: Lower-band chorus wave frequency range [rad/s].
+- `ϕ`: Longitude [rad].
 - `ne_model`: Model used to make density distribution.
 """
 struct PlasmaState{M}
@@ -27,8 +28,9 @@ struct PlasmaState{M}
     ne_model :: M
 end
 
+# TODO: See if these functions really are needed anymore
 """
-    Ωe_at_λ(λ, L, ϕ, magnetic_field)
+    Ωe_at_λ(λ, L, ϕ, magnetic_field::AbstractMagneticField)
 
 Calculate the electron gyrofreequency `Ω_e` as a function of magnetic latitude `λ`.
 
@@ -36,7 +38,8 @@ Calculate the electron gyrofreequency `Ω_e` as a function of magnetic latitude 
 
 - `λ`: Magnetic latitude [rad].
 - `L`: L-shell position [RE].
-- `magnetic_field`: Function that describes the magnetic field based on `L` amd `λ`.
+- `ϕ`: Longitude [rad].
+- `magnetic_field`: Function that describes the magnetic field based on position.
 
 # Returns
 
@@ -49,18 +52,16 @@ end
 
 
 """
-    ωpe_at_λ(ne_model::Function, L, λ, ϕ, magnetic_field::Function)
+    ωpe_at_λ(ne_model::Function, L, λ)
 
 Calculate the plasma frequency of electrons for some latitude `λ` and L-shell `L`, given
-some defined position- and magnetic field dependent density model.
+some density model.
 
 # Arguments
 
 - `ne_model`: Function describing the density model in use, dependent on `L` and `λ`.
 - `L`: Position L-shell.
 - `λ`: Position latitude [rad].
-- `ϕ`: Position longitude [rad].
-- `magnetic_field`: Function describing the magnetic field model.
 
 # Returns
 
@@ -80,7 +81,7 @@ end
     ne_model::AbstractDensityModel,
     magnetic_field::Function,
     L;
-    lb_low=0.25,
+    lb_low=0.1,
     lb_high=0.5
 )
 
@@ -101,8 +102,10 @@ of Ω_e.
 
 # Keyword Arguments
 
-- `lb_low`: Fraction of `Ω_e` for the lower boundary of the lower-band chorus wave.
-- `lb_high`: Fraction of `Ω_e` for the upper boundary of the lower-band chorus wave.
+- `lb_low`: Fraction of `Ω_e` for the lower boundary of the lower-band chorus wave, default
+  is 0.1.
+- `lb_high`: Fraction of `Ω_e` for the upper boundary of the lower-band chorus wave, default
+  is 0.5.
 
 # Returns
 
@@ -114,8 +117,8 @@ function PlasmaState(
     ne_model::AbstractDensityModel,
     magnetic_field::AbstractMagneticField,
     L;
-    lb_low=0.25,
-    lb_high=0.48
+    lb_low=0.1,
+    lb_high=0.5
 )
 
     n_λ = length(λ_grid)
@@ -135,18 +138,21 @@ function PlasmaState(
 end
 
 function Base.show(io::IO, plasma::PlasmaState)
-    idx_eq  = argmin(plasma.Ω_e)   # magnetic equator (minimum B)
-    Ω_e_eq  = plasma.Ω_e[idx_eq]
+    # Plasma frequency corresponding to λ of the lowest Ω_e (not stored in the struct)
+    idx_eq  = argmin(plasma.Ω_e)
     ω_pe_eq = plasma.ω_pe[idx_eq]
 
     println(io, "PlasmaState:")
-    println(io, "  λ range   = $(round(rad2deg(plasma.λ[1]), digits=1))° to $(round(rad2deg(plasma.λ[end]), digits=1))°")
-    println(io, "  n points  = $(length(plasma.λ))")
-    println(io, "  ϕ         = $(round(rad2deg(plasma.ϕ), digits=1))° ($(round(longitude_to_MLT(plasma.ϕ, degrees=false), digits=1)) MLT)")
-    println(io, "  n_e range = $(round(minimum(plasma.n_e)/1e6, digits=2)) - $(round(maximum(plasma.n_e)/1e6, digits=2)) cm⁻³")
-    println(io, "  Ω_e(eq)   = $(round(Ω_e_eq, digits=1)) rad/s")
+    println(io, "  λ range   = $(round(rad2deg(plasma.λ[1]), digits=1))° to " *
+                "$(round(rad2deg(plasma.λ[end]), digits=1))° ($(length(plasma.λ)) points)")
+    println(io, "  ϕ         = $(round(rad2deg(plasma.ϕ), digits=1))° " *
+                "($(round(longitude_to_MLT(plasma.ϕ, degrees=false), digits=1)) MLT)")
+    println(io, "  n_e range = $(round(minimum(plasma.n_e)/1e6, digits=2)) - " *
+                "$(round(maximum(plasma.n_e)/1e6, digits=2)) cm⁻³")
+    println(io, "  Ω_e(eq)   = $(round(Ω_eq, digits=1)) rad/s")
     println(io, "  ω_pe(eq)  = $(round(ω_pe_eq, digits=1)) rad/s")
-    println(io, "  ω_pe/Ω_e  = $(round(ω_pe_eq/Ω_e_eq, digits=2))")
-    println(io, "  ω_lb      = $(round(plasma.ω_lb[1], digits=1)) - $(round(plasma.ω_lb[end], digits=1)) rad/s")
+    println(io, "  ω_pe/Ω_e  = $(round(ω_pe_eq/Ω_eq, digits=2))")
+    println(io, "  ω_lb      = $(round(plasma.ω_lb[1], digits=1)) - " *
+                "$(round(plasma.ω_lb[end], digits=1)) rad/s")
     print(io,   "  ne_model  = $(typeof(plasma.ne_model))")
 end

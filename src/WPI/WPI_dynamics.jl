@@ -5,16 +5,20 @@ using LinearAlgebra
 using Roots
 
 #===
+
 TODO: Several places in this file, the change in arc-length with latitude (ds/dλ) uses a
 dipole approximation, also for the Tsyganenko model. This must either be fixed or jusitfied!
+
 ===#
+
 """
     wave_transit(
     ω,
     λ_resonance,
     particle::ParticleState,
     plasma::PlasmaState;
-    field_dependent::Bool=true)
+    field_dependent::Bool=true,
+    )
 
 Calculates the transit time of the whistler wave from the equator to the resonance latitude.
 
@@ -45,7 +49,7 @@ function wave_transit(
     λ_resonance,
     particle::ParticleState,
     plasma::PlasmaState;
-    field_dependent::Bool=true
+    field_dependent::Bool=true,
     )
 
     # Initial position of the wave in the equatorial plane
@@ -76,15 +80,24 @@ end
 
 
 """
-    particle_transit(particle, λ_resonance; V_r=nothing z_ionosphere::Float64=600e3)
+    particle_transit(
+    particle,
+    λ_resonance;
+    wave::Union{WaveState, Nothing}=nothing
+    V_r=nothing,
+    field_dependent::Bool=true,
+    use_boris::Bool=false,
+    )
 
 Calculates the transit time of the particle from the resonance latitude to the ionosphere.
 
-By either using a field-independent model (Miyoshi and Saito, 2012) or a field-dependent
-model (Hsieh et al. 2022), where the latter is default. The function calculates the time it
-takes for the particle in the defined state to travel from the resonance region
-`λ_resonance` to the defined ionospheric latitude, `λ_ionosphere`, as defined in the
-particle state (600 km altitude).
+Either using a field-independent model (Miyoshi and Saito, 2012) or a field-dependent
+model (Hsieh et al. 2022), the transit time, i.e. the time it takes a particle to travel
+from the resonance region `λ_resonance` to the ionsophere, is calculated. The particle can
+either travel freely, by setting `wave=nothing`, or can be subject to wave-particle
+interactions, by passing also a `wave` to the function. To allow for the use of different
+resonances `n`, the resonance velocity `V_r` can also be passed, allowing the function to
+decide the hemisphere of the resonance latitude `λ_res` and direction of travel.
 
 # Arguments
 
@@ -93,6 +106,9 @@ particle state (600 km altitude).
 
 # Keyword Arguments
 
+- `wave`: Struct holding information about the wave (modulation and amplitude), default is
+  `nothing`, i.e. no WPI considered.
+- `V_r`: Resonance velocity of the particle [m/s].
 - `field_dependent`: Decides which model to use, default is `true`.
 - `use_boris`: Option to use the boris-mover to find the time-of-flight, default is `false`.
 
@@ -124,9 +140,6 @@ function particle_transit(
         return isnothing(result.footpoint) ? nothing : result.time
     end
 
-    # Position  in the equatorial plane
-    R0 = particle.L * RE
-
     # Decides which hemisphere the particle travels towards
     λ_iono = if isnothing(V_r)
         sign(λ_resonance) * particle.λ_ionosphere   # If non given, use λ at resonance
@@ -134,6 +147,7 @@ function particle_transit(
         -sign(V_r) * particle.λ_ionosphere          # If given, base on velocity direction
     end
 
+    # Function along a dipole fieldline to be integrated over
     function f(λ)
         if field_dependent
             # Velocity as a function of latitude
@@ -148,6 +162,9 @@ function particle_transit(
             # Velocity, but constant
             vz = abs(particle.v * cos(particle.α_lc))
         end
+
+        # Position in the equatorial plane
+        R0 = particle.L * RE
 
         # Arc length element along a dipole field line
         ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
@@ -171,19 +188,16 @@ end
     plasma::PlasmaState;
     θ::Float64=0.0,
     n::Int=1,
-    fast::Bool=false
+    fast::Bool=false,
+    wave_direction=-1
 )
 
     resonance_latitude(
     ω_grid::AbstractVector,
-    particle,
-    plasma;
-    θ::Float64=0.0,
-    n::Int=1,
-    fast::Bool=false
+    particle::ParticleState,
+    plasma::PlasmaState;
+    kwargs...
 )
-
-
 
 Calculate the resonance latitude for the defined particle with a whistler mode wave.
 
@@ -202,7 +216,7 @@ northern hemisphere comes from latitudes in the southern hemisphere.
 
 # Keyword Arguments
 
-- `θ`: WNA, default is nothing (ducted).
+- `θ`: WNA, default is `0.0` (ducted).
 - `n`: Resonance number, default is `1` (cyclotron resonance).
 - `fast`: Option to use pre-computed values to also decide field strength. Avoids evaluating
   the Tsyganenko model (i.e. is faster), but result is less smooth. Default is `false`.
@@ -228,7 +242,7 @@ function resonance_latitude(
         throw(ArgumentError("Wave direction needs to be `-1` for southward or `1` for nothward."))
     end
 
-    # Define the resonance condition (equation that should equal zero)
+    # Define the resonance condition (equation that should be zero for resonance to occure)
     function resonance_condition(λ; n=n, θ=θ, fast=fast)
 
         if fast
@@ -264,31 +278,37 @@ function resonance_latitude(
         return ω - k_parallel * v_parallel - (n*Ω_e / particle.γ)
     end
 
-    # Find which λ causes the resonance condition-function to change sign
+    # Find λ that causes the resonance condition to change sign, return NaN if there is none
     λ_grid = plasma.λ
     f_possible = resonance_condition.(λ_grid, n=n)
 
-    # Find which λ causes the function to change sign, return NaN if there is none
     idx = nothing
+
+    # Look for index of change in sign
     for i in 1:length(f_possible)-1
-        if !isnan(f_possible[i]) && !isnan(f_possible[i+1]) && f_possible[i] * f_possible[i+1] < 0
+        f_i = f_possible[i]
+        f_i1 = f_possible[i+1]
+        if !isnan(f_i) && !isnan(f_i1) && f_i * f_i1 < 0
             idx = i
             break
         end
     end
+
+    # Return if none is found
     isnothing(idx) && return NaN, NaN
 
     # Figure out the latitude where the funciton changed sign, i.e. index `idx`
     λ_resonance = find_zero(resonance_condition, (λ_grid[idx], λ_grid[idx+1]))
 
-    # Find also the resonance velocity at this position to decide the hemisphere of the
-    # resonant particles
+    # Find also the resonance velocity at this position to decide the hemisphere
     i_res = searchsortedfirst(plasma.λ , λ_resonance)
     i_res = clamp(i_res, 1, length(plasma.Ω_e))
     Ω_e_res = plasma.Ω_e[i_res]
     ω_pe_res = plasma.ω_pe[i_res]
     k_res = dispersion_relation_whistler_branch(ω, θ, ω_pe_res, Ω_e_res)
     k_par_res = wave_direction * k_res * cos(θ)
+
+    # Calculate the resonance velocity (Saito et al. 2012 #NOTE: Verify this!)
     V_r = (ω - (n * Ω_e_res / particle.γ)) / k_par_res
 
     return λ_resonance, V_r
@@ -296,18 +316,16 @@ end
 
 function resonance_latitude(
     ω_grid::AbstractVector,
-    particle,
-    plasma;
-    θ::Float64=0.0,
-    n::Int=1,
-    fast::Bool=false
+    particle::ParticleState,
+    plasma::PlasmaState;
+    kwargs...
 )
     # Loop over the function if there is several frequencies
     λ_out = zeros(length(ω_grid))
     Vr_out = zeros(length(ω_grid))
 
     for (i, ω) in enumerate(ω_grid)
-        result = resonance_latitude(ω, particle, plasma; θ=θ, n=n, fast=fast)
+        result = resonance_latitude(ω, particle, plasma; kwargs...)
 
         if isnan(result[1])
             λ_out[i]  = NaN
@@ -327,21 +345,28 @@ end
     ω_grid::AbstractVector,
     particle::ParticleState,
     plasma::PlasmaState;
+    wave::Union{WaveState, Nothing}=nothing,
     use_boris::Bool=false,
-    wave_launch_time=wave_chirp,
     field_dependent::Bool=true,
     θ::Float64=0.0,
-    n::Int=1
+    n::Int=1,
+    fast::Bool=false
 )
 
-    WPI_TOF(ω::Real, particle, plasma; kwargs...)
+    WPI_TOF(ω::Real, particle::ParticleState, plasma::PlasmaState; kwargs...)
 
-Calculates the time-of-flight of a particle resonating with a whistler mode chorus wave,
-then precipitating into the ionosphere.
+Calculates the time-of-flight (TOF) of a particle resonating with a whistler mode chorus
+wave, then precipitating into the ionosphere.
 
-The funciton uses a defined frequency-grid for the wave, particle state and plasma state to
-calculate the resonance latitude. The wave launch time can be given as a function in the
-keyword arguments, else, it is assumed instant at all frequencies.
+The function uses a defined frequency-grid for the wave, as well as a struct holding the
+particle state and the plasma state, to calculate the TOF. If a `wave` is passed to the
+function, also wave-particle-interactions (WPI) are considered. The TOF can be calculated
+either by integration (using field-dependent or -independent models), or by numerical
+simulations (boris-mover), the latter by setting `use_boris = true`. Also the resonance `n`
+can be decided, default is `1` (cyclotron resonance), and the wave-normal-angle `θ`, default
+is `0.0`. The function can be run slightly faster by using pre-computed values for the
+electron plasma frequency `ω_pe` and the electron cyclotron frequency `Ω_e`, by setting
+`fast=true` (default is `false`), but this gives less smooth results.
 
 # Arguments
 
@@ -351,18 +376,19 @@ keyword arguments, else, it is assumed instant at all frequencies.
 
 # Keyword Arguments
 
+- `wave`: Struct holding information about the wave to consider (if there is one), default
+  is `nothing`.
 - `use_boris`: Decides whether to integrate or use the boris-mover, default is `true`.
-- `wave_launch_time`: The time at which the frequencies in the frequency grid is launched
-  from the source region (equator). The default is a simple chirp, but can be any function
-  that takes frequencies `ω`.
 - `field_dependent`: Decides which model to use, default is `true`.
 - `θ`: Wave-normal angle of the wave, default is `1.0` (field-aligned).
 - `n`: Harmonic number, default is `1` (cyclotron resonance).
+- `fast`: Option to use precomputed values for the PlasmaState, default is `false`.
 
 # Returns
 
 - The time of flight for the `particle` in the current state of the `plasma` under the
-  influence of the defined wave `wave_launch_time` [s].
+  influence of the defined `wave`, using the defined method [s]. If the particle don't
+  precipitate, the TOF returned is `0.0`.
 """
 function WPI_TOF(
     ω_grid::AbstractVector,
@@ -373,7 +399,7 @@ function WPI_TOF(
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1,
-    fast=false
+    fast::Bool=false
 )
 
     # Calculate wave-launch time based on given model
@@ -413,13 +439,13 @@ function WPI_TOF(
         if !isnothing(t_e)
             tof[i] = t_w + t_e + t_l[i]
         else
-            tof[i] = 0.0
+            tof[i] = 0.0  # TODO: Is there a better way to do this maybe?
         end
     end
     return tof
 end
 
 # Also allows for single frequencies
-function WPI_TOF(ω::Real, particle, plasma, wave; kwargs...)
-    return WPI_TOF([ω], particle, plasma, wave; kwargs...)[1]
+function WPI_TOF(ω::Real, particle::ParticleState, plasma::PlasmaState; kwargs...)
+    return WPI_TOF([ω], particle, plasma; kwargs...)[1]
 end

@@ -2,44 +2,97 @@ using AURORA
 using StaticArrays
 
 # TODO: Finish and test this!
-# Define different models for the modulation of the wave
+# Models for defining waves intearcting with the particles.
+# Implements AbstractWaveModulation with Monochromatic, Chirp and Demekhov and
+# AbstractAmplitude with ConstantAmplitude and GaussianAmplitude (TBW).
+
+"""
+    AbstractWaveModulation
+
+Abstract type for wave modulation models.
+"""
 abstract type AbstractWaveModulation end
+
+# TODO: Change name to AbstractWaveAmplitude, for consistency
+"""
+    AbstractAmplitude
+
+Abstract type for wave amplitude models.
+"""
 abstract type AbstractAmplitude end
 
+# TODO: Change name to MonochromaticModulation for consistency (and like for the others)
+"""
+    Monochromatic
 
-# Wave with constant frequency
+Monocromatic wave modulation where the frequency stays constant.
+
+# Fields
+
+- `ω`: Wave frequency [rad/s].
+"""
 struct Monochromatic <: AbstractWaveModulation
-    ω                :: Float64    # Wave frequency [rad/s]
+    ω::Float64
 end
 
-# Chirp wave with a linear increase/decrease in frequency
+"""
+    Chirp
+
+Chirp wave modulation with a linear increase/decrease in frequency over some time.
+
+# Fields
+
+- `ω0`: Frequency at the start [rad/s].
+- `ω1`: Frequency at the end [rad/s].
+- `t_duration`: Total duration of chirp [s].
+"""
 struct Chirp <: AbstractWaveModulation
-    ω0         :: Float64   # Start frequency [rad/s]
-    ω1         :: Float64   # End frequency [rad/s]
-    t_duration :: Float64   # Duration of chirp [s]
+    ω0         :: Float64
+    ω1         :: Float64
+    t_duration :: Float64
 end
 
-# Chirp wave as described by Demekhov 2016
+# Chirp wave as described by Demekhov 2016 (TBW)
 struct Demekhov <: AbstractWaveModulation end
 
 
-# Define different models for the amplitude of the wave
+"""
+    ConstantAmplitude
+
+Constant amplitude model, which stays constant for all times `t` and positions `s`.
+
+# Fields
+
+- `Bw`: Amplitude of the wave [T].
+"""
 struct ConstantAmplitude <: AbstractAmplitude
-    Bw :: Float64
+    Bw::Float64
 end
 
-wave_amplitude(a::ConstantAmplitude, t, s) = a.Bw    # Is the same no matter the time t and the position s
+wave_amplitude(a::ConstantAmplitude, t, s) = a.Bw
 
 # TODO: Add also Gaussian-like amplitude from Chen 2020
 
 
-# Collect everything to define the wave state
+"""
+    WaveState{M<:AbstractWaveModulation, A<:AbstractAmplitude}
+
+Collecting modulation and amplitude to define a complete wave state.
+
+# Fields
+
+- `modulation`: Struct holding information about the modulation.
+- `amplitude`: Struct holding information about the amplitude.
+- `plasma`: Struct holding information about the plasma state, used for dispersion relation.
+- `Ψ0`: Initial wave phase [rad].
+- `wave_direction`: Decides the propagation direction, `1` is northward and `-1` southward.
+"""
 struct WaveState{M<:AbstractWaveModulation, A<:AbstractAmplitude}
     modulation     :: M
     amplitude      :: A
-    plasma         :: PlasmaState      # Used for dispersion
-    Ψ0             :: Float64          # Initial wave phase [rad]
-    wave_direction :: Int              # +1 for northward, -1 for southward
+    plasma         :: PlasmaState
+    Ψ0             :: Float64
+    wave_direction :: Int
 end
 
 # NOTE: rand() here might be an issue?
@@ -47,7 +100,22 @@ function WaveState(modulation, amplitude, plasma; Ψ0=2π*rand(), wave_direction
     return WaveState(modulation, amplitude, plasma, Ψ0, wave_direction)
 end
 
-# TODO: Wave already store modulation, should this be changed?
+"""
+    wave_frequency(modulation::AbstractWaveModulation, wave::WaveState, t)
+    wave_frequency(wave::WaveState, t)
+
+Calculates the frequency `ω` at some time `t` given some `WaveState`.
+
+# Arguments
+
+- `modulation`: Struct holding the modulation of the wave
+- `wave`: Struct holding the defined state of the wave.
+- `t`: Time in wave-duration to evaluate for [s].
+
+# Returns
+
+- The frequency `ω` at the given time `t` [rad/s].
+"""
 function wave_frequency(modulation::Chirp, wave::WaveState, t)
     frequency_drift_rate = (modulation.ω1 - modulation.ω0) / modulation.t_duration
     return clamp(modulation.ω0 + frequency_drift_rate * t, modulation.ω0, modulation.ω1)
@@ -57,7 +125,7 @@ function wave_frequency(modulation::Monochromatic, wave::WaveState, t)
     return modulation.ω
 end
 
-# TODO: This is now frequency as a function of time at one location, need time as a function of frequency
+# NOTE: Does not work yet
 function wave_frequency(modulation::Demekhov, wave::WaveState, t)
     ω0 = wave.plasma.ω_lb[1]
 
@@ -78,8 +146,23 @@ function wave_frequency(wave::WaveState, t)
 end
 
 
-# All frequencies launch at the same time
+
+"""
+    wave_launch_time(modulation::AbstractWaveModulation, ω_grid)
+
+Calculates the launching time for some frequency `ω`, given some modulation.
+
+# Arguments
+
+- `modulation`: Struct holding the modulation of the wave.
+- `ω_grid`: Frequencies to evaluate for [rad/s].
+
+# Returns
+
+- The time it takes for each frequency to be launched [s].
+"""
 function wave_launch_time(modulation::Monochromatic, ω_grid)
+    # All frequencies launch at t = 0.0
     return zeros(length(ω_grid))
 end
 
@@ -103,10 +186,36 @@ function wave_launch_time(wave::Nothing, ω_grid; t_duration=0.2)
 end
 
 
-function wave_fields(
+
+"""
+    wave_fields(
     wave::WaveState,
     t::Float64,
     s::Float64,
+    Ψ::Float64,
+    B0::SVector{3, Float64},
+    λ::Float64
+)
+
+Calculates perturbations to the magnetic- and electric field, `δB` and `δE`.
+
+The method is described by Saito et al. (2012). The wave is a right-hand polarized whistler
+wave, and the cold plasma approximation is used to link the perturbations calculated in the
+magnetic field to the electric field.
+
+# Arguments
+
+- `wave`: Struct holding the state of the wave.
+- `t`: Current time [s].
+- `s`: Current position along the field line, used for position-dependent amplitudes [m].
+- `Ψ`: Current wave phase [rad].
+- `B0`: Magnetic field at initial position, constructs the magnetic basis vectors [T].
+- `λ`: Current magnetic latitude [rad].
+"""
+function wave_fields(
+    wave::WaveState,
+    t::Float64,
+    s::Float64,     # TODO: Check if this can be made a kwarg
     Ψ::Float64,
     B0::SVector{3, Float64},
     λ::Float64
@@ -125,7 +234,8 @@ function wave_fields(
     ω_pe = wave.plasma.ω_pe[i]
 
     # Use the dispersion relation to find the wave number of this position
-    k = dispersion_relation_whistler_branch(ω, 0.0, ω_pe, Ω_e)
+    θ = 0.0     # Wave-normal angle, approximation is only valid for non-oblique waves.
+    k = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
 
     # Find the field perturbations from equations 10 and 11 in Saito 2012
     # TODO: Check polarization and directions compared to the paper!

@@ -17,7 +17,9 @@ the magnetic field model.
 - `μ`: Pitch-angle cosine.
 - `α0`: Pitch angle at initial position [rad].
 - `r0`: Initial position in Cartesian coordinates [m].
+- `v0`: Initial velocity vector [m/s].
 - `B0`: Magnetic field vector at initial position [T].
+- `E0`: Electric field vector at initial position [V/m].
 - `b̂`: Unit vector along the magnetic field at initial position.
 - `L`: L-shell number.
 - `B_eq`: Magnetic field strength at the equator on this L-shell [T].
@@ -26,7 +28,8 @@ the magnetic field model.
 - `λ_ionosphere`: Magnetic latitude where the L-shell intersects the ionosphere [rad].
 - `magnetic_field`: Magnetic field model function `f(x, y, z)`.
 - `γ`: Lorentz factor.
-- `ϕ`: Longitude [rad].
+- `ϕ_eq`: Longitude at equator [rad].
+- `φ0`: Initial gyrophase of the particle [rad].
 """
 struct ParticleState{F}
     E_eV           :: Float64
@@ -49,6 +52,7 @@ struct ParticleState{F}
     φ0             :: Float64
 end
 
+# TODO: Check if this is necessary anymore
 function find_R_max(particle::ParticleState; kwargs...)
     return find_R_max(
         particle.magnetic_field,
@@ -59,6 +63,7 @@ end
 
 # TODO: Test this for non-equatorial r0, check that values makes sense physically
 # TODO: See if r0 actually is particle r0, or if it just represents the equatorial distance of the field-line in question
+# TODO: Look into if the particle is defined correctly also for a tsyganenko field
 """
     ParticleState(E_eV, μ, r0, magnetic_field, ϕ_eq; relativistic::Bool=false)
 
@@ -92,7 +97,7 @@ function ParticleState(
     magnetic_field::AbstractMagneticField,
     ϕ_eq;
     relativistic::Bool=false,
-    φ0=deg2rad(0.0)
+    φ0=deg2rad(0.0),
 )
 
     # Check validity of initial position
@@ -104,7 +109,7 @@ function ParticleState(
         E_eV,
         mₑ;
         relativistic=relativistic,
-        return_gamma=true
+        return_gamma=true,
     )
 
     # Specify magnetic field
@@ -126,7 +131,7 @@ function ParticleState(
     # Find point of max R to use as L-shell
     L = find_R_max(magnetic_field, r0) / RE
 
-    # Loss-cone angle at the equator
+    # Loss-cone angle at the equator of this L-shell
     α_lc = losscone_angle(magnetic_field, L, ϕ_eq)
 
     # Current position pitch-angle and equatorial pitch-angle
@@ -173,7 +178,6 @@ function ParticleState(
     return ParticleState(E_eV, μ, Cartesian(r0), magnetic_field, ϕ_eq; kwargs...)
 end
 
-# TODO: Update to something useful
 function Base.show(io::IO, p::ParticleState)
     println(io, "ParticleState:")
     println(io, "  E        = $(round(p.E_eV/1e3, digits=2)) keV")
@@ -181,7 +185,8 @@ function Base.show(io::IO, p::ParticleState)
     println(io, "  α_eq     = $(round(rad2deg(p.α_eq), digits=2))°")
     println(io, "  α_lc     = $(round(rad2deg(p.α_lc), digits=2))°")
     println(io, "  L        = $(round(p.L, digits=2))")
-    println(io, "  ϕ_eq     = $(round(rad2deg(p.ϕ_eq), digits=1))° ($(round(longitude_to_MLT(p.ϕ_eq, degrees=false), digits=1)) MLT)")
+    println(io, "  ϕ_eq     = $(round(rad2deg(p.ϕ_eq), digits=1))° " *
+                "($(round(longitude_to_MLT(p.ϕ_eq, degrees=false), digits=1)) MLT)")
     println(io, "  γ        = $(round(p.γ, digits=4))")
     println(io, "  B_field  = $(typeof(p.magnetic_field))")
 end
