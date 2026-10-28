@@ -17,7 +17,7 @@ p_dipole = ParticleState(
     DipoleMagneticField(),
     ϕ_eq;
     relativistic=true,
-    φ0=deg2rad(0.0)
+    φ0=deg2rad(0.0),
 )
 
 p_tsyg = ParticleState(
@@ -27,12 +27,8 @@ p_tsyg = ParticleState(
     TsyganenkoMagneticField(ϕ_eq),
     ϕ_eq;
     relativistic=true,
-    φ0=deg2rad(0.0)
+    φ0=deg2rad(0.0),
 )
-
-## Find trace
-R_max_dipole, trace_dipole = find_R_max(p_dipole; store_trace=true)
-R_max_tsyg, trace_tsyg = find_R_max(p_tsyg; store_trace=true)
 
 
 ## Compute resonance
@@ -42,14 +38,14 @@ plasma_dipole = PlasmaState(
     ϕ_eq,
     DentonDensity(DipoleMagneticField(), L, ϕ_eq),
     DipoleMagneticField(),
-    Float64(L)
+    Float64(L),
 )
 plasma_tsyg = PlasmaState(
     λ_grid,
     ϕ_eq,
     DentonDensity(TsyganenkoMagneticField(ϕ_eq), L, ϕ_eq),
     TsyganenkoMagneticField(ϕ_eq),
-    Float64(L)
+    Float64(L),
 )
 
 Ω_e_eq_dip  = minimum(plasma_dipole.Ω_e)
@@ -60,6 +56,14 @@ plasma_tsyg = PlasmaState(
 
 λ_res_dip,  V_r_dip  = resonance_latitude(ω_dip,  p_dipole, plasma_dipole; n=1)
 λ_res_tsyg, V_r_tsyg = resonance_latitude(ω_tsyg, p_tsyg,   plasma_tsyg;   n=1)
+
+## Find trace
+R_max_dipole, trace_dipole = find_R_max(p_dipole; store_trace=true)
+R_max_tsyg, trace_tsyg = find_R_max(
+    p_tsyg.magnetic_field,
+    Spherical(p_tsyg.L, λ_res_tsyg, ϕ_eq);
+    store_trace=true,
+)
 
 ## Helper to convert spherical to Cartesian RE
 function λ_to_xyz(p, λ)
@@ -81,45 +85,76 @@ ax = Axis3(
     ylabel="Y [RE]",
     zlabel="Z [RE]",
     title="Trace of magnetic field lines" *
-        "L=$(L) at $(round(longitude_to_MLT(ϕ_eq; degrees=false), digits=1)) MLT"
+          "L=$(L) at $(round(longitude_to_MLT(ϕ_eq; degrees=false), digits=1)) MLT"
 )
 
 # Starting positions
 x0, y0, z0 = p_dipole.r0 ./ RE
-scatter!(ax, [x0], [y0], [z0]; color=:red, markersize=20, marker=:star5, label="r0 (dipole)")
+scatter!(
+    ax, [x0], [y0], [z0];
+    color=:red,
+    markersize=20,
+    marker=:star5,
+    label="r0 (dipole)",
+)
 x0, y0, z0 = p_tsyg.r0 ./ RE
-scatter!(ax, [x0], [y0], [z0]; color=:green, markersize=20, marker=:star5, label="r0 (tsyg)")
+scatter!(
+    ax, [x0], [y0], [z0];
+    color=:green,
+    markersize=20,
+    marker=:star5,
+    label="r0 (tsyg)",
+)
 
 # Resonance latitude
 if !isnan(λ_res_dip)
     x, y, z = λ_to_xyz(p_dipole, λ_res_dip)
-    scatter!(ax, [x], [y], [z]; color=:red, markersize=20, marker=:diamond, label="λ_res (dipole)")
-end
-if !isnan(λ_res_tsyg)
-    x, y, z = λ_to_xyz(p_tsyg, λ_res_tsyg)
-    scatter!(ax, [x], [y], [z]; color=:green, markersize=20, marker=:diamond, label="λ_res (tsyg)")
+    scatter!(
+        ax, [x], [y], [z];
+        color=:red,
+        markersize=20,
+        marker=:diamond,
+        label="λ_res (dipole)",
+    )
 end
 
-# Ionospheric footpoint
-for (p, color) in [(p_dipole, :red), (p_tsyg, :green)]
-    for sign in [1, -1]
-        x, y, z = λ_to_xyz(p, sign * p.λ_ionosphere)
-        scatter!(ax, [x], [y], [z]; color=color, markersize=15, marker=:circle)
-    end
+if !isnan(λ_res_tsyg)
+    x, y, z = λ_to_xyz(p_tsyg, λ_res_tsyg)
+    scatter!(
+        ax, [x], [y], [z];
+        color=:green,
+        markersize=20,
+        marker=:diamond,
+        label="λ_res (tsyg)",
+    )
 end
+
+## Ionospheric footpoint
+#for (p, color) in [(p_dipole, :red), (p_tsyg, :green)]
+#    for sign in [1, -1]
+#        x, y, z = λ_to_xyz(p, sign * p.λ_ionosphere)
+#        scatter!(ax, [x], [y], [z]; color=color, markersize=15, marker=:circle)
+#    end
+#end
 
 # Boris mover trajectory
 lines!(ax,
     result_dip.position[:, 1] ./ RE,
     result_dip.position[:, 2] ./ RE,
     result_dip.position[:, 3] ./ RE;
-    color=:red, linewidth=1, linestyle=:dot, label="Boris (dipole)"
+    color=:red,
+    linewidth=1,
+    linestyle=:dot,
+    label="Boris (dipole)",
 )
 lines!(ax,
     result_tsyg.position[:, 1] ./ RE,
     result_tsyg.position[:, 2] ./ RE,
     result_tsyg.position[:, 3] ./ RE;
-    color=:green, linewidth=1, linestyle=:dot, label="Boris (tsyg)"
+    color=:green,
+    linewidth=1,
+    linestyle=:dot,
+    label="Boris (tsyg)",
 )
 
 # Magnetic equator
@@ -130,7 +165,13 @@ for (p, trace, color) in [(p_dipole, trace_dipole, :red), (p_tsyg, trace_tsyg, :
     x_eq = trace.xs[idx] / RE
     y_eq = trace.ys[idx] / RE
     z_eq = trace.zs[idx] / RE
-    scatter!(ax, [x_eq], [y_eq], [z_eq]; color=color, markersize=20, marker=:cross, label="B_eq ($(color))")
+    scatter!(
+        ax, [x_eq], [y_eq], [z_eq];
+        color=color,
+        markersize=20,
+        marker=:cross,
+        label="B_eq ($(color))",
+    )
 end
 
 # Field-lines

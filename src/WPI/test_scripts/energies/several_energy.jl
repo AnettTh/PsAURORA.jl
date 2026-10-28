@@ -3,33 +3,46 @@ using CairoMakie
 
 
 ## Make magnetic field
-ϕ = 0.0
-ϕ_eq = 0.0
+ϕ_eq = deg2rad(240.0)
 magnetic_field = DipoleMagneticField()
 
 ## Define the particles
-μ = -cos(deg2rad(3))       # Almost field-aligned
-L = 6.0
-r0 = Cartesian(L*RE, 0.0, 0.0)
+μ = -cos(deg2rad(2))       # Almost field-aligned
+L = 6.5
+r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
 E_grid = range(1e3, 40e3, length=100)
-particles = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
+particles = [
+    ParticleState(
+        E,
+        μ,
+        r0,
+        magnetic_field,
+        ϕ_eq;
+        relativistic=true,
+    )
+    for E in E_grid
+]
 
-# Define the plasma
+## Define the plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
-plasma = PlasmaState(λ_grid, ϕ_eq, DentonDensity(magnetic_field, L, ϕ_eq), magnetic_field, Float64(L))
+plasma = PlasmaState(
+    λ_grid,
+    ϕ_eq,
+    DentonDensity(magnetic_field, L, ϕ_eq),
+    magnetic_field,
+    Float64(L),
+)
 
 ## Define the wave
 # NOTE: I do not think this is correct anymore
 Ω_e_eq = minimum(plasma.Ω_e)
-ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.4, length=5)
+ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.5, length=5)
 
-# Define a wave
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
 wave = WaveState(modulation, amplitude, plasma)
-
-
+#wave = nothing
 
 ## Calculate TOF
 TOF_matrix = zeros(length(E_grid), length(ωs))  # [n_E × n_ω]
@@ -37,24 +50,18 @@ TOF_simple = zeros(length(E_grid), length(ωs))
 
 
 for (i, p) in enumerate(particles)
-    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma, wave; field_dependent=true )
-    TOF_simple[i, :] = WPI_TOF(ωs, p, plasma, wave; field_dependent=false)
+    TOF_matrix[i, :] = WPI_TOF(ωs, p, plasma; wave=wave, field_dependent=true )
+    TOF_simple[i, :] = WPI_TOF(ωs, p, plasma; wave=wave, field_dependent=false)
 end
 
-for (i, ω) in enumerate(ωs)
-    n_nan = sum(isnan.(TOF_matrix[:, i]))
-    println("ω=$(round(ω/1e3, digits=1)) kHz: $n_nan NaN out of $(length(E_grid))")
-end
-
-for (i, ω) in enumerate(ωs)
-    nan_idx = findall(isnan.(TOF_matrix[:, i]))
-    if !isempty(nan_idx)
-        println("ω=$(round(ω/1e3, digits=1)) kHz: NaN at E=$(round.(E_grid[nan_idx]./1e3, digits=1)) keV")
-    end
-end
 ## Make Figure
 fig = Figure(size=(900,500))
-ax = Axis(fig[1,1], xlabel="time-of-flight [s]", ylabel="E [keV]", title="Pitch-angle $(round(rad2deg(acos(abs(μ)))))")#, yscale=log10)
+ax = Axis(
+    fig[1,1],
+    xlabel="time-of-flight [s]",
+    ylabel="E [keV]",
+    title="Pitch-angle $(round(rad2deg(acos(abs(μ)))))",
+)
 
 #ax.yticks = [1, 10, 100, 1000]
 #ax.ytickformat = values -> ["$(Int(v))" for v in values]
