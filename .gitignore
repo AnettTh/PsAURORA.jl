@@ -11,6 +11,9 @@ docs/build/
 env
 node_modules
 
+src/WPI/data/*.jld2
+src/WPI/data/field_cache/*.jld2
+
 # ignore msis and iri files
 internal_data/data_neutrals/msis*
 internal_data/data_electron/iri*
