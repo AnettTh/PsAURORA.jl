@@ -15,8 +15,7 @@ both.
 # Arguments
 
 - `ω`: Wave angular frequency for the whistler-mode chorus wave [rad/s].
-- `θ`: Wave normal angle of the propagating wave, non-zero value indicates oblique wave
-  [rad].
+- `θ`: Wave normal angle of propagating wave, non-zero value indicates oblique wave [rad].
 - `ω_pe`: Electron plasma frequencie [rad/s].
 - `Ω_e`: Electron cyclotron frequencie [rad/s].
 
@@ -27,15 +26,11 @@ both.
 # Throws
 
 - `ArgumentError`: If the WNA is outside of ±1 (not in radians).
-- `ArgumentError`: If the frequency is outside the LBC range.
 """
 function dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
 
     abs(θ) > 2π && throw(ArgumentError("Are you sure you are using radians for the WNA?"))
 
-    #ω > 0.5 * minimum(abs.(Ω_e)) && throw(ArgumentError(
-    #    "You are not in the LBC-range, sure this is right? ω = $(ω), 0.5Ωₑ = $(0.5 * minimum(abs.(Ω_e))) "
-    #    ))
 
     X = @. ω_pe^2 / ω^2
     Y = @. Ω_e / ω
@@ -78,7 +73,7 @@ This is valid assuming chorus frequencies `ω` ≫ ion gyro-frequencies (Chen 20
 """
 function group_velocity_whistler_wave(ω, Ω_e, ω_pe)
 
-    any(@. ω > Ω_e) && throw(ArgumentError("Not on whistler branch, check your frequencies!"))
+    any(@. ω > Ω_e) && throw(ArgumentError("Not on whistler branch, check frequencies!"))
 
     Ω_e = abs.(Ω_e)
     a = @. (2 * c₀) / (ω_pe / Ω_e)
