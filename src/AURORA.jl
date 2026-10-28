@@ -42,18 +42,18 @@ include("physics/species.jl")
 export NeutralSpecies, MSISDensity, VectorDensity
 export N2Species, O2Species, OSpecies
 
+include("WPI/coordinates.jl")
+export Cartesian, Spherical
+export longitude_to_MLT
 
 include("WPI/make_magnetic_field.jl")
-export DipoleMagneticField, TsyganenkoMagneticField
-export Cartesian, Spherical, AbstractMagneticField
-export field_line
+export AbstractMagneticField, DipoleMagneticField, TsyganenkoMagneticField
 
 include("WPI/magnetic_field.jl")
-export dipole_field
-export tsyganenko_field, tsyganenko_field_spherical
+export dipole_field, tsyganenko_field
 
-include("WPI/coordinates.jl")
-export r_to_λL, magnetic_basis, find_R_max, longitude_to_MLT
+include("WPI/field_line.jl")
+export magnetic_basis, find_R_max
 
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
@@ -77,7 +77,7 @@ include("WPI/make_particle.jl")
 export ParticleState
 
 include("WPI/make_wave.jl")
-export AbstractModulation, Chirp, Monochromatic, Demekhov
+export AbstractWaveModulation, Chirp, Monochromatic, Demekhov
 export wave_frequency
 export AbstractAmplitude, ConstantAmplitude
 export wave_amplitude
