@@ -11,11 +11,11 @@ dipole = DipoleMagneticField()
 tsyganenko = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
-μ = -cos(deg2rad(2))
+μ = -cos(deg2rad(1))
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
-E_grid = range(1e3, 40e3, length=10)
+E_grid = range(1e3, 40e3, length=50)
 
 particle_dipole = Vector{ParticleState}(undef, length(E_grid))
 @showprogress for (i, E) in enumerate(E_grid)
@@ -78,7 +78,7 @@ end
 
 
 ## Save the data
-#@save "src/WPI/data/TOF_results_L$(L)_alpha$(round(rad2deg(acos(abs(μ))), digits=1)).jld2" TOF_dipole TOF_tsyg E_grid ωs_dipole ωs_tsyg L μ ϕ_eq lb_low lb_high
+@save "src/WPI/data/28102026TOF.jld2" TOF_dipole TOF_tsyg E_grid ωs_dipole ωs_tsyg L μ ϕ_eq lb_low lb_high
 
 ## Make the figure
 fig = Figure(size=(900, 500))
@@ -120,4 +120,4 @@ Legend(fig[1,2], ax)
 #ylims!(ax, 100, 1000)
 
 #save("src/WPI/test_scripts/energies/tsyg_tof.png", fig)
-save("src/WPI/test_scripts/energies/tsyg_tof_ϕ_$(round(rad2deg(ϕ), digits = 0)).png", fig)
+save("src/WPI/test_scripts/energies/28102026TOF_ϕ_$(round(rad2deg(ϕ), digits = 0)).png", fig)
