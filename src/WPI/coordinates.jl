@@ -8,6 +8,7 @@ struct Cartesian
     z::Float64
 end
 
+# NOTE: This might be an issue, as it is spherical dipole coordinates, not pure spherical coordinates!
 struct Spherical
     L::Float64
     λ::Float64
