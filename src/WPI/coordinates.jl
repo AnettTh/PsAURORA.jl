@@ -1,18 +1,39 @@
 using AURORA
+using Geodesy
 
 ## Coordinate types
 struct Cartesian
-    x :: Float64
-    y :: Float64
-    z :: Float64
+    x::Float64
+    y::Float64
+    z::Float64
 end
 
 struct Spherical
-    L :: Float64
-    λ :: Float64
-    ϕ :: Float64
+    L::Float64
+    λ::Float64
+    ϕ::Float64
 end
 
+struct EastNorthUp
+    e::Float64
+    n::Float64
+    u::Float64
+end
+
+struct LTPReference
+    lat::Float64
+    lon::Float64
+    alt::Float64
+end
+
+# Adding some locations that can be called by name
+LTPReference(name::Symbol) = LTPReference(
+    Dict(
+        :tromso       => (69.66,  18.94, 0.0),
+        :longyearbyen => (78.22,  15.63, 0.0),
+        :sodankyla    => (67.37,  26.63, 0.0),
+    )[name]...
+)
 
 # Define conversion between the types
 function Spherical(r::Cartesian)
@@ -29,6 +50,33 @@ function Cartesian(r::Spherical)
     y     = r_mag * cos(r.λ) * sin(r.ϕ)
     z     = r_mag * sin(r.λ)
     return Cartesian(x, y, z)
+end
+
+
+function EastNorthUp(r::Cartesian, ref::LTPReference)
+    # Make ECEF Geodesy-element of position
+    ecef = ECEF(r.x, r.y, r.z)
+
+    # Make ECEF Geodesy-element of reference
+    ref_lla = LLA(ref.lat, ref.lon, ref.alt)
+    ref_ecef = ECEF(ref_lla, wgs84)
+
+    # Convert position to ENU with reference
+    enu = ENU(ecef, ref_ecef, wgs84)
+
+    return EastNorthUp(enu.e, enu.n, enu.u)
+end
+
+function EastNorthUp(r::Cartesian, ref::Symbol)
+    return EastNorthUp(r, LTPReference(ref))
+end
+
+function EastNorthUp(r::Spherical, ref::LTPReference)
+    return EastNorthUp(Cartesian(r), ref)
+end
+
+function EastNorthUp(r::Spherical, ref::Symbol)
+    return EastNorthUp(Cartesian(r), LTPReference(ref))
 end
 
 
