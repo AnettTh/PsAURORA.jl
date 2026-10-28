@@ -84,6 +84,7 @@ end
     lb_low=0.1,
     lb_high=0.5
 )
+    PlasmaState(λ_grid, ϕ_eq, magnetic_field::AbstractMagneticField, L; kwargs...)
 
 Construct a `PlasmaState` along at a magnetic field line on a given L-shell.
 
