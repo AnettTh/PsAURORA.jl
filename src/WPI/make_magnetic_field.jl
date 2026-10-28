@@ -2,37 +2,6 @@ using Dates
 using TsyganenkoModels
 using StaticArrays
 
-## Coordinate types
-struct Cartesian
-    x :: Float64
-    y :: Float64
-    z :: Float64
-end
-
-struct Spherical
-    L :: Float64
-    λ :: Float64
-    ϕ :: Float64
-end
-
-
-# Define conversion between the types
-function Spherical(r::Cartesian)
-    r_mag = sqrt(r.x^2 + r.y^2 + r.z^2)
-    λ     = asin(r.z / r_mag)
-    ϕ     = atan(r.y, r.x)
-    L     = r_mag / (RE * cos(λ)^2)
-    return Spherical(L, λ, ϕ)
-end
-
-function Cartesian(r::Spherical)
-    r_mag = r.L * RE * cos(r.λ)^2
-    x     = r_mag * cos(r.λ) * cos(r.ϕ)
-    y     = r_mag * cos(r.λ) * sin(r.ϕ)
-    z     = r_mag * sin(r.λ)
-    return Cartesian(x, y, z)
-end
-
 # Abstract magnetic field type
 abstract type AbstractMagneticField end
 
@@ -69,19 +38,21 @@ function TsyganenkoMagneticField(ϕ;
     return TsyganenkoMagneticField(time, pdyn, dst, byimf, bzimf, ps, ϕ, component)
 end
 
-(model::TsyganenkoMagneticField)(r::Cartesian) = tsyganenko_field(r.x, r.y, r.z;
+(model::TsyganenkoMagneticField)(position::Cartesian) = tsyganenko_field(position;
     time      = model.time,
     pdyn      = model.pdyn,
     dst       = model.dst,
     byimf     = model.byimf,
     bzimf     = model.bzimf,
-    component = model.component
+    ps        = model.ps,
+    component = model.component,
 )
-(model::TsyganenkoMagneticField)(r::Spherical) = tsyganenko_field_spherical(r.L, r.λ, r.ϕ;
+(model::TsyganenkoMagneticField)(position::Spherical) = tsyganenko_field(position;
     time      = model.time,
     pdyn      = model.pdyn,
     dst       = model.dst,
     byimf     = model.byimf,
     bzimf     = model.bzimf,
-    component = model.component
+    ps        = model.ps,
+    component = model.component,
 )
