@@ -137,6 +137,7 @@ function particle_transit(
         )
 
         # If the particle precipitates, return the TOF
+        # TODO: Figure out how to solve this!
         return isnothing(result.footpoint) ? nothing : result.time
     end
 
