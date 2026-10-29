@@ -138,11 +138,22 @@ function PlasmaState(
     return PlasmaState(collect(λ_grid), n_e, Ω_e, ω_pe, collect(ω_lb), ϕ, ne_model)
 end
 
+# TODO: Try to remove all calls like this in the script, using only the one with a λ_grid and density model
 function PlasmaState(λ_grid, ϕ_eq, magnetic_field::AbstractMagneticField, L; kwargs...)
     ne_model = DentonDensity(magnetic_field, L, ϕ_eq)
     return PlasmaState(λ_grid, ϕ_eq, ne_model, magnetic_field, Float64(L); kwargs...)
 end
 
+function PlasmaState(λ_grid, ne_model::DentonDensity; kwargs...)
+    return PlasmaState(
+        λ_grid,
+        ne_model.ϕ_eq,
+        ne_model,
+        ne_model.magnetic_field,
+        Float64(ne_model.L);
+        kwargs...
+    )
+end
 
 function Base.show(io::IO, plasma::PlasmaState)
     # Plasma frequency corresponding to λ of the lowest Ω_e (not stored in the struct)
