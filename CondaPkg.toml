@@ -1,9 +1,11 @@
 [deps]
-python = "3.11.*"
 cmake = ""
 ninja = ""
+python = "3.11.*"
 gfortran = ""
 
 [pip.deps]
 iri2020 = "@https://github.com/space-physics/iri2020/archive/refs/heads/main.zip"
 pymsis = ">=0.12,<0.13"
+geopack = ""
+apexpy = ""
