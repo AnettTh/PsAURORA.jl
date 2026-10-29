@@ -111,8 +111,6 @@ export SubtractedBiMaxwellianSpectrum
 include("input/Liu2018_distribution.jl")
 export subtracted_bimaxwellian, distribution_weight
 
-include("input/Hsieh2022_distribution.jl")
-export subtracted_bimaxwellian_Hsieh
 
 export AbstractModulation, ConstantModulation, SinusoidalFlickering, SquareFlickering, SmoothOnset
 export InputFlux, evaluate_spectrum, apply_modulation, compute_flux
