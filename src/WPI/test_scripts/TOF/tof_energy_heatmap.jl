@@ -61,7 +61,7 @@ ax = Axis(
     title="Time-of-flight using "
     * if use_boris "boris mover \n" else "integration \n " end
     * "α = $(round(rad2deg(acos(abs(μ))), digits=1))"
-    * ", MLT $(round(longitude_to_MLT(ϕ; degrees=false), digits = 1))"
+    * ", MLT $(round(longitude_to_MLT(ϕ_eq; degrees=false), digits = 1))"
     * ", L=$(L)",
 )
 
