@@ -43,7 +43,7 @@ mod = Chirp(plasmas[1].ω_lb[1], plasmas[1].ω_lb[end], 0.2)
 wave = [WaveState(mod, amp, plasma) for plasma in plasmas]
 
 ## Choose frequency to simulate for
-frac = 0.1
+frac = 0.5
 ω = frac * minimum(plasmas[1].Ω_e)
 
 ## Calculate TOF
@@ -92,3 +92,5 @@ for i in info
 end
 
 Legend(fig[1,2], ax)
+
+save("src/WPI/test_scripts/density/figures/several_frac_$(frac)Ωe.png", fig)
