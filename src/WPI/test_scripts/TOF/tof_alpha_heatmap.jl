@@ -66,4 +66,4 @@ Colorbar(fig[1,2], hm; label="TOF [s]")
 #xlims!(ax, 0.8, 1.0)
 #ylims!(ax, 100, 1000)
 
-save("src/WPI/test_scripts/TOF/TOF_figures/TOF_alpha_heatmap.png", fig)
+save("src/WPI/test_scripts/TOF/figures/TOF_alpha_heatmap.png", fig)

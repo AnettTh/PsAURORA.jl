@@ -120,4 +120,4 @@ Legend(fig[1,2], ax)
 #ylims!(ax, 100, 1000)
 
 #save("src/WPI/test_scripts/energies/tsyg_tof.png", fig)
-save("src/WPI/test_scripts/energies/28102026TOF_ϕ_$(round(rad2deg(ϕ_eq), digits = 0)).png", fig)
+save("src/WPI/test_scripts/TOF/figures/TOF.png", fig)
