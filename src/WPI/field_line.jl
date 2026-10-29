@@ -161,22 +161,24 @@ function find_R_max(magnetic_field::AbstractMagneticField, position::Spherical; 
     return find_R_max(magnetic_field, Cartesian(position); kwargs...)
 end
 
-# TODO: Make this make sense
+# TODO: Make this make sense, DEFINITELY some coordinate issues here
 function find_L_shell(
     magnetic_field::AbstractMagneticField,
     lat::Float64,
     lon::Float64;
-    ds::Float64=RE*0.005,
+    ds::Float64=0.0005*RE,
     n_steps::Int=100_000,
 )
     # Radius of the ionsphere with Earth in center
     r_iono = RE + z_ionosphere
 
+    # Find cartesian coordinates of initial position
     x0 = r_iono * cos(lat) * cos(lon)
     y0 = r_iono * cos(lat) * sin(lon)
     z0 = r_iono * sin(lat)
 
     function trace_fieldline(x0, y0, z0)
+        # Define and store initial position
         xs, ys, zs = [x0], [y0], [z0]
         x, y, z = x0, y0, z0
 
@@ -184,19 +186,30 @@ function find_L_shell(
         B0 = magnetic_field(Cartesian(x0, y0, z0))
         b̂0 = B0 ./ norm(B0)
         r̂0 = [x0, y0, z0] ./ norm([x0, y0, z0])
-        sign = dot(b̂0, r̂0) < 0 ? -1 : 1
 
+        # Check if we are in the northern or southern hemisphere
+        direction = dot(b̂0, r̂0) < 0 ? -1 : 1
+
+        r2_previous = x^2 + y^2 + z^2
         for _ in 1:n_steps
-            B     = magnetic_field(Cartesian(x, y, z))
+            B = magnetic_field(Cartesian(x, y, z))
             B_mag = norm(B)
             bx, by, bz = B ./ B_mag
 
-            x += sign * ds * bx
-            y += sign * ds * by
-            z += sign * ds * bz
+            # Move one step towards equator
+            x += direction * ds * bx
+            y += direction * ds * by
+            z += direction * ds * bz
 
+            # Stop when radius starts to decrease
+            r2_current = x^2 + y^2 + z^2
+            r2_current < r2_previous && break
+            r2_previous = r2_current
+
+            # Save current position
             push!(xs, x); push!(ys, y); push!(zs, z)
 
+            # Quit if outside the limit of 10RE
             sqrt(x^2 + y^2 + z^2) > 10 * RE && break
         end
         return xs, ys, zs
@@ -216,5 +229,5 @@ function find_L_shell(
     r_eq = sqrt(xs[idx_eq]^2 + ys[idx_eq]^2 + zs[idx_eq]^2)
     L = r_eq / RE
 
-    return L
+    return xs, ys, zs, L
 end
