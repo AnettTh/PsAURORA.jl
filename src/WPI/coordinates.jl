@@ -1,5 +1,7 @@
 using AURORA
 using Geodesy
+using PythonCall
+using Dates
 
 ## Coordinate types
 struct Cartesian
@@ -26,6 +28,14 @@ struct LTPReference
     lon::Float64
     alt::Float64
 end
+
+struct MagneticCoordinate
+    mlat_deg::Float64   # Magnetic apex latitude [°]
+    mlon_deg::Float64   # Magnetic apex longitude [°]
+    alt::Float64
+    mlt::Float64
+end
+
 
 # Adding some locations that can be called by name
 LTPReference(name::Symbol) = LTPReference(
@@ -78,6 +88,18 @@ end
 
 function EastNorthUp(r::Spherical, ref::Symbol)
     return EastNorthUp(Cartesian(r), LTPReference(ref))
+end
+
+function Geograpic2Magnetic(ref::LTPReference; time::DateTime=DateTime(2020, 1, 1, 2, 0, 0))
+    apex = pyimport("apexpy").Apex(date=year(time))
+    mlat, mlon = apex.geo2apex(ref.lat, ref.lon, ref.alt / 1e3)
+    mlt = apex.mlon2mlt(pyconvert(Float64, mlon), time)
+    return MagneticCoordinate(
+        pyconvert(Float64, mlat),
+        pyconvert(Float64, mlon),
+        ref.alt,
+        pyconvert(Float64, mlt),
+        )
 end
 
 
