@@ -19,8 +19,12 @@ particle_dipole = ParticleState(1e4, μ, r0, dipole_field, ϕ_eq; relativistic=t
 
 ## Make a plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
-plasma_tsyg = PlasmaState(λ_grid, ϕ_eq, DentonDensity(tsyg_field, L, ϕ_eq), tsyg_field, Float64(L))
-plasma_dipole = PlasmaState(λ_grid, ϕ_eq, DentonDensity(dipole_field, L, ϕ_eq), dipole_field, Float64(L))
+
+density_tsyg = DentonDensity(tsyg_field, L, ϕ_eq)
+density_dipole = DentonDensity(dipole_field, L, ϕ_eq)
+
+plasma_tsyg = PlasmaState(λ_grid, density_tsyg)
+plasma_dipole = PlasmaState(λ_grid, density_dipole)
 
 
 ## Make a wave

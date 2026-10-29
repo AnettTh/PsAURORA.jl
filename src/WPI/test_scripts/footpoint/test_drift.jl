@@ -16,7 +16,8 @@ particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true)
 
 ## Define a plasma
 λ_grid = range(deg2rad(-50.0), deg2rad(50.0), length=200)
-plasma = PlasmaState(λ_grid, ϕ_eq, magnetic_field, L; lb_low=0.1, lb_high=0.5)
+density = DentonDensity(magnetic_field, L, ϕ_eq)
+plasma = PlasmaState(λ_grid, density; lb_low=0.1, lb_high=0.5)
 
 ## Define a wave
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp

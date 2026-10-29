@@ -28,9 +28,9 @@ particles = [
 
 ## Define a plasma
 λ_grid = range(deg2rad(-50.0), deg2rad(50.0), length=200)
-ne_model = DentonDensity(magnetic_field, L, ϕ_eq)
+density = DentonDensity(magnetic_field, L, ϕ_eq)
 
-plasma = PlasmaState(λ_grid, ϕ_eq, ne_model, magnetic_field, L; lb_low=0.1, lb_high=0.5)
+plasma = PlasmaState(λ_grid, density; lb_low=0.1, lb_high=0.5)
 
 # Define a wave
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
@@ -54,8 +54,6 @@ results = Vector{Any}(undef, length(E_grid))
     )
 end
 
-
-##
 ## Trajectory plot
 fig = Figure(size=(800, 600))
 ax  = Axis(fig[1,1];

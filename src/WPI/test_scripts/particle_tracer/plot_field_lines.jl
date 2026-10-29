@@ -33,20 +33,8 @@ p_tsyg = ParticleState(
 
 ## Compute resonance
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
-plasma_dipole = PlasmaState(
-    λ_grid,
-    ϕ_eq,
-    DentonDensity(DipoleMagneticField(), L, ϕ_eq),
-    DipoleMagneticField(),
-    Float64(L),
-)
-plasma_tsyg = PlasmaState(
-    λ_grid,
-    ϕ_eq,
-    DentonDensity(TsyganenkoMagneticField(ϕ_eq), L, ϕ_eq),
-    TsyganenkoMagneticField(ϕ_eq),
-    Float64(L),
-)
+plasma_dipole = PlasmaState(λ_grid, DentonDensity(DipoleMagneticField(), L, ϕ_eq))
+plasma_tsyg = PlasmaState(λ_grid, DentonDensity(TsyganenkoMagneticField(ϕ_eq), L, ϕ_eq))
 
 Ω_e_eq_dip  = minimum(plasma_dipole.Ω_e)
 Ω_e_eq_tsyg = minimum(plasma_tsyg.Ω_e)
@@ -250,5 +238,5 @@ xlims!(ax, -lim, 2)
 ylims!(ax, -lim, 2)
 zlims!(ax, -lim+3, lim-3)
 ## Refreshing the plot
-close(server)
+#close(server)
 server = Bonito.Server(Bonito.App(fig), "0.0.0.0", 8888)

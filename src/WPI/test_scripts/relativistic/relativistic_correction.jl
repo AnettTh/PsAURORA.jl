@@ -6,21 +6,21 @@ using CairoMakie
 ## Make magnetic field
 ϕ_eq = deg2rad(240.0)
 magnetic_field = TsyganenkoMagneticField(ϕ_eq)
-magnetic_field = DipoleMagneticField()
+#magnetic_field = DipoleMagneticField()
 
 ## Define the particles
 μ = -cos(deg2rad(2))       # Almost field-aligned
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
-E_grid = range(1e3, 40e3, length=200)
+E_grid = range(1e3, 40e3, length=10)
 
 p_relativistic = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
 p_classical = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=false) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
-plasma = PlasmaState(λ_grid, ϕ, DentonDensity(magnetic_field, L, ϕ), magnetic_field, Float64(L))
+plasma = PlasmaState(λ_grid, DentonDensity(magnetic_field, L, ϕ_eq))
 
 
 ## Define the wave
@@ -35,8 +35,8 @@ TOF_matrix_relativistic = zeros(length(E_grid), length(ωs))
 TOF_simple_relativistic = zeros(length(E_grid), length(ωs))
 
 for (i, p) in enumerate(p_relativistic)
-    TOF_matrix_relativistic[i, :] = WPI_TOF(ωs, p, plasma, wave; field_dependent=true  )
-    TOF_simple_relativistic[i, :]  = WPI_TOF(ωs, p, plasma, wave; field_dependent=false)
+    TOF_matrix_relativistic[i, :] = WPI_TOF(ωs, p, plasma; wave=wave, field_dependent=true)
+    TOF_simple_relativistic[i, :] = WPI_TOF(ωs, p, plasma; wave=wave, field_dependent=false)
 end
 
 ##
@@ -44,8 +44,8 @@ TOF_matrix_classical = zeros(length(E_grid), length(ωs))
 TOF_simple_classical = zeros(length(E_grid), length(ωs))
 
 for (i, p) in enumerate(p_classical)
-    TOF_matrix_classical[i, :] = WPI_TOF(ωs, p, plasma, wave; field_dependent=true  )
-    TOF_simple_classical[i, :]  = WPI_TOF(ωs, p, plasma, wave; field_dependent=false)
+    TOF_matrix_classical[i, :] = WPI_TOF(ωs, p, plasma; wave=wave, field_dependent=true  )
+    TOF_simple_classical[i, :]  = WPI_TOF(ωs, p, plasma; wave=wave, field_dependent=false)
 end
 
 

@@ -7,7 +7,7 @@ using CairoMakie
 magnetic_field = DipoleMagneticField()
 
 ## Define the particles
-μ = -cos(deg2rad(2))       # Almost field-aligned
+μ = -cos(deg2rad(5))
 L = 6.5
 r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
@@ -26,23 +26,16 @@ particles = [
 
 ## Define the plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
-plasma = PlasmaState(
-    λ_grid,
-    ϕ_eq,
-    DentonDensity(magnetic_field, L, ϕ_eq),
-    magnetic_field,
-    Float64(L),
-)
+desnity = DentonDensity(magnetic_field, L, ϕ_eq)
+plasma = PlasmaState(λ_grid, density)
 
 ## Define the wave
-# NOTE: I do not think this is correct anymore
 Ω_e_eq = minimum(plasma.Ω_e)
-ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.5, length=5)
+ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.5, length=10)
 
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
 wave = WaveState(modulation, amplitude, plasma)
-#wave = nothing
 
 ## Calculate TOF
 TOF_matrix = zeros(length(E_grid), length(ωs))  # [n_E × n_ω]
@@ -60,7 +53,7 @@ ax = Axis(
     fig[1,1],
     xlabel="time-of-flight [s]",
     ylabel="E [keV]",
-    title="Pitch-angle $(round(rad2deg(acos(abs(μ)))))",
+    title="Dipole approximation with pitch-angle α=$(round(rad2deg(acos(abs(μ)))))°",
 )
 
 #ax.yticks = [1, 10, 100, 1000]
@@ -69,7 +62,8 @@ ax = Axis(
 ω_norm = (ωs .- minimum(ωs)) ./ (maximum(ωs) - minimum(ωs))
 
 
-colors = [:blue, :red, :green, :orange, :purple]  # one per ω
+#colors = [:blue, :red, :green, :orange, :purple]  # one per ω
+colors = cgrad(:turbo, length(ωs), categorical=true)
 
 for (i, ω) in enumerate(ωs)
     lines!(ax, TOF_matrix[:, i], E_grid ./ 1e3;
@@ -88,7 +82,4 @@ lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,   label="Field-independe
 Legend(fig[1,2], ax)
 
 ##
-#xlims!(ax, 0.8, 1.0)
-#ylims!(ax, 100, 1000)
-
-#save("src/WPI/test_scripts/energies/several_energies_$(round(rad2deg(acos(abs(μ))))).png", fig)
+#save("src/WPI/test_scripts/field_independent_model/figures/several_energies_$(round(rad2deg(acos(abs(μ))))).png", fig)
