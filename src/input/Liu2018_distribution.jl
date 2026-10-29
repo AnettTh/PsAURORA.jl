@@ -76,20 +76,3 @@ function compute_Nj(M, a_par, a_perp, α_LC, Δ, N, r)
 
     return Njs, vdjs, a_par_js, a_perp_js
 end
-
-
-function distribution_weight(
-    particle::ParticleState,
-    N::Float64,
-    T_parallel::Float64,
-    A::Float64,
-    α_lc::Float64,
-    Δ::Float64,
-    r::Float64,
-    M::Int
-)
-    v_par = particle.v * cos(particle.α_lc)
-    v_perp = particle.v * sin(particle.α_lc)
-
-    return subtracted_bimaxwellian(v_par, v_perp, N, T_parallel, A, α_lc, Δ, r, M)
-end
