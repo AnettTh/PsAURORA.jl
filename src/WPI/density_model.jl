@@ -26,8 +26,11 @@ end
 Density model along a magnetic field line, as described by Denton et al. (2002).
 """
 struct DentonDensity <: AbstractDensityModel
-    R_max::Float64      # Maximum radial distance along field line [m].
-    ϕ_eq::Float64       # Equatorial longitude [rad].
+    R_max::Float64                          # Maximum radial distance along field line [m].
+    ϕ_eq::Float64                           # Equatorial longitude [rad].
+    duct_enhancement::Float64               # Fraction of density enhancement, 0.0 = not ducted.
+    L::Float64                              # L-shell used for computation.
+    magnetic_field::AbstractMagneticField   # Magnetic field model.
 end
 
 
@@ -50,15 +53,15 @@ using an analytical solution for a dipole field.
 - A `struct` holding the necessary information to run the Denton density model.
 
 """
-function DentonDensity(magnetic_field, L, ϕ_eq)
+function DentonDensity(magnetic_field::AbstractMagneticField, L, ϕ_eq; duct_enhancement=0.0)
     R_max = find_R_max(magnetic_field, Spherical(L, 0.0, ϕ_eq))
-    return DentonDensity(R_max, ϕ_eq)
+    return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, magnetic_field)
 end
 
 
-function DentonDensity(::typeof(dipole_field), L, ϕ_eq)
+function DentonDensity(magnetic_field::typeof(dipole_field), L, ϕ_eq; duct_enhancement=0.0)
     R_max = Float64(L) * RE
-    return DentonDensity(R_max, ϕ_eq)
+    return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, magnetic_field)
 end
 
 
@@ -82,7 +85,8 @@ function electron_density(model::ConstantDensity, L, λ)
 end
 
 function electron_density(model::DentonDensity, L, λ)
-    return denton_density_model(Spherical(L, λ, model.ϕ_eq), model.R_max)
+    n_e = denton_density_model(Spherical(L, λ, model.ϕ_eq), model.R_max)
+    return n_e * (1.0 + model.duct_enhancement)
 end
 
 # Make both callable as functions
