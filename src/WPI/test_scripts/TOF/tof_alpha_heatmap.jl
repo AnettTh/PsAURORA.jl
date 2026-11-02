@@ -10,12 +10,12 @@ using JLD2
 magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
-α0, α1 = deg2rad(0.01), deg2rad(2)
-μ_grid = -cos.(range(α0, α1, length=10))
+α0, α1 = deg2rad(0.01), deg2rad(5)
+μ_grid = -cos.(range(α0, α1, length=50))
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
-E = 30e3
+E = 25e3
 
 particle = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for μ in μ_grid]
 
@@ -66,4 +66,4 @@ Colorbar(fig[1,2], hm; label="TOF [s]")
 #xlims!(ax, 0.8, 1.0)
 #ylims!(ax, 100, 1000)
 
-save("src/WPI/test_scripts/TOF/figures/TOF_alpha_heatmap.png", fig)
+save("src/WPI/test_scripts/TOF/figures/02112026_TOF_alpha_heatmap.png", fig)
