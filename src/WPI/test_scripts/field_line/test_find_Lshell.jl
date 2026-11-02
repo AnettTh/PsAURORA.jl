@@ -97,6 +97,6 @@ scatter!(ax, [xs_dipole[1]/RE], [ys_dipole[2]/RE], [zs_dipole[2]/RE];
 
 
 axislegend(ax)
-
+##
 isdefined(Main, :server) && close(server)
 server = Bonito.Server(Bonito.App(fig), "0.0.0.0", 8888)
