@@ -87,7 +87,7 @@ function boris_mover(
     steps = Int(n_T * resolution)
 
     if store_trajectory
-        @info "\nStoring trajectory"
+        #@info "\nStoring trajectory"
         r_array = zeros(steps + 1, 3)
         v_array = zeros(steps + 1, 3)
         t_array = zeros(steps + 1)
@@ -96,12 +96,12 @@ function boris_mover(
 
     # Find position and velocity
     if isnothing(λ_start)
-        @info "\nUsing equatorial position as initial position"
+        #@info "\nUsing equatorial position as initial position"
         # Use default positions, usually in the equatorial plane
         x, y, z = particle.r0
         vx, vy, vz = particle.v0
     else
-        @info "\nUsing latitude λ=$(round(rad2deg(λ_start), digits=1))° as initial position"
+        #@info "\nUsing latitude λ=$(round(rad2deg(λ_start), digits=1))° as initial position"
         # Get position of resonance
         # TODO: Using ϕ_eq here is just temporary, figure out the accurate position?
         r_start = Cartesian(Spherical(particle.L, λ_start, particle.ϕ_eq))
@@ -240,7 +240,7 @@ function boris_mover(
                 end
 
                 if stop_when_bouncing
-                    @info "\nBounced (and told to stop at that), no footpoint detected"
+                    #@info "\nBounced (and told to stop at that), no footpoint detected"
                     if store_trajectory
                         return (
                             position=r_array[1:i, :],
@@ -311,7 +311,7 @@ function boris_mover(
 
         ===#
         if x^2 + y^2 + z^2 ≤ r_ionosphere^2
-            @info "\nPrecipitation!"
+            #@info "\nPrecipitation!"
             if store_trajectory
                 return (
                     position=r_array[1:i, :],
@@ -337,7 +337,7 @@ function boris_mover(
 
     ===#
 
-    @info "\nBouncing..."
+    #@info "\nBouncing..."
     if store_trajectory
         return (
             position=r_array,

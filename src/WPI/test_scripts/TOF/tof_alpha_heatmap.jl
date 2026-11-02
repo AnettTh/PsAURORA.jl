@@ -34,16 +34,18 @@ wave = WaveState(modulation, amplitude, plasma)
 ## Calculate TOF
 TOF = zeros(length(μ_grid), length(ωs))
 use_boris = true
+progress = Progress(length(particle))
 
-@showprogress for (i, p) in enumerate(particle)
+Treads.@threads :greedy for i in eachindex(particle)
     TOF[i, :] = WPI_TOF(
         ωs,
-        p,
+        particle[i],
         plasma;
         wave=wave,
         use_boris=use_boris,
         field_dependent=true,
     )
+    next!(progress)
 end
 
 
