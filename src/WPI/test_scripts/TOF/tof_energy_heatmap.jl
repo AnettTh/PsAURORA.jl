@@ -14,7 +14,7 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
-E_grid = range(10e3, 40e3, length=50)
+E_grid = range(1e3, 40e3, length=60)
 
 particle = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
 
@@ -30,11 +30,11 @@ plasma = PlasmaState(
 
 # Define the wave
 Ω_e_eq = minimum(plasma.Ω_e)
-ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.5, length=50)
+ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.5, length=60)
 
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
-wave = WaveState(modulation, amplitude, plasma)
+wave = WaveState(modulation, amplitude, plasma; Ψ0=0.0)
 
 ## Calculate TOF
 TOF = zeros(length(E_grid), length(ωs))
@@ -52,23 +52,39 @@ use_boris = true
 end
 
 
-## Make Figure
-fig = Figure(size=(700,500))
-ax = Axis(
-    fig[1,1],
-    xlabel="ω/Ωₑ",
-    ylabel="E [keV]",
-    title="Time-of-flight using "
-    * if use_boris "boris mover \n" else "integration \n " end
-    * "α = $(round(rad2deg(acos(abs(μ))), digits=1))"
-    * ", MLT $(round(longitude_to_MLT(ϕ_eq; degrees=false), digits = 1))"
-    * ", L=$(L)",
+outfile = "src/WPI/data/02112026TOF_heatmap.jld2"
+
+jldsave(outfile;
+    TOF,                              # [E, ω], size (60, 60)
+    E_grid  = collect(E_grid),        # [eV]
+    ωs      = collect(ωs),            # [rad/s]
+    ω_frac  = collect(ωs) ./ Ω_e_eq,  # ω/Ωₑ,eq, the axis you plot against
+    Ω_e_eq,
+    μ, L, ϕ_eq,
+    Bw      = amplitude.Bw,           # [T]
+    Ψ0      = wave.Ψ0,
+    t_chirp = modulation.t_duration,
+    use_boris,
 )
 
-hm = heatmap!(ax, ωs ./ Ω_e_eq, E_grid ./ 1e3, TOF; colormap=:turbo, nan_color=:white)
-Colorbar(fig[1,2], hm; label="TOF [s]")
-##
-#xlims!(ax, 0.8, 1.0)
-#ylims!(ax, 100, 1000)
+## Make Figure
+data = load(outfile)
 
-save("src/WPI/test_scripts/TOF/figures/TOF_heatmap.png", fig)
+fig = Figure(size=(700, 500))
+ax  = Axis(fig[1, 1];
+    xlabel = "ω/Ωₑ",
+    ylabel = "E [keV]",
+    title  = "Time-of-flight using " * (data["use_boris"] ? "boris mover" : "integration") * "\n" *
+             "α = $(round(rad2deg(acos(abs(data["μ"]))), digits=1))°" *
+             ", MLT $(round(longitude_to_MLT(data["ϕ_eq"]; degrees=false), digits=1))" *
+             ", L = $(data["L"])",
+)
+
+hm = heatmap!(ax, data["ω_frac"], data["E_grid"] ./ 1e3, data["TOF"]';
+    colormap  = :turbo,
+    nan_color = :white,
+)
+Colorbar(fig[1, 2], hm; label="TOF [s]")
+
+save("src/WPI/test_scripts/TOF/figures/02112026TOF_energy_heatmap.png", fig)
+fig

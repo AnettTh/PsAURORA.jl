@@ -10,7 +10,7 @@ using JLD2
 magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
-α0, α1 = deg2rad(0.01), deg2rad(5)
+α0, α1 = deg2rad(0.01), deg2rad(10)
 μ_grid = -cos.(range(α0, α1, length=50))
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
@@ -25,7 +25,7 @@ plasma = PlasmaState(λ_grid, ϕ_eq, magnetic_field, L)
 
 # Define the wave
 Ω_e_eq = minimum(plasma.Ω_e)
-ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.5, length=10)
+ωs = range(Ω_e_eq*0.1, Ω_e_eq*0.5, length=50)
 
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
@@ -36,7 +36,7 @@ TOF = zeros(length(μ_grid), length(ωs))
 use_boris = true
 progress = Progress(length(particle))
 
-Treads.@threads :greedy for i in eachindex(particle)
+Threads.@threads :greedy for i in eachindex(particle)
     TOF[i, :] = WPI_TOF(
         ωs,
         particle[i],
@@ -54,7 +54,7 @@ fig = Figure(size=(700,500))
 ax = Axis(
     fig[1,1],
     xlabel="ω/Ωₑ",
-    ylabel="E [keV]",
+    ylabel="α [°]",
     title="Time-of-flight using "
     * if use_boris "boris mover \n" else "integration \n " end
     * "E=$(E / 1e3) keV"
@@ -62,7 +62,7 @@ ax = Axis(
     * ", L=$(L)",
 )
 
-hm = heatmap!(ax, ωs ./ Ω_e_eq, rad2deg.(acos.(-μ_grid)), TOF; colormap=:turbo)
+hm = heatmap!(ax, ωs ./ Ω_e_eq, rad2deg.(acos.(-μ_grid)), TOF'; colormap=:turbo)
 Colorbar(fig[1,2], hm; label="TOF [s]")
 ##
 #xlims!(ax, 0.8, 1.0)
