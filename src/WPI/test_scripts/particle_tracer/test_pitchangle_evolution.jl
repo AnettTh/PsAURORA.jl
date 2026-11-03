@@ -8,7 +8,7 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 #magnetic_field = DipoleMagneticField()
 
 # Define a particle
-μ = -cos(deg2rad(2))
+μ = -cos(deg2rad(0.1))
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
