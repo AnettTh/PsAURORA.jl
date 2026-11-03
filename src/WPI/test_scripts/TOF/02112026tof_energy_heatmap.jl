@@ -15,6 +15,7 @@ L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
 E_grid = range(1e3, 40e3, length=60)
+# Minimal energy of precipitation was 6.949 keV for this run
 
 particle = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
 
@@ -80,11 +81,11 @@ ax  = Axis(fig[1, 1];
              ", L = $(data["L"])",
 )
 
-hm = heatmap!(ax, data["ω_frac"], data["E_grid"] ./ 1e3, data["TOF"]';
+hm = heatmap!(ax, data["ω_frac"], data["E_grid"][10:end] ./ 1e3, data["TOF"][10:end, :]';
     colormap  = :turbo,
     nan_color = :white,
 )
 Colorbar(fig[1, 2], hm; label="TOF [s]")
 
-save("src/WPI/test_scripts/TOF/figures/02112026TOF_energy_heatmap.png", fig)
+#save("src/WPI/test_scripts/TOF/figures/02112026TOF_energy_heatmap.png", fig)
 fig

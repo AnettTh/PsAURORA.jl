@@ -24,8 +24,8 @@ struct EastNorthUp
 end
 
 struct LTPReference
-    lat::Float64
-    lon::Float64
+    lat_deg::Float64
+    lon_deg::Float64
     alt::Float64
 end
 
@@ -69,7 +69,7 @@ function EastNorthUp(r::Cartesian, ref::LTPReference)
     ecef = ECEF(r.x, r.y, r.z)
 
     # Make ECEF Geodesy-element of reference
-    ref_lla = LLA(ref.lat, ref.lon, ref.alt)
+    ref_lla = LLA(ref.lat_deg, ref.lon_deg, ref.alt)
     ref_ecef = ECEF(ref_lla, wgs84)
 
     # Convert position to ENU with reference
@@ -90,9 +90,10 @@ function EastNorthUp(r::Spherical, ref::Symbol)
     return EastNorthUp(Cartesian(r), LTPReference(ref))
 end
 
+# TODO: Check rad/deg for this
 function Geograpic2Magnetic(ref::LTPReference; time::DateTime=DateTime(2020, 1, 1, 2, 0, 0))
     apex = pyimport("apexpy").Apex(date=year(time))
-    mlat, mlon = apex.geo2apex(ref.lat, ref.lon, ref.alt / 1e3)
+    mlat, mlon = apex.geo2apex(ref.lat_deg, ref.lon_deg, ref.alt / 1e3)
     mlt = apex.mlon2mlt(pyconvert(Float64, mlon), time)
     return MagneticCoordinate(
         pyconvert(Float64, mlat),

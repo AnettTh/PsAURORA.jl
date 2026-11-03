@@ -12,7 +12,7 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 L = 6.5
 r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
 
-E_grid = 20e3:3e3:41e3 #[1e3; 5e3:5e3:40e3]
+E_grid = 15e3:5e3:40e3 #[1e3; 5e3:5e3:40e3]
 particles = [
     ParticleState(
         E,
@@ -34,7 +34,9 @@ plasma = PlasmaState(λ_grid, density; lb_low=0.1, lb_high=0.5)
 # Define a wave
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
-wave = WaveState(modulation, amplitude, plasma)
+Ψ0 = 0.0
+wave = WaveState(modulation, amplitude, plasma; Ψ0=Ψ0)
+
 
 # Find the resonance latitude
 ω_start = wave_frequency(wave, 0.0)
@@ -91,8 +93,8 @@ plot_pitchangle!(ax_full, results, E_grid, colors)
 plot_pitchangle!(ax_zoom, results, E_grid, colors)
 
 
-xlims!(ax_zoom, 0.085, 0.175)
-ylims!(ax_zoom, -0.5, 8.0)
+xlims!(ax_zoom, 0.085, 0.2)
+ylims!(ax_zoom, -0.5, 10.0)
 
 # Add info to Legend
 info = [

@@ -262,5 +262,5 @@ function Base.show(io::IO, w::WaveState)
     println(io, "  Modulation = $(w.modulation)")
     println(io, "  Amplitude = $(w.amplitude)")
     println(io, "  Ψ₀ = $(w.Ψ0)")
-    println(io, "  Wave propagating " * (abs(w.wave_direction)>0 ? "northward" : "southward"))
+    println(io, "  Wave propagating " * (abs(w.wave_direction)>0 ? "northward" : "southward")) # TODO: Check if this is correct!
 end
