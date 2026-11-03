@@ -89,9 +89,11 @@ function Base.show(io::IO, ::DipoleMagneticField)
 end
 
 function Base.show(io::IO, f::TsyganenkoMagneticField)
-    println(io, "TsyganenkoMagneticField() at ϕ_eq=$(round(rad2deg(f.ϕ), digits=1))°:" *
-           "$(round(longitude_to_MLT(f.ϕ, degrees=false), digits=1)) MLT, " *
-           "dst=$(f.dst), " *
-           "pdyn=$(f.pdyn), " *
-           "bzimf=$(f.bzimf)")
+    println(io, "TsyganenkoMagneticField() at ϕ_eq=$(round(rad2deg(f.ϕ), digits=1))°:\n" *
+           "  $(round(longitude_to_MLT(f.ϕ, degrees=false), digits=1)) MLT\n" *
+           "  dst=$(f.dst) \n" *
+           "  pdyn=$(f.pdyn) \n" *
+           "  byimf=$(f.byimf) \n" *
+           "  bzimf=$(f.bzimf) \n"
+           )
 end
