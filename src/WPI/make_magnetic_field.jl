@@ -65,29 +65,29 @@ function TsyganenkoMagneticField(
 )
     return TsyganenkoMagneticField(time, pdyn, dst, byimf, bzimf, ps, ϕ, component)
 end
-
-(model::TsyganenkoMagneticField)(position::Cartesian) = tsyganenko_field(
-    position;
-    time      = model.time,
-    pdyn      = model.pdyn,
-    dst       = model.dst,
-    byimf     = model.byimf,
-    bzimf     = model.bzimf,
-    ps        = model.ps,
-    component = model.component,
-)
-
-# TODO: Try to remove this, as it is not valid when λ≠0
-(model::TsyganenkoMagneticField)(position::Dipolar) = tsyganenko_field(
-    position;
-    time      = model.time,
-    pdyn      = model.pdyn,
-    dst       = model.dst,
-    byimf     = model.byimf,
-    bzimf     = model.bzimf,
-    ps        = model.ps,
-    component = model.component,
-)
+#
+#(model::TsyganenkoMagneticField)(position::Cartesian) = tsyganenko_field(
+#    position;
+#    time      = model.time,
+#    pdyn      = model.pdyn,
+#    dst       = model.dst,
+#    byimf     = model.byimf,
+#    bzimf     = model.bzimf,
+#    ps        = model.ps,
+#    component = model.component,
+#)
+#
+## TODO: Try to remove this, as it is not valid when λ≠0
+#(model::TsyganenkoMagneticField)(position::Dipolar) = tsyganenko_field(
+#    position;
+#    time      = model.time,
+#    pdyn      = model.pdyn,
+#    dst       = model.dst,
+#    byimf     = model.byimf,
+#    bzimf     = model.bzimf,
+#    ps        = model.ps,
+#    component = model.component,
+#)
 
 function Base.show(io::IO, ::DipoleMagneticField)
     println(io, "DipoleMagneticField()")

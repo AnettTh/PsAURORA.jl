@@ -123,13 +123,13 @@ end
 
 - `ArgumentError`: If invalid argument is given to `component`.
 """
-function tsyganenko_field(
+function tsyganenko_field_gsm(
     x::Real,
     y::Real,
     z::Real;
     time="2020-01-01T02:00:00",
     pdyn=2.0,
-    dst=-28.0,
+    dst=-50.0,
     byimf=1.0,
     bzimf=2.0,
     ps=-0.533585131,
@@ -162,23 +162,48 @@ function tsyganenko_field(
     return [Bx, By, Bz]
 end
 
-function tsyganenko_field(r::AbstractVector; kwargs...)
-    length(r) == 3 || throw(
-        ArgumentError("Position vector needs to have three cartesian components")
+#function tsyganenko_field(r::AbstractVector; kwargs...)
+#    length(r) == 3 || throw(
+#        ArgumentError("Position vector needs to have three cartesian components")
+#    )
+#    return tsyganenko_field(r...; kwargs...)
+#end
+
+
+## TODO: Try to remove this, as it is not valid when λ≠0
+#function tsyganenko_field(position::Dipolar; kwargs...)
+#    abs(position.λ) > 1e-5 && throw(
+#        ArgumentError("Issue with using Tsyganenko model with dipolar coordinates if λ≠0.")
+#    )
+#    pos = Cartesian(position)
+#    return tsyganenko_field(pos.x, pos.y, pos.z; kwargs...)
+#end
+
+#function tsyganenko_field(position::Cartesian; kwargs...)
+#    return tsyganenko_field(position.x, position.y, position.z; kwargs...)
+#end
+
+
+rot_y(v, α) = [cos(α) * v[1] + sin(α) * v[3], v[2], -sin(α) * v[1] + cos(α) * v[3]]
+
+function (model::TsyganenkoMagneticField)(r::Cartesian)
+    r_gsm = rot_y([r.x, r.y, r.z], model.ps)             # SM -> GSM
+    B_gsm = tsyganenko_field_gsm(r_gsm...;
+        time      = model.time,
+        pdyn      = model.pdyn,
+        dst       = model.dst,
+        byimf     = model.byimf,
+        bzimf     = model.bzimf,
+        ps        = model.ps,
+        component = model.component,
     )
-    return tsyganenko_field(r...; kwargs...)
+    return rot_y(B_gsm, -model.ps)                       # GSM -> SM
 end
 
 
-# TODO: Try to remove this, as it is not valid when λ≠0
-function tsyganenko_field(position::Dipolar; kwargs...)
+function (model::TsyganenkoMagneticField)(position::Dipolar)
     abs(position.λ) > 1e-5 && throw(
-        ArgumentError("Issue with using Tsyganenko model with dipolar coordinares if λ≠0.")
+        ArgumentError("Issue with using Tsyganenko model with dipolar coordinates if λ≠0.")
     )
-    pos = Cartesian(position)
-    return tsyganenko_field(pos.x, pos.y, pos.z; kwargs...)
-end
-
-function tsyganenko_field(position::Cartesian; kwargs...)
-    return tsyganenko_field(position.x, position.y, position.z; kwargs...)
+    return model(Cartesian(position))      # this rotates SM to GSM
 end

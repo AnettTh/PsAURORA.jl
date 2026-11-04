@@ -164,12 +164,22 @@ end
 function find_footpoint(
     magnetic_field,
     position::Dipolar;
-    ds=RE*0.01,
+    ds=RE*0.005,
     n_steps=10_000,
     hemisphere::Symbol=:north,
 )
-    # Find the trace
-    R_max, trace = find_R_max(magnetic_field, position; ds=ds, n_steps=n_steps, store_trace=true)
+    hemisphere in (:north, :south) || throw(
+        ArgumentError("hemisphere must be :north or :south")
+    )
+
+    # Find the trace and R_max
+    R_max, trace = find_R_max(
+        magnetic_field,
+        position;
+        ds=ds,
+        n_steps=n_steps,
+        store_trace=true
+    )
     xs, ys, zs = trace.xs, trace.ys, trace.zs
     n = length(xs)
     r_iono = RE + z_ionosphere
@@ -185,21 +195,22 @@ function find_footpoint(
     fp_in  = [xs[i_in],  ys[i_in],  zs[i_in]]
     r_fp_end, r_fp_in = norm(fp_end), norm(fp_in)
 
+    # Catching open lines
+    r_fp_end <= r_iono || error(
+        "Trace did not reach the ionosphere" *
+        " in the $hemisphere hemisphere (open line or too few steps)"
+    )
+
     # The trace stops one step below r_iono, so interpolate to exactly r_iono
     frac = (r_fp_in - r_iono) / (r_fp_in - r_fp_end)
     fp = fp_in .+ frac .* (fp_end .- fp_in)
 
-    # Rotate GSM -> SM about y so the latitude is measured from the dipole axis
-    c, s = cos(magnetic_field.ps), sin(magnetic_field.ps)
-    x_sm = c * fp[1] - s * fp[3]
-    y_sm = fp[2]
-    z_sm = s * fp[1] + c * fp[3]
+    λ_fp = asin(fp[3] / norm(fp))
+    ϕ_fp = atan(fp[2], fp[1])
+    L = (norm(fp) / RE) / cos(λ_fp)^2
 
-    λ_f = asin(z_sm / r_iono)
-    ϕ_f = atan(y_sm, x_sm)
-    L = (r_iono / RE) / cos(λ_f)^2
-
-    return (L = L, λ = λ_f, ϕ = ϕ_f, point = Cartesian(fp...))
+    # TODO: Review how much of this must actually be returned
+    return (L_tsyg=R_max/RE, L_dipolar=L, λ_fp=λ_fp, ϕ_fp=ϕ_fp, point=Cartesian(fp...))
 end
 
 

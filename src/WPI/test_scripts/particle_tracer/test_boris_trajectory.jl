@@ -89,7 +89,7 @@ lines!(ax, cos.(θ_earth), sin.(θ_earth); color=:blue, linewidth=2, label="Eart
 
 # Field line
 r0_field = Cartesian(Dipolar(particle.L, λ_resonance, particle.ϕ_eq))
-_, trace  = find_R_max(particle.magnetic_field, r0_field; store_trace=true)
+_, trace = find_R_max(particle.magnetic_field, r0_field; store_trace=true)
 lines!(ax, trace.xs./RE, trace.zs./RE; color=:gray, linestyle=:dash, label="Tsyganenko")
 
 # Add also dipole fieldline

@@ -65,8 +65,18 @@ function DentonDensity(
         R_max = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ_eq))
         return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, magnetic_field)
     else
-        fp = find_footpoint(magnetic_field, Dipolar(L, 0.0, ϕ_eq); hemisphere=hemisphere)
-        return fp#DentonDensity(DipoleMagneticField(), dipole_L, ϕ_eq)
+        result = find_footpoint(
+            magnetic_field,
+            Dipolar(L, 0.0, ϕ_eq);
+            hemisphere=hemisphere
+        )
+        return DentonDensity(
+            result.L_dipolar*RE,
+            ϕ_eq,  # Should this be result.ϕ_fp?
+            duct_enhancement,
+            result.L_dipolar,
+            DipolarMagneticField()
+        )
     end
 end
 
