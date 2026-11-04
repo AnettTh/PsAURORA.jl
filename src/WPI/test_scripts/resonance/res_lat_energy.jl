@@ -1,5 +1,6 @@
 using AURORA
 using CairoMakie
+using ProgressMeter
 
 ## Make magnetic field
 ϕ = deg2rad(240.0)

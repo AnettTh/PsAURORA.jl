@@ -28,7 +28,7 @@ for (L, color) in zip(L_vals, colors)
 end
 
 axislegend(ax, position=:rt)
-save("src/WPI/diagnostic_figures/simple_denton_density_tsyg.png", fig)
+#save("src/WPI/diagnostic_figures/simple_denton_density_tsyg.png", fig)
 
 
 ##
