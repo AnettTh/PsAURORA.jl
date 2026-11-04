@@ -54,7 +54,7 @@ include("WPI/magnetic_field.jl")
 export dipole_field, tsyganenko_field
 
 include("WPI/field_line.jl")
-export magnetic_basis, find_R_max, find_L_shell
+export magnetic_basis, find_R_max, find_footpoint, find_L_shell
 
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
@@ -65,7 +65,7 @@ export quarter_bounceperiod, average_driftvelocity, total_drift
 include("WPI/denton_density.jl")
 export ne_denton, denton_density_model
 
-include("WPI/density_model.jl")
+include("WPI/make_density.jl")
 export AbstractDensityModel, ConstantDensity, DentonDensity, electron_density
 
 include("WPI/analytical_results.jl")
