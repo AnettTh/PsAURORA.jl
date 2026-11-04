@@ -161,6 +161,48 @@ function find_R_max(magnetic_field::AbstractMagneticField, position::Spherical; 
     return find_R_max(magnetic_field, Cartesian(position); kwargs...)
 end
 
+function find_footpoint(
+    magnetic_field,
+    position::Spherical;
+    ds=RE*0.01,
+    n_steps=10_000,
+    hemisphere::Symbol=:north,
+)
+    # Find the trace
+    R_max, trace = find_R_max(magnetic_field, position; ds=ds, n_steps=n_steps, store_trace=true)
+    xs, ys, zs = trace.xs, trace.ys, trace.zs
+    n = length(xs)
+    r_iono = RE + z_ionosphere
+
+    # The trace runs from one footpoint to the other: figure out which is which
+    north_is_last = zs[end] > zs[1]
+    use_last = (hemisphere == :north) == north_is_last
+    i_end = use_last ? n : 1
+    i_in  = use_last ? n - 1 : 2
+
+    # Store the two last positions saved
+    fp_end = [xs[i_end], ys[i_end], zs[i_end]]
+    fp_in  = [xs[i_in],  ys[i_in],  zs[i_in]]
+    r_fp_end, r_fp_in = norm(fp_end), norm(fp_in)
+
+    # The trace stops one step below r_iono, so interpolate to exactly r_iono
+    frac = (r_fp_in - r_iono) / (r_fp_in - r_fp_end)
+    fp = fp_in .+ frac .* (fp_end .- fp_in)
+
+    # Rotate GSM -> SM about y so the latitude is measured from the dipole axis
+    c, s = cos(magnetic_field.ps), sin(magnetic_field.ps)
+    x_sm = c * fp[1] - s * fp[3]
+    y_sm = fp[2]
+    z_sm = s * fp[1] + c * fp[3]
+
+    λ_f = asin(z_sm / r_iono)
+    ϕ_f = atan(y_sm, x_sm)
+    L = (r_iono / RE) / cos(λ_f)^2
+
+    return (L = L, λ = λ_f, ϕ = ϕ_f, point = Cartesian(fp...))
+end
+
+
 # TODO: Make this make sense, DEFINITELY some coordinate issues here
 function find_L_shell(
     magnetic_field::AbstractMagneticField,
@@ -222,7 +264,6 @@ function find_L_shell(
     for (i, (x, y, z)) in enumerate(zip(xs, ys, zs))
         Bs[i] = norm(magnetic_field(Cartesian(x, y, z)))
     end
-
 
     # Find point with lowest fieldstrength
     idx_eq = argmin(Bs)
