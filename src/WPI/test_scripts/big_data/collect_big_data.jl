@@ -35,7 +35,7 @@ end
 
 ## Compute
 for (iL, L) in enumerate(L_grid)
-    r0     = Cartesian(Spherical(L, 0.0, ϕ_eq))
+    r0     = Cartesian(Dipolar(L, 0.0, ϕ_eq))
     plasma = PlasmaState(λ_grid, ϕ_eq, magnetic_field, L)
 
     Ω_e_eq[iL] = minimum(plasma.Ω_e)

@@ -36,7 +36,7 @@ end
 ## Compute
 for (iL, L) in enumerate(L_grid)
     # Make initial position used to define particles
-    r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
+    r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
     # Make the plasma
     plasma = PlasmaState(λ_grid, ϕ_eq, magnetic_field, L)

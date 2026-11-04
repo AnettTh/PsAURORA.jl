@@ -152,7 +152,7 @@ function particle_transit(
     function f(λ)
         if field_dependent
             # Velocity as a function of latitude
-            B_λ = particle.magnetic_field(Spherical(particle.L, λ, particle.ϕ_eq))
+            B_λ = particle.magnetic_field(Dipolar(particle.L, λ, particle.ϕ_eq))
             α_λ = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
 
             # Find velocity, but removing mirrored particles
@@ -257,7 +257,7 @@ function resonance_latitude(
             B_mag = Ω_e * mₑ / abs(qₑ)
         else
             # Evaluate magnetic field at current position
-            B = particle.magnetic_field(Spherical(particle.L, λ, particle.ϕ_eq))
+            B = particle.magnetic_field(Dipolar(particle.L, λ, particle.ϕ_eq))
             B_mag = norm(B)
 
             # Plasma-parameters based on current latitude

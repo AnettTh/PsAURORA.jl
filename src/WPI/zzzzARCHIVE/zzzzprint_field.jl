@@ -11,7 +11,7 @@ L = 6.5
 ϕ = deg2rad(240.0)
 μ = -cos(deg2rad(2.0))
 E = 30e3
-r0 = Cartesian(Spherical(L, 0.0, ϕ))
+r0 = Cartesian(Dipolar(L, 0.0, ϕ))
 
 p = ParticleState(
     E,
@@ -32,7 +32,7 @@ p = ParticleState(
 
 
 ## Test the interpolated magnetic field
-B_direct = norm(magnetic_field(Spherical(L, 0.0, ϕ)))
+B_direct = norm(magnetic_field(Dipolar(L, 0.0, ϕ)))
 B_interp = norm(p.field_line.B_interpolated(p.field_line.s0))
 @show B_direct * 1e9   # nT
 @show B_interp * 1e9   # should match B_direct

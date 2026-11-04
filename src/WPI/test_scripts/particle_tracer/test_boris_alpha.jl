@@ -11,7 +11,7 @@ magnetic_field = DipoleMagneticField()
 # Define a particle
 μ = -cos(deg2rad(1))
 L = 6.5
-r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
+r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 E_grid = 30e3:5e3:40e3
 particles = [
@@ -68,7 +68,7 @@ ax  = Axis(fig[1,1];
 lines!(ax, cos.(θ_earth), sin.(θ_earth); color=:blue, linewidth=2, label="Earth")
 
 # Field line
-r0_field  = Cartesian(Spherical(particles[1].L, 0.0, particles[1].ϕ_eq))
+r0_field  = Cartesian(Dipolar(particles[1].L, 0.0, particles[1].ϕ_eq))
 _, trace  = find_R_max(magnetic_field, r0_field; store_trace=true)
 lines!(ax, trace.xs./RE, trace.zs./RE; color=:gray, linestyle=:dash, label="Field line")
 
@@ -76,7 +76,7 @@ lines!(ax, trace.xs./RE, trace.zs./RE; color=:gray, linestyle=:dash, label="Fiel
 colors = cgrad(:viridis, length(E_grid), categorical=true)
 for (i, (r, λ)) in enumerate(zip(results, λ_resonance))
     if !isnan(λ)
-        r_res = Cartesian(Spherical(particles[i].L, λ, particles[i].ϕ_eq))
+        r_res = Cartesian(Dipolar(particles[i].L, λ, particles[i].ϕ_eq))
         scatter!(ax, [r_res.x/RE], [r_res.z/RE];
             color=colors[i], markersize=15, marker=:diamond)
     end

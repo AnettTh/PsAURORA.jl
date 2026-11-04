@@ -8,7 +8,7 @@ L = 6.5
 ϕ_eq = deg2rad(240.0)
 μ = -cos(deg2rad(2.0))
 E = 30e3
-r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
+r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 p_dipole = ParticleState(
     E,
@@ -49,13 +49,13 @@ plasma_tsyg = PlasmaState(λ_grid, DentonDensity(TsyganenkoMagneticField(ϕ_eq),
 R_max_dipole, trace_dipole = find_R_max(p_dipole; store_trace=true)
 R_max_tsyg, trace_tsyg = find_R_max(
     p_tsyg.magnetic_field,
-    Spherical(p_tsyg.L, λ_res_tsyg, ϕ_eq);
+    Dipolar(p_tsyg.L, λ_res_tsyg, ϕ_eq);
     store_trace=true,
 )
 
 ## Helper to convert spherical to Cartesian RE
 function λ_to_xyz(p, λ)
-    r = Cartesian(Spherical(p.L, λ, p.ϕ_eq))
+    r = Cartesian(Dipolar(p.L, λ, p.ϕ_eq))
     return r.x/RE, r.y/RE, r.z/RE
 end
 

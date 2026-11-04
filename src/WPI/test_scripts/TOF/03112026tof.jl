@@ -36,7 +36,7 @@ magnetic_field = TsyganenkoMagneticField(
 ## Define the particles
 μ = -cos(deg2rad(0.5))
 L = 6.5
-r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
+r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 E_grid = range(7e3, 40e3, length=20)
 
 particles = Vector{ParticleState}(undef, length(E_grid))

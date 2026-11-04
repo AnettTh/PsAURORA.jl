@@ -66,7 +66,7 @@ function get_magnetic_field(
             # Trace the field-line
             _, trace = find_R_max(
                 magnetic_field,
-                Spherical(L, 0.0, ϕ_eq);
+                Dipolar(L, 0.0, ϕ_eq);
                 ds=RE*0.001,
                 store_trace=true
             )

@@ -17,7 +17,7 @@ E_grid = range(25e3, 30e3, length=10)
 Ψ0_grid = collect(0:π/2:7π/4)
 
 ## Initial position and wave amplitude is constant for all runs
-r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
+r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 amplitude = ConstantAmplitude(100e-12)
 
 

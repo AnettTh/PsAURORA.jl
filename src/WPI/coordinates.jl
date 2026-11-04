@@ -11,7 +11,7 @@ struct Cartesian
 end
 
 # NOTE: This might be an issue, as it is spherical dipole coordinates, not pure spherical coordinates!
-struct Spherical
+struct Dipolar
     L::Float64
     λ::Float64
     ϕ::Float64
@@ -47,15 +47,15 @@ LTPReference(name::Symbol) = LTPReference(
 )
 
 # Define conversion between the types
-function Spherical(r::Cartesian)
+function Dipolar(r::Cartesian)
     r_mag = sqrt(r.x^2 + r.y^2 + r.z^2)
     λ     = asin(r.z / r_mag)
     ϕ     = atan(r.y, r.x)
     L     = r_mag / (RE * cos(λ)^2)
-    return Spherical(L, λ, ϕ)
+    return Dipolar(L, λ, ϕ)
 end
 
-function Cartesian(r::Spherical)
+function Cartesian(r::Dipolar)
     r_mag = r.L * RE * cos(r.λ)^2
     x     = r_mag * cos(r.λ) * cos(r.ϕ)
     y     = r_mag * cos(r.λ) * sin(r.ϕ)
@@ -82,11 +82,11 @@ function EastNorthUp(r::Cartesian, ref::Symbol)
     return EastNorthUp(r, LTPReference(ref))
 end
 
-function EastNorthUp(r::Spherical, ref::LTPReference)
+function EastNorthUp(r::Dipolar, ref::LTPReference)
     return EastNorthUp(Cartesian(r), ref)
 end
 
-function EastNorthUp(r::Spherical, ref::Symbol)
+function EastNorthUp(r::Dipolar, ref::Symbol)
     return EastNorthUp(Cartesian(r), LTPReference(ref))
 end
 

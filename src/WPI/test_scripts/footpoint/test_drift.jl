@@ -9,7 +9,7 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 ## Define a particle
 μ = -cos(deg2rad(0.1))
 L = 7.1
-r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
+r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 E = 10e3
 
 particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true)

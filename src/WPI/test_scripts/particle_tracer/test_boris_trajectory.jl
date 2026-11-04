@@ -11,7 +11,7 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 E = 40e3
 μ = -cos(deg2rad(2))
 L = 6.5
-r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
+r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true)
 
@@ -88,7 +88,7 @@ ax  = Axis(fig[1,1];
 lines!(ax, cos.(θ_earth), sin.(θ_earth); color=:blue, linewidth=2, label="Earth")
 
 # Field line
-r0_field = Cartesian(Spherical(particle.L, λ_resonance, particle.ϕ_eq))
+r0_field = Cartesian(Dipolar(particle.L, λ_resonance, particle.ϕ_eq))
 _, trace  = find_R_max(particle.magnetic_field, r0_field; store_trace=true)
 lines!(ax, trace.xs./RE, trace.zs./RE; color=:gray, linestyle=:dash, label="Tsyganenko")
 

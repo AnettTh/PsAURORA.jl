@@ -44,7 +44,7 @@ using an analytical solution for a dipole field.
 # Arguments
 
 - `magnetic field`: Arbitrary magnetic field function that can take either
-  `Spherical(L, λ, ϕ)` or `Cartesian(x, y, z)`.
+  `Dipolar(L, λ, ϕ)` or `Cartesian(x, y, z)`.
 - `L`: L-shell of initial position.
 - `ϕ_eq`: Longitude of position at equator [rad].
 
@@ -62,10 +62,10 @@ function DentonDensity(
     adjusted_model=false,
 )
     if !adjusted_model
-        R_max = find_R_max(magnetic_field, Spherical(L, 0.0, ϕ_eq))
+        R_max = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ_eq))
         return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, magnetic_field)
     else
-        fp = find_footpoint(magnetic_field, Spherical(L, 0.0, ϕ_eq); hemisphere=hemisphere)
+        fp = find_footpoint(magnetic_field, Dipolar(L, 0.0, ϕ_eq); hemisphere=hemisphere)
         return fp#DentonDensity(DipoleMagneticField(), dipole_L, ϕ_eq)
     end
 end
@@ -97,7 +97,7 @@ function electron_density(model::ConstantDensity, L, λ)
 end
 
 function electron_density(model::DentonDensity, L, λ)
-    n_e = denton_density_model(Spherical(L, λ, model.ϕ_eq), model.R_max)
+    n_e = denton_density_model(Dipolar(L, λ, model.ϕ_eq), model.R_max)
     return n_e * (1.0 + model.duct_enhancement)
 end
 

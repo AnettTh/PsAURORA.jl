@@ -43,7 +43,7 @@ export NeutralSpecies, MSISDensity, VectorDensity
 export N2Species, O2Species, OSpecies
 
 include("WPI/coordinates.jl")
-export Cartesian, Spherical, EastNorthUp, LTPReference
+export Cartesian, Dipolar, EastNorthUp, LTPReference
 export MagneticCoordinate, Geograpic2Magnetic, GEO2GSM
 export longitude_to_MLT
 

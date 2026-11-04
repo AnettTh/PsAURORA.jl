@@ -58,7 +58,7 @@ end
     n_steps=10_000,
     store_trace::Bool=false
 )
-    find_R_max(magnetic_field::AbstractMagneticField, position::Spherical; kwargs...)
+    find_R_max(magnetic_field::AbstractMagneticField, position::Dipolar; kwargs...)
 
 Find maximum radial distance from the Earth along a magnetic field line.
 
@@ -69,7 +69,7 @@ directions. Then, it returns the largest value, as well as the trace if specifie
 # Arguments
 
 - `magnetic_field`: Magnetic field function `f(x, y, z)`.
-- `position`: Position of particle either `Cartesian(x, y, z)` or `Spherical(L, λ, ϕ)`.
+- `position`: Position of particle either `Cartesian(x, y, z)` or `Dipolar(L, λ, ϕ)`.
 
 # Keyword Arguments
 
@@ -157,13 +157,13 @@ function find_R_max(
 end
 
 
-function find_R_max(magnetic_field::AbstractMagneticField, position::Spherical; kwargs...)
+function find_R_max(magnetic_field::AbstractMagneticField, position::Dipolar; kwargs...)
     return find_R_max(magnetic_field, Cartesian(position); kwargs...)
 end
 
 function find_footpoint(
     magnetic_field,
-    position::Spherical;
+    position::Dipolar;
     ds=RE*0.01,
     n_steps=10_000,
     hemisphere::Symbol=:north,

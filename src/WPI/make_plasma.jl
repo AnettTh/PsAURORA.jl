@@ -46,7 +46,7 @@ Calculate the electron gyrofreequency `Ω_e` as a function of magnetic latitude 
 - The gyrofrequency as a fuction of magnetic latitude [rad/s].
 """
 function Ωe_at_λ(λ, L, ϕ, magnetic_field::AbstractMagneticField)
-    B = magnetic_field(Spherical(L, λ, ϕ))
+    B = magnetic_field(Dipolar(L, λ, ϕ))
     return abs(qₑ) * norm(B) / mₑ
 end
 

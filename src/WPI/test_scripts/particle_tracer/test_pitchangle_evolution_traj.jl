@@ -11,7 +11,7 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 # Define a particle
 μ = -cos(deg2rad(2))
 L = 6.5
-r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
+r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 E_grid = [1e3; 10e3; 20e3:5e3:40e3] #[1e3; 5e3:5e3:40e3]
 particles = [

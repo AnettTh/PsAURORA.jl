@@ -13,7 +13,7 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 α0, α1 = deg2rad(0.01), deg2rad(10)
 μ_grid = -cos.(range(α0, α1, length=25))
 L = 6.5
-r0 = Cartesian(Spherical(L, 0.0, ϕ_eq))
+r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 E = 30e3
 

@@ -79,7 +79,7 @@ function dipole_field(pos::Cartesian)
     return dipole_field(pos.x, pos.y, pos.z)
 end
 
-function dipole_field(pos::Spherical)
+function dipole_field(pos::Dipolar)
     r = Cartesian(pos)
     return dipole_field(r.x, r.y, r.z)
 end
@@ -96,13 +96,13 @@ end
     component="both",
 )
     tsyganenko_field(r::AbstractVector; kwargs...)
-    tsyganenko_field(position::Spherical; kwargs...)
+    tsyganenko_field(position::Dipolar; kwargs...)
     tsyganenko_field(position::Cartesian; kwargs...)
 
 # Arguments
 - `x, y, z`: Cartesian position components [m].
 - `r`: Cartesian position vector [m].
-- `position`: Position as `Cartesian(x, y, z)` [m] or `Spherical(L, λ, ϕ)` [RE, rad, rad].
+- `position`: Position as `Cartesian(x, y, z)` [m] or `Dipolar(L, λ, ϕ)` [RE, rad, rad].
 
 # Keyword Arguments
 
@@ -164,12 +164,17 @@ end
 
 function tsyganenko_field(r::AbstractVector; kwargs...)
     length(r) == 3 || throw(
-        ArgumentError("Position vector needs to have three cartesian components, whats up?")
+        ArgumentError("Position vector needs to have three cartesian components")
     )
     return tsyganenko_field(r...; kwargs...)
 end
 
-function tsyganenko_field(position::Spherical; kwargs...)
+
+# TODO: Try to remove this, as it is not valid when λ≠0
+function tsyganenko_field(position::Dipolar; kwargs...)
+    abs(position.λ) > 1e-5 && throw(
+        ArgumentError("Issue with using Tsyganenko model with dipolar coordinares if λ≠0.")
+    )
     pos = Cartesian(position)
     return tsyganenko_field(pos.x, pos.y, pos.z; kwargs...)
 end

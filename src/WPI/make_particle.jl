@@ -56,7 +56,7 @@ end
 function find_R_max(particle::ParticleState; kwargs...)
     return find_R_max(
         particle.magnetic_field,
-        Spherical(particle.L, 0.0, particle.ϕ_eq);
+        Dipolar(particle.L, 0.0, particle.ϕ_eq);
         kwargs...
     )
 end
@@ -170,7 +170,7 @@ end
 function ParticleState(
     E_eV,
     μ,
-    r0::Spherical,
+    r0::Dipolar,
     magnetic_field::AbstractMagneticField,
     ϕ_eq;
     kwargs...

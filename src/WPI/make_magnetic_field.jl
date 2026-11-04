@@ -16,18 +16,18 @@ abstract type AbstractMagneticField end
 """
     DipoleMagneticField
 
-Dipole magnetic field model, callable with either `Cartesian` or `Spherical` coordinates.
+Dipole magnetic field model, callable with either `Cartesian` or `Dipolar` coordinates.
 """
 struct DipoleMagneticField <: AbstractMagneticField end
 
 (model::DipoleMagneticField)(r::Cartesian) = dipole_field(r)
-(model::DipoleMagneticField)(r::Spherical) = dipole_field(r)
+(model::DipoleMagneticField)(r::Dipolar) = dipole_field(r)
 
 
 """
     TsyganenkoMagneticField
 
-Tsyganenko magnetic field model, callable with either `Cartesian` or `Spherical`
+Tsyganenko magnetic field model, callable with either `Cartesian` or `Dipolar`
 coordinates, also containing free parameters describing the solar wind conditions.
 
 # Fields
@@ -53,7 +53,8 @@ struct TsyganenkoMagneticField <: AbstractMagneticField
     component :: String
 end
 
-function TsyganenkoMagneticField(ϕ;
+function TsyganenkoMagneticField(
+    ϕ;
     time      = DateTime("2020-01-01T00:01:40"),
     pdyn      = 2.0,
     dst       = -50.0,
@@ -65,7 +66,8 @@ function TsyganenkoMagneticField(ϕ;
     return TsyganenkoMagneticField(time, pdyn, dst, byimf, bzimf, ps, ϕ, component)
 end
 
-(model::TsyganenkoMagneticField)(position::Cartesian) = tsyganenko_field(position;
+(model::TsyganenkoMagneticField)(position::Cartesian) = tsyganenko_field(
+    position;
     time      = model.time,
     pdyn      = model.pdyn,
     dst       = model.dst,
@@ -74,7 +76,10 @@ end
     ps        = model.ps,
     component = model.component,
 )
-(model::TsyganenkoMagneticField)(position::Spherical) = tsyganenko_field(position;
+
+# TODO: Try to remove this, as it is not valid when λ≠0
+(model::TsyganenkoMagneticField)(position::Dipolar) = tsyganenko_field(
+    position;
     time      = model.time,
     pdyn      = model.pdyn,
     dst       = model.dst,

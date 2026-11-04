@@ -27,7 +27,7 @@ L_α_vals  = [  8.1,   5.9,   4.8,   5.2,  6.4,  5.5,  4.8, 6.1]     # Scale len
 
 """
     denton_density_model(position::Cartesian, R_max; SI::Bool=true)
-    denton_density_model(position::Spherical, R_max; SI::Bool=true)
+    denton_density_model(position::Dipolar, R_max; SI::Bool=true)
 
 Compute density along a fieldline, given some initial position.
 
@@ -38,7 +38,7 @@ is by default returned in SI units [m⁻³], but can also be given in #/cc [cm�
 
 # Agurments
 
-- `position`: Current position of type `Cartesian` or `Spherical`.
+- `position`: Current position of type `Cartesian` or `Dipolar`.
 - `R_max`: Maximal distance from the Earth along the current field line [m].
 
 # Keyword Arguments
@@ -49,7 +49,7 @@ function denton_density_model(position::Cartesian, R_max; SI::Bool=true)
 
     # Find current radius
     R  = @. sqrt(position.x^2 + position.y^2 + position.z^2)
-    L = Spherical(position).L
+    L = Dipolar(position).L
 
     # Find correct bin
     i = max(1, searchsortedfirst(L_edges, L) - 1)
@@ -62,6 +62,6 @@ function denton_density_model(position::Cartesian, R_max; SI::Bool=true)
     return @. n_e0 * (R_max / R)^α
 end
 
-function denton_density_model(position::Spherical, R_max; SI::Bool=true)
+function denton_density_model(position::Dipolar, R_max; SI::Bool=true)
     return denton_density_model(Cartesian(position), R_max; SI=SI)
 end

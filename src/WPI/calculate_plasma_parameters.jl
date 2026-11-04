@@ -76,7 +76,7 @@ function losscone_angle(
     degrees::Bool=false
 )
     # Find point of lowest magnetic field strength, i.e. 'equator'
-    _, trace = find_R_max(magnetic_field, Spherical(L, 0.0, ϕ_eq); ds=RE*0.001, store_trace=true)
+    _, trace = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ_eq); ds=RE*0.001, store_trace=true)
 
     # Compute B along trace
     Bs = [norm(magnetic_field(Cartesian(x, y, z)))
