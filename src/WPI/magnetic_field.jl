@@ -92,7 +92,6 @@ end
     dst=-28.0,
     byimf=2.0,
     bzimf=-5.0,
-    ps=-0.533585131,
     component="both",
 )
     tsyganenko_field(r::AbstractVector; kwargs...)
@@ -111,7 +110,6 @@ end
 - `dst`: Disturbance Storm Time index [nT], default is `-50.0`.
 - `byimf`: IMF By component [nT], default is `2.0`.
 - `bzimf`: IMF Bz component [nT], default is `-5.0`.
-- `ps`: Dipole tilt angle [rad], defautl is `-0.533585131`.
 - `component`: String to chose which component of the field to return; either external
   `ext`, internal `int` or the total field `both`, default is `"both"`.
 
@@ -132,25 +130,29 @@ function tsyganenko_field_gsm(
     dst=-50.0,
     byimf=1.0,
     bzimf=2.0,
-    ps=-0.533585131,
+    ps=nothing,
     component="both",
 )
 
     # Convert to format needed by TsyganenkoModels
     t = DateTime(time)
+
     r_RE = [x/RE, y/RE, z/RE]
 
     param = (; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
 
+    # Find dipole tilt-angle at this time
+    ps_used = isnothing(ps) ? dipole_tilt(t) : ps
+
     # Construct the components and combine
     if component == "both"
-        B_ext_nT = TS04(param)(r_RE, ps)
+        B_ext_nT = TS04(param)(r_RE, ps_used)
         B_int_nT = TsyIGRF()(r_RE, t)
         B_tot_nT = B_ext_nT .+ B_int_nT     # [nT]
         Bx, By, Bz = B_tot_nT .* 1e-9       # [T]
     elseif component == "ext"
-        B_ext_nT = TS04(param)(r_RE, ps)    # [nT]
-        Bx, By, Bz = B_ext_nT .* 1e-9       # [T]
+        B_ext_nT = TS04(param)(r_RE, ps_used)  # [nT]
+        Bx, By, Bz = B_ext_nT .* 1e-9          # [T]
     elseif component == "int"
         B_int_nT = TsyIGRF()(r_RE, t)       # [nT]
         Bx, By, Bz = B_int_nT .* 1e-9       # [T]
@@ -162,39 +164,20 @@ function tsyganenko_field_gsm(
     return [Bx, By, Bz]
 end
 
-#function tsyganenko_field(r::AbstractVector; kwargs...)
-#    length(r) == 3 || throw(
-#        ArgumentError("Position vector needs to have three cartesian components")
-#    )
-#    return tsyganenko_field(r...; kwargs...)
-#end
-
-
-## TODO: Try to remove this, as it is not valid when λ≠0
-#function tsyganenko_field(position::Dipolar; kwargs...)
-#    abs(position.λ) > 1e-5 && throw(
-#        ArgumentError("Issue with using Tsyganenko model with dipolar coordinates if λ≠0.")
-#    )
-#    pos = Cartesian(position)
-#    return tsyganenko_field(pos.x, pos.y, pos.z; kwargs...)
-#end
-
-#function tsyganenko_field(position::Cartesian; kwargs...)
-#    return tsyganenko_field(position.x, position.y, position.z; kwargs...)
-#end
-
 
 rot_y(v, α) = [cos(α) * v[1] + sin(α) * v[3], v[2], -sin(α) * v[1] + cos(α) * v[3]]
 
 function (model::TsyganenkoMagneticField)(r::Cartesian)
+
     r_gsm = rot_y([r.x, r.y, r.z], model.ps)             # SM -> GSM
-    B_gsm = tsyganenko_field_gsm(r_gsm...;
+    B_gsm = tsyganenko_field_gsm(
+        r_gsm...;
         time      = model.time,
         pdyn      = model.pdyn,
         dst       = model.dst,
         byimf     = model.byimf,
         bzimf     = model.bzimf,
-        ps        = model.ps,
+        ps        = ps,
         component = model.component,
     )
     return rot_y(B_gsm, -model.ps)                       # GSM -> SM
@@ -202,8 +185,8 @@ end
 
 
 function (model::TsyganenkoMagneticField)(position::Dipolar)
-    abs(position.λ) > 1e-5 && throw(
-        ArgumentError("Issue with using Tsyganenko model with dipolar coordinates if λ≠0.")
-    )
+    #abs(position.λ) > 1e-5 && throw(
+    #    ArgumentError("Issue with using Tsyganenko model with dipolar coordinates if λ≠0.")
+    #)
     return model(Cartesian(position))      # this rotates SM to GSM
 end
