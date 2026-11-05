@@ -60,34 +60,13 @@ function TsyganenkoMagneticField(
     dst       = -50.0,
     byimf     = 1.0,
     bzimf     = 2.0,
-    ps        = -0.533585131,
+    ps        = nothing,
     component = "both"
 )
-    return TsyganenkoMagneticField(time, pdyn, dst, byimf, bzimf, ps, ϕ, component)
+    ps_used = isnothing(ps) ? dipole_tilt(time) : Float64(ps)
+    return TsyganenkoMagneticField(time, pdyn, dst, byimf, bzimf, ps_used, ϕ, component)
 end
-#
-#(model::TsyganenkoMagneticField)(position::Cartesian) = tsyganenko_field(
-#    position;
-#    time      = model.time,
-#    pdyn      = model.pdyn,
-#    dst       = model.dst,
-#    byimf     = model.byimf,
-#    bzimf     = model.bzimf,
-#    ps        = model.ps,
-#    component = model.component,
-#)
-#
-## TODO: Try to remove this, as it is not valid when λ≠0
-#(model::TsyganenkoMagneticField)(position::Dipolar) = tsyganenko_field(
-#    position;
-#    time      = model.time,
-#    pdyn      = model.pdyn,
-#    dst       = model.dst,
-#    byimf     = model.byimf,
-#    bzimf     = model.bzimf,
-#    ps        = model.ps,
-#    component = model.component,
-#)
+
 
 function Base.show(io::IO, ::DipoleMagneticField)
     println(io, "DipoleMagneticField()")
@@ -99,6 +78,7 @@ function Base.show(io::IO, f::TsyganenkoMagneticField)
            "  dst=$(f.dst) \n" *
            "  pdyn=$(f.pdyn) \n" *
            "  byimf=$(f.byimf) \n" *
-           "  bzimf=$(f.bzimf) \n"
+           "  bzimf=$(f.bzimf) \n" *
+           "  ps=$(round(f.ps, digits=9))"
            )
 end
