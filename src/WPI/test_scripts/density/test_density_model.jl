@@ -1,10 +1,12 @@
 using AURORA
 using CairoMakie
+using Dates
 
 ##
 L_vals = [4, 5, 6, 7, 8]
 ϕ_eq = deg2rad(240.0)
-tsyganenko = TsyganenkoMagneticField(ϕ_eq)
+time = DateTime("2020-01-01T02:00:00")
+tsyganenko = TsyganenkoMagneticField(ϕ_eq; time=time)
 dipole = DipoleMagneticField()
 colors = [:blue, :red, :green, :orange, :purple]
 
