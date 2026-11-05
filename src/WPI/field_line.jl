@@ -52,7 +52,7 @@ end
 
 """
     find_R_max(
-    magnetic_field,
+    magnetic_field::AbstractMagneticField,
     position::Cartesian;
     ds=RE*0.01,
     n_steps=10_000,
@@ -63,7 +63,7 @@ end
 Find maximum radial distance from the Earth along a magnetic field line.
 
 The function takes  either an arbitrary magnetic field and a position, or a `ParticleState`,
-and traces the field line from some initial position until reaching the ionosphere, in both '
+and traces the field line from some initial position until reaching the ionosphere, in both
 directions. Then, it returns the largest value, as well as the trace if specified.
 
 # Arguments
@@ -77,10 +77,18 @@ directions. Then, it returns the largest value, as well as the trace if specifie
 - `n_steps`: Maximum number of steps taken before ending the tracing, default is `10 000`.
 - `store_trace`: Option to store the total trace, default is `false`.
 
+# Returns
+
+- `R_max`: Maximum radius following the fieldline of the given magnetic field [m].
+- `(; xs, ys, zs)`: If `store_trace` is `true`, it also returns a named tuple with the trace
+  of the fieldline [m].
+
 # Throws
 
 - `ArgumentError`: If the magnetic field gives a zero-value, meaning that the initial
   conditions are invalid.
+- `ArgumentError`: If λ is non-zero, as this requires other solutions when combined with the
+  Tsyganenko field model.
 
 """
 function find_R_max(
@@ -114,7 +122,8 @@ function find_R_max(
             # Find the current magnetic field direction
             B = magnetic_field(Cartesian(x, y, z))
             B_mag = norm(B)
-            iszero(B_mag) && throw(ArgumentError("Why is your magnetic field zero, Miss??"))
+            (iszero(B_mag) || isnan(B_mag)) &&
+                throw(ArgumentError("Magnetic field is zero or NaN at ($x, $y, $z)"))
             bx, by, bz = B ./ B_mag
 
             # Move one step in the right direction
@@ -158,11 +167,105 @@ end
 
 
 function find_R_max(magnetic_field::AbstractMagneticField, position::Dipolar; kwargs...)
+    # NOTE: Remove this when not needed anymore
+    abs(position.λ) > 1e-6 &&
+        throw(ArgumentError("Issue using Dipolar coordinates for of-equatorial latitudes."))
     return find_R_max(magnetic_field, Cartesian(position); kwargs...)
 end
 
+#===
+
+VERSION WITH HELPER FUNCTION, MIGHT RUN FASTER BUT NOT TESTED
+
+===#
+#function trace_one_way(magnetic_field::AbstractMagneticField, x0, y0, z0, dir; ds, n_steps)
+#    r_iono = RE + z_ionosphere
+#    xs, ys, zs = [x0], [y0], [z0]
+#    x, y, z = x0, y0, z0
+#
+#    for _ in 1:n_steps
+#        B     = magnetic_field(Cartesian(x, y, z))
+#        B_mag = norm(B)
+#        (iszero(B_mag) || isnan(B_mag)) &&
+#            throw(ArgumentError("Magnetic field is zero or NaN at ($x, $y, $z)"))
+#
+#        x += dir * ds * B[1] / B_mag
+#        y += dir * ds * B[2] / B_mag
+#        z += dir * ds * B[3] / B_mag
+#        push!(xs, x); push!(ys, y); push!(zs, z)
+#
+#        r = sqrt(x^2 + y^2 + z^2)
+#        (r ≤ r_iono || r > 10 * RE) && break     # CHANGED: no step > 10 guard
+#    end
+#    return xs, ys, zs
+#end
+#
+#
+#function find_R_max(
+#    magnetic_field::AbstractMagneticField,
+#    position::Cartesian;
+#    ds=RE*0.01,
+#    n_steps=10_000,
+#    store_trace::Bool=false
+#)
+#    # CHANGED: both directions through the helper
+#    x_f, y_f, z_f = trace_one_way(
+#        magnetic_field, position.x, position.y, position.z, +1; ds, n_steps
+#    )
+#    x_b, y_b, z_b = trace_one_way(
+#        magnetic_field, position.x, position.y, position.z, -1; ds, n_steps
+#    )
+#
+#    # Assemble ionosphere 1 → start → ionosphere 2, dropping the duplicated start point
+#    xs = [reverse(x_b); x_f[2:end]]
+#    ys = [reverse(y_b); y_f[2:end]]
+#    zs = [reverse(z_b); z_f[2:end]]
+#
+#    R_max = maximum(sqrt.(xs .^ 2 .+ ys .^ 2 .+ zs .^ 2))
+#    return store_trace ? (R_max, (; xs, ys, zs)) : R_max
+#end
+#
+#
+#function find_R_max(magnetic_field::AbstractMagneticField, position::Dipolar; kwargs...)
+#    return find_R_max(magnetic_field, Cartesian(position); kwargs...)
+#end
+
+"""
+    find_footpoint(
+    magnetic_field::AbstractMagneticField,
+    position::Dipolar;
+    ds=RE*0.005,
+    n_steps=10_000,
+    hemisphere::Symbol=:north,
+)
+
+TBW
+
+# Arguments
+
+- `magnetic_field`: Magnetic field function `f(x, y, z)`.
+- `position`: Position of particle either `Cartesian(x, y, z)` or `Dipolar(L, λ, ϕ)`.
+
+# Keyword Arguments
+
+- `ds`: Stepsize used when constructing the trace of the fieldline, default is `0.005RE`.
+- `n_steps`: Number of maximal steps used for the tracing, default is `10_000`
+- `hemisphere`: Symbol that chooses which hemisphere to find the footpoint for, either
+  `:north` or `:south`. Default is `:north`
+
+# Returns
+
+- A named tuple containing
+  - `L_tsyg_max`: The maximum distance from the Earth center for the fieldline trace.
+  - `L_dipolar`: The L-shell of the dipole fieldline with the same footpoint as the
+    Tsyganenko fieldline with the defined initial position (i.e. equatorial value of L).
+  - `λ_fp`: The latitude of the common footpoint [rad].
+  - `ϕ_fp`: The longitude of the common footpoint [rad].
+  - `fp`: The Cartesian representation of the footpoint [m].
+
+"""
 function find_footpoint(
-    magnetic_field,
+    magnetic_field::AbstractMagneticField,
     position::Dipolar;
     ds=RE*0.005,
     n_steps=10_000,
@@ -187,8 +290,7 @@ function find_footpoint(
     # The trace runs from one footpoint to the other: figure out which is which
     north_is_last = zs[end] > zs[1]
     use_last = (hemisphere == :north) == north_is_last
-    i_end = use_last ? n : 1
-    i_in  = use_last ? n - 1 : 2
+    i_end, i_in = use_last ? (n, n-1) : (1, 2)
 
     # Store the two last positions saved
     fp_end = [xs[i_end], ys[i_end], zs[i_end]]
@@ -205,12 +307,14 @@ function find_footpoint(
     frac = (r_fp_in - r_iono) / (r_fp_in - r_fp_end)
     fp = fp_in .+ frac .* (fp_end .- fp_in)
 
-    λ_fp = asin(fp[3] / norm(fp))
+    # Convert the footpoint from Cartesian coordinates to Dipolar coordinates
+    r_fp = norm(fp)
+    λ_fp = asin(fp[3] / r_fp)
     ϕ_fp = atan(fp[2], fp[1])
-    L = (norm(fp) / RE) / cos(λ_fp)^2
+    L_fp = (r_fp / RE) / cos(λ_fp)^2
 
     # TODO: Review how much of this must actually be returned
-    return (L_tsyg=R_max/RE, L_dipolar=L, λ_fp=λ_fp, ϕ_fp=ϕ_fp, point=Cartesian(fp...))
+    return (L_tsyg_max=R_max/RE, L_dipolar=L_fp, λ_fp=λ_fp, ϕ_fp=ϕ_fp, fp=Cartesian(fp...))
 end
 
 
