@@ -21,7 +21,6 @@ pdyn = 2.0
 dst = -50.0
 byimf = 1.0
 bzimf = 2.0
-ps = dipole_tilt(t)
 
 magnetic_field = TsyganenkoMagneticField(
     ϕ_eq;
