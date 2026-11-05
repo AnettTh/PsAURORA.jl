@@ -67,6 +67,12 @@ function TsyganenkoMagneticField(
     return TsyganenkoMagneticField(time, pdyn, dst, byimf, bzimf, ps_used, ϕ, component)
 end
 
+function TsyganenkoMagneticField(position::LTPReference; time::DateTime, kwargs...)
+    r = LLA_to_SM(position.lat_deg, position.lon_deg, position.alt_m, time)
+    ϕ = Dipolar(Cartesian(r...)).ϕ
+    return TsyganenkoMagneticField(ϕ; time=time, kwargs...)
+end
+
 
 function Base.show(io::IO, ::DipoleMagneticField)
     println(io, "DipoleMagneticField()")
