@@ -43,9 +43,11 @@ export NeutralSpecies, MSISDensity, VectorDensity
 export N2Species, O2Species, OSpecies
 
 include("WPI/coordinates.jl")
-export Cartesian, Dipolar, EastNorthUp, LTPReference
-export MagneticCoordinate, Geograpic2Magnetic, GEO2GSM
+export Cartesian, Dipolar, EastNorthUp, LatitudeLongitudeAltitude, LTPReference
+export solar_coefficients, subsolar_point, sun_unit_vector_GEO, axis_SM, dipole_tilt
+export LLA_to_SM
 export longitude_to_MLT
+
 
 include("WPI/make_magnetic_field.jl")
 export AbstractMagneticField, DipoleMagneticField, TsyganenkoMagneticField
