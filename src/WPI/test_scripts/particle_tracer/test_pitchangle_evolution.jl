@@ -27,7 +27,7 @@ particles = [
 
 ## Define a plasma
 λ_grid = range(deg2rad(-50.0), deg2rad(50.0), length=200)
-density = DentonDensity(magnetic_field, L, ϕ_eq)
+density = DentonDensity(magnetic_field, L, ϕ_eq; adjusted_model=true, hemisphere=:north)
 
 plasma = PlasmaState(λ_grid, density; lb_low=0.1, lb_high=0.5)
 
@@ -42,18 +42,17 @@ wave = WaveState(modulation, amplitude, plasma; Ψ0=Ψ0)
 ω_start = wave_frequency(wave, 0.0)
 λ_resonance = [resonance_latitude(ω_start, p, wave.plasma)[1] for p in particles]
 
-## Run Boris-mover
 ## Run Boris-mover (skip particles without resonance)
 results = Vector{Any}(nothing, length(E_grid))
 
 @showprogress for (i, p) in enumerate(particles)
     isnan(λ_resonance[i]) && continue
     results[i] = boris_mover(p;
-        wave             = wave,
-        n_T              = 100_000,
-        resolution       = 10,
-        store_trajectory = true,
-        λ_start          = λ_resonance[i],
+        wave               = wave,
+        n_T                = 100_000,
+        resolution         = 10,
+        store_trajectory   = true,
+        λ_start            = λ_resonance[i],
         stop_when_bouncing = true,
     )
 end
