@@ -25,12 +25,13 @@ end
 
 Density model along a magnetic field line, as described by Denton et al. (2002).
 """
-struct DentonDensity <: AbstractDensityModel
-    R_max::Float64                          # Maximum radial distance along field line [m].
-    ϕ_eq::Float64                           # Equatorial longitude [rad].
-    duct_enhancement::Float64               # Fraction of density enhancement, 0.0 = not ducted.
-    L::Float64                              # L-shell used for computation.
-    magnetic_field::AbstractMagneticField   # Magnetic field model.
+struct DentonDensity{F<:AbstractMagneticField} <: AbstractDensityModel
+    R_max::Float64              # Maximum radial distance along field line [m].
+    ϕ_eq::Float64               # Equatorial longitude [rad].
+    duct_enhancement::Float64   # Fraction of density enhancement, 0.0 = not ducted.
+    L::Float64                  # Original equatorial L, used for initial position.
+    L_Denton_bin::Float64       # L for the bin used when constructing the density model.
+    magnetic_field::F           # Magnetic field model.
 end
 
 
@@ -62,35 +63,51 @@ function DentonDensity(
     adjusted_model=false,
 )
     if !adjusted_model
+        # Based on R_max regardless of the magnetic field model used
         R_max = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ_eq))
-        return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, magnetic_field)
+        return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L, magnetic_field)
     else
+        # Find the footpoint of the Tsyganenko fieldline
         result = find_footpoint(
             magnetic_field,
             Dipolar(L, 0.0, ϕ_eq);
             hemisphere=hemisphere
         )
+
+        # Use the result of the dipolar L with the same footpoint as the Tsyganenko line to
+        # specify which Denton bin to use. This allows for one smooth model, avoiding jumps
+        # in density around L∼7
+        L_Denton_bin = result.L_dipolar
+
         return DentonDensity(
-            result.L_dipolar*RE,
-            ϕ_eq,  # Should this be result.ϕ_fp?
+            result.L_tsyg_max * RE,
+            ϕ_eq,
             duct_enhancement,
-            result.L_dipolar,
-            DipolarMagneticField()
+            L,
+            L_Denton_bin,
+            DipoleMagneticField(),
         )
     end
 end
 
 
-function DentonDensity(magnetic_field::typeof(dipole_field), L, ϕ_eq; duct_enhancement=0.0)
+function DentonDensity(
+    magnetic_field::DipoleMagneticField,
+    L,
+    ϕ_eq;
+    duct_enhancement=0.0,
+    kwargs...,      # Accept, but ignore, kwargs about hemispheres and adjusted model
+)
     R_max = Float64(L) * RE
-    return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, magnetic_field)
+    return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L, magnetic_field)
 end
 
 
 """
     electron_density(model::AbstractDensityModel, L, λ)
 
-Compute electron number density at a given L-shell and latitude.
+Compute electron number density at a given L-shell and latitude, using any defined density
+model.
 
 # Arguments
 
@@ -100,17 +117,16 @@ Compute electron number density at a given L-shell and latitude.
 
 # Returns
 
-- Electron number densoty [m⁻³].
+- Electron number density [m⁻³].
 """
 function electron_density(model::ConstantDensity, L, λ)
     return model.n_e
 end
 
 function electron_density(model::DentonDensity, L, λ)
-    n_e = denton_density_model(Dipolar(L, λ, model.ϕ_eq), model.R_max)
+    n_e = denton_density_model(Dipolar(L, λ, model.ϕ_eq), model.R_max, model.L_Denton_bin)
     return n_e * (1.0 + model.duct_enhancement)
 end
 
 # Make both callable as functions
-(model::ConstantDensity)(L, λ) = electron_density(model, L, λ)
-(model::DentonDensity)(L, λ) = electron_density(model, L, λ)
+(model::AbstractDensityModel)(L, λ) = electron_density(model, L, λ)
