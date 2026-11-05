@@ -26,8 +26,8 @@ L_α_vals  = [  8.1,   5.9,   4.8,   5.2,  6.4,  5.5,  4.8, 6.1]     # Scale len
 
 
 """
-    denton_density_model(position::Cartesian, R_max; SI::Bool=true)
-    denton_density_model(position::Dipolar, R_max; SI::Bool=true)
+    denton_density_model(position::Cartesian, R_max, L_Denton_bin; SI::Bool=true)
+    denton_density_model(position::Dipolar, R_max, L_Denton_bin; SI::Bool=true)
 
 Compute density along a fieldline, given some initial position.
 
@@ -40,28 +40,47 @@ is by default returned in SI units [m⁻³], but can also be given in #/cc [cm�
 
 - `position`: Current position of type `Cartesian` or `Dipolar`.
 - `R_max`: Maximal distance from the Earth along the current field line [m].
+- `L_Denton_bin`: L-value deciding which bin to use, which depends on the chosen model
+  (it will be the same as `R_max/RE` if the original model is used, but it will be decided
+  by footpoints from fieldline tracing if the adapted model is to be used).
 
 # Keyword Arguments
 
 - `SI`: Return density in SI units or #/cc, default is `true`.
+
+# Returns
+
+- The density at the current position, using the given bin.
+
+# Throws
+
+- `ArgumentError`: If `L_Denton_bin` is out of the valid range for the model.
+- `ArgumentError`: If λ is non-zero, as this requires other solutions when combined with the
+  Tsyganenko field model.
 """
-function denton_density_model(position::Cartesian, R_max; SI::Bool=true)
+function denton_density_model(position::Cartesian, R_max, L_Denton_bin; SI::Bool=true)
+
+    L_edges[1] ≤ L_Denton_bin ≤ L_edges[end] || throw(
+        ArgumentError("L=$(round(L_Denton_bin, digits=2)) is outside of the valid range" *
+        " [$(L_edges[1]), $(L_edges[end])]")
+    )
 
     # Find current radius
     R  = @. sqrt(position.x^2 + position.y^2 + position.z^2)
-    L = Dipolar(position).L
 
     # Find correct bin
-    i = max(1, searchsortedfirst(L_edges, L) - 1)
-    i = clamp(i, 1, length(n_e0_vals))
+    i = clamp(searchsortedfirst(L_edges, L_Denton_bin) - 1, 1, length(n_e0_vals))
 
     # Store and return value based on the bin
     n_e0 = SI ? n_e0_vals[i] * 1e6 : n_e0_vals[i]
-    α    = α_vals[i]
+    α = α_vals[i]
 
-    return @. n_e0 * (R_max / R)^α
+    return n_e0 * (R_max / R)^α
 end
 
-function denton_density_model(position::Dipolar, R_max; SI::Bool=true)
-    return denton_density_model(Cartesian(position), R_max; SI=SI)
+function denton_density_model(position::Dipolar, R_max, L_Denton_bin; SI::Bool=true)
+    # NOTE: Remove this when not needed anymore
+    abs(position.λ) > 1e-6 &&
+        throw(ArgumentError("Issue using Dipolar coordinates for of-equatorial latitudes."))
+    return denton_density_model(Cartesian(position), R_max, L_Denton_bin; SI=SI)
 end
