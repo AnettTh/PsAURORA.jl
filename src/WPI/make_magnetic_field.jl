@@ -67,6 +67,7 @@ function TsyganenkoMagneticField(
     return TsyganenkoMagneticField(time, pdyn, dst, byimf, bzimf, ps_used, ϕ, component)
 end
 
+# Print this and check that it works
 function TsyganenkoMagneticField(position::LTPReference; time::DateTime, kwargs...)
     r = LLA_to_SM(position.lat_deg, position.lon_deg, position.alt_m, time)
     ϕ = Dipolar(Cartesian(r...)).ϕ
