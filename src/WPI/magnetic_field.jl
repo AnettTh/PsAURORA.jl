@@ -168,6 +168,8 @@ end
 rot_y(v, α) = [cos(α) * v[1] + sin(α) * v[3], v[2], -sin(α) * v[1] + cos(α) * v[3]]
 
 function (model::TsyganenkoMagneticField)(r::Cartesian)
+    r_mag = sqrt(r.x^2 + r.y^2 + r.z^2)
+    r_mag > 15 * RE && error("Tsyganenko evaluated at r = $(round(r_mag / RE, digits=2)) RE")   # TEMPORARY
 
     r_gsm = rot_y([r.x, r.y, r.z], model.ps)             # SM -> GSM
     B_gsm = tsyganenko_field_gsm(
