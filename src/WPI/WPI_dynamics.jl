@@ -122,7 +122,8 @@ function particle_transit(
     wave::Union{WaveState, Nothing}=nothing,
     V_r=nothing,
     field_dependent::Bool=true,
-    use_boris::Bool=false
+    use_boris::Bool=false,
+    r_start::Union{Cartesian, Nothing}=nothing,
 )
 
     # If Boris-mover is to be used, shortcuts the function
@@ -133,7 +134,8 @@ function particle_transit(
             wave=wave,
             λ_start=λ_resonance,
             store_trajectory=false,
-            stop_when_bouncing=true
+            stop_when_bouncing=true,
+            r_start=r_start,
         )
 
         # If the particle precipitates, return the TOF
@@ -400,7 +402,8 @@ function WPI_TOF(
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1,
-    fast::Bool=false
+    fast::Bool=false,
+    r_start::Union{Cartesian, Nothing}=nothing
 )
 
     # Calculate wave-launch time based on given model
@@ -434,6 +437,7 @@ function WPI_TOF(
             V_r=V_r,
             use_boris=use_boris,
             field_dependent=field_dependent,
+            r_start=r_start,
         )
 
         # Total time = wave-to-λ + particle-to-ionosphere + delay of current ω based on wave
