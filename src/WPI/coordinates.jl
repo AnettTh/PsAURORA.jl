@@ -49,7 +49,7 @@ LTPReference(name::Symbol) = LTPReference(
 function Dipolar(r::Cartesian)
     r_mag = sqrt(r.x^2 + r.y^2 + r.z^2)
     λ     = asin(r.z / r_mag)
-    ϕ     = atan(r.y, r.x)
+    ϕ     = mod2pi(atan(r.y, r.x))
     L     = r_mag / (RE * cos(λ)^2)
     return Dipolar(L, λ, ϕ)
 end
@@ -177,6 +177,7 @@ function LLA_to_SM(lat_deg, lon_deg, alt_m, t::DateTime)
 
     # Rescale to simulation sphere
     ref_geo_scaled = (RE + z_ionosphere) .* ref_geo ./ norm(ref_geo)
+    #ref_geo_scaled = RE .* ref_geo ./ norm(ref_geo)
 
     # Project onto the SM axes at the correct time
     x̂, ŷ, ẑ = axis_SM(t)
