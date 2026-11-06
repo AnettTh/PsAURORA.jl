@@ -129,7 +129,11 @@ function ParticleState(
     )
 
     # Find point of max R to use as L-shell
-    L = find_R_max(magnetic_field, r0) / RE
+    R_max, trace = find_R_max(magnetic_field, r0; store_trace=true)
+    L = R_max / RE
+
+    B_line = [norm(magnetic_field(Cartesian(x, y, z)))
+             for (x, y, z) in zip(trace.xs, trace.ys, trace.zs)]
 
     # Loss-cone angle at the equator of this L-shell
     α_lc = losscone_angle(magnetic_field, L, ϕ_eq)
@@ -142,7 +146,7 @@ function ParticleState(
 
     # Find field-strength and pitch angle at the equator
     # TODO: These are not correct for the tsyganenko-model, look into how to handle it
-    B_eq = BE / L^3
+    B_eq = minimum(B_line) #BE / L^3
     α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq)
 
     return ParticleState(
