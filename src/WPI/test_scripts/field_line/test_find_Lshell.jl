@@ -5,26 +5,25 @@ using Dates
 
 
 ## Make magnetic field
-time = DateTime("2020-01-01T01:30:00")
-ref = LTPReference(:tromso)
-tsyg = TsyganenkoMagneticField(ref; time=time)
-
 dipole = DipoleMagneticField()
+
+time = DateTime("2020-01-01T02:30:00")
+dst = 20
+pdyn = 7.0
+bzimf = 7.5
+byimf = 2.0
+ref = LTPReference(:tromso)
+tsyg = TsyganenkoMagneticField(ref; time=time, dst=dst, bzimf=bzimf, byimf=byimf, pdyn=pdyn)
 
 
 ## Run function
-# TODO: There is some mismatch here, this is where to start tomorrow!
-xs_tsyg, ys_tsyg, zs_tsyg, L_tsyg = find_L_shell(
-    tsyg, ref.lat_deg, ref.lon_deg
-)
-##xs_dipole, ys_dipole, zs_dipole, L_dipole = find_L_shell(
-#    dipole,
-#    deg2rad(MAG.mlat_deg),
-#    deg2rad(MAG.mlon_deg),
-#)
-#
-#rs_tsyg = sqrt.(xs_tsyg.^2 .+ ys_tsyg.^2 .+ zs_tsyg.^2) ./ RE
-#rs_dip  = sqrt.(xs_dipole.^2  .+ ys_dipole.^2  .+ zs_dipole.^2)  ./ RE
+xs_tsyg, ys_tsyg, zs_tsyg, L_tsyg = find_L_shell(tsyg, ref, time; r_start=RE+10)
+xs_dipole, ys_dipole, zs_dipole, L_dipole = find_L_shell(dipole, ref, time; r_start=RE+10)
+
+##
+rs_tsyg = sqrt.(xs_tsyg.^2 .+ ys_tsyg.^2 .+ zs_tsyg.^2) ./ RE
+rs_dip  = sqrt.(xs_dipole.^2  .+ ys_dipole.^2  .+ zs_dipole.^2)  ./ RE
+
 
 
 ##

@@ -5,24 +5,17 @@ using LinearAlgebra
 using Dates
 
 ## Make magnetic field
-ϕ_eq = deg2rad(240.0)
-tsyg = TsyganenkoMagneticField(ϕ_eq; time=DateTime("2020-01-01T00:01:40"))
-
-## Define point of reference
-ref = LTPReference(:tromso)
-MAG = Geograpic2Magnetic(ref)
+t = DateTime("2020-01-01T00:01:30")
+station = :tromso
+ref = LTPReference(station)
+tsyg = TsyganenkoMagneticField(ref; time=t)
 
 ## Trace the field line from the reference point
-xs_tsyg, ys_tsyg, zs_tsyg, L_tsyg = find_L_shell(
-    tsyg,
-    deg2rad(MAG.mlat_deg),
-    deg2rad(MAG.mlon_deg),
-)
-
+xs_tsyg, ys_tsyg, zs_tsyg, L_tsyg = find_L_shell(tsyg, ref, t)
 rs_tsyg = sqrt.(xs_tsyg.^2 .+ ys_tsyg.^2 .+ zs_tsyg.^2) ./ RE
 
 ## Background field lines, seeded in the equatorial plane
-seed_L   = [3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+seed_L   = [3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0]
 seed_ϕ   = deg2rad.(0.0:30.0:330.0)
 seeds    = [(L, ϕ) for L in seed_L, ϕ in seed_ϕ]      # matrix of (L, ϕ) pairs
 traces   = Vector{Any}(undef, length(seeds))
@@ -73,16 +66,16 @@ for t in traces
         linewidth  = 1,
     )
 end
-Colorbar(fig[1, 2]; colormap=:viridis, limits=L_range, label="Seed L (equatorial plane)")
+Colorbar(fig[1, 2]; colormap=:viridis, limits=L_range, label="L(Z=0)")
 
 # Field line through the Tromsø reference point
 lines!(ax,
     xs_tsyg ./ RE,
     ys_tsyg ./ RE,
     zs_tsyg ./ RE;
-    color     = :red,
+    color = :black,
     linewidth = 3,
-    label     = "Tsyganenko, from Tromsø",
+    label = "Fieldline from $(station)",
 )
 
 # Maximum radius point (L-shell)
@@ -91,8 +84,8 @@ scatter!(ax,
     [xs_tsyg[idx_max_tsyg] / RE],
     [ys_tsyg[idx_max_tsyg] / RE],
     [zs_tsyg[idx_max_tsyg] / RE];
-    color = :red, markersize = 12, marker = :circle,
-    label = "L=$(round(L_tsyg, digits=2)) (Tsyg)",
+    color = :black, markersize = 10, marker = :circle,
+    label = "Lₘₐₓ=$(round(L_tsyg, digits=2))",
 )
 
 # Start point (ionosphere above Tromsø)
@@ -100,8 +93,7 @@ scatter!(ax,
     [xs_tsyg[1] / RE],
     [ys_tsyg[1] / RE],
     [zs_tsyg[1] / RE];
-    color = :blue, markersize = 15, marker = :circle,
-    label = "Ionosphere above Tromsø",
+    color = :black, markersize = 10, marker = :circle,
 )
 
 axislegend(ax)
