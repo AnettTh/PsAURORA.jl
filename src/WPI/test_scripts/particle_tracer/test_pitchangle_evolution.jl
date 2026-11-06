@@ -1,15 +1,26 @@
 using AURORA
 using CairoMakie
 using ProgressMeter
+using Dates
 
 ## Define a magnetic field
-ϕ_eq = deg2rad(240.0)
-magnetic_field = TsyganenkoMagneticField(ϕ_eq)
-#magnetic_field = DipoleMagneticField()
+t = DateTime("2020-12-21T03:00:00")
+ref = LTPReference(:sodankyla)
 
-# Define a particle
-μ = -cos(deg2rad(0.1))
-L = 6.5
+# Storm conditions
+byimf = 0.0
+bzimf = 2.0
+dst = -28.0
+
+#magnetic_field = TsyganenkoMagneticField(ref; time=t, byimf=byimf, bzimf=bzimf, dst=dst)
+#ϕ_eq = magnetic_field.ϕ
+
+magnetic_field = DipoleMagneticField()
+ϕ_eq = deg2rad(269.6)
+
+## Define the particles
+μ = -cos(deg2rad(0.5))
+L = find_L_shell(magnetic_field, ref, t; r_start=RE+10).L
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 E_grid = 15e3:5e3:40e3 #[1e3; 5e3:5e3:40e3]
@@ -31,14 +42,14 @@ density = DentonDensity(magnetic_field, L, ϕ_eq; adjusted_model=true, hemispher
 
 plasma = PlasmaState(λ_grid, density; lb_low=0.1, lb_high=0.5)
 
-# Define a wave
+## Define a wave
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
 Ψ0 = 0.0
 wave = WaveState(modulation, amplitude, plasma; Ψ0=Ψ0)
 
 
-# Find the resonance latitude
+## Find the resonance latitude
 ω_start = wave_frequency(wave, 0.0)
 λ_resonance = [resonance_latitude(ω_start, p, wave.plasma)[1] for p in particles]
 
@@ -58,7 +69,7 @@ results = Vector{Any}(nothing, length(E_grid))
 end
 
 
-##
+## Make colorscale
 colors = cgrad(:turbo, length(E_grid), categorical=true)
 
 # Plot every nth energy, or specific indices
@@ -82,7 +93,7 @@ fig = Figure(size=(900, 600)) #1200, 450))
 Label(fig[0, :], "Pitch-angle evolution";
     fontsize  = 18,
     font      = :bold,
-    tellwidth = false,      # don't let the title widen the figure
+    tellwidth = false,
 )
 
 ax_full = Axis(fig[1, 1], xlabel = "t [s]", ylabel = "α [°]")
@@ -92,7 +103,7 @@ plot_pitchangle!(ax_full, results, E_grid, colors)
 plot_pitchangle!(ax_zoom, results, E_grid, colors)
 
 
-xlims!(ax_zoom, 0.085, 0.2)
+xlims!(ax_zoom, 0.14, 0.50)
 ylims!(ax_zoom, -0.5, 10.0)
 
 # Add info to Legend

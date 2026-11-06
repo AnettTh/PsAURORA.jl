@@ -1,25 +1,50 @@
 using AURORA
 using ProgressMeter
-using WGLMakie
-using Bonito
+using CairoMakie
+using Dates
 
-## Define a magnetic field
-ϕ_eq = deg2rad(240.0)
-magnetic_field = TsyganenkoMagneticField(ϕ_eq)
-#magnetic_field = DipoleMagneticField()
+## Define the magnetic fields
+t = DateTime("2020-12-21T03:00:00")
+station = :sodankyla
+ref = LTPReference(station)
 
-# Define a particle
-μ = -cos(deg2rad(2))
-L = 6.5
-r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
+# Storm conditions
+byimf = 0.0
+bzimf = 2.0
+dst = -28.0
 
-E_grid = [1e3; 10e3; 20e3:5e3:40e3] #[1e3; 5e3:5e3:40e3]
-particles = [
+tsyg = TsyganenkoMagneticField(ref; time=t, byimf=byimf, bzimf=bzimf, dst=dst)
+dipole = DipoleMagneticField()
+
+## Define the particles
+μ = -cos(deg2rad(0.5))
+L_tsyg = find_L_shell(tsyg, ref, t; r_start=RE+10).L
+L_dipole = find_L_shell(dipole, ref, t; r_start=RE+10).L
+
+ϕ_eq = tsyg.ϕ
+
+r0_tsyg = Cartesian(Dipolar(L_tsyg, 0.0, ϕ_eq))
+r0_dipole = Cartesian(Dipolar(L_dipole, 0.0, ϕ_eq))
+
+E_grid = 15e3:5e3:40e3 #[1e3; 5e3:5e3:40e3]
+particles_tsyg = [
     ParticleState(
         E,
         μ,
-        r0,
-        magnetic_field,
+        r0_tsyg,
+        tsyg,
+        ϕ_eq;
+        relativistic=true
+    )
+    for E in E_grid
+]
+
+particles_dipole = [
+    ParticleState(
+        E,
+        μ,
+        r0_dipole,
+        dipole,
         ϕ_eq;
         relativistic=true
     )
@@ -28,104 +53,69 @@ particles = [
 
 ## Define a plasma
 λ_grid = range(deg2rad(-50.0), deg2rad(50.0), length=200)
-density = DentonDensity(magnetic_field, L, ϕ_eq)
 
-plasma = PlasmaState(λ_grid, density; lb_low=0.1, lb_high=0.5)
+density_tsyg = DentonDensity(tsyg, L_tsyg, ϕ_eq; adjusted_model=true, hemisphere=:north)
+density_dipole = DentonDensity(dipole, L_dipole, ϕ_eq; adjusted_model=false)
 
-# Define a wave
-modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+plasma_tsyg = PlasmaState(λ_grid, density_tsyg; lb_low=0.1, lb_high=0.5)
+plasma_dipole = PlasmaState(λ_grid, density_dipole; lb_low=0.1, lb_high=0.5)
+
+# Define the waves
+modulation_tsyg = Chirp(plasma_tsyg.ω_lb[1], plasma_tsyg.ω_lb[end], 0.2)   # 0.2 s chirp
+modulation_dipole = Chirp(plasma_dipole.ω_lb[1], plasma_dipole.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
 Ψ0 = 0.0
-wave = WaveState(modulation, amplitude, plasma; Ψ0=Ψ0)
+
+wave_tsyg = WaveState(modulation_tsyg, amplitude, plasma_tsyg; Ψ0=Ψ0)
+wave_dipole = WaveState(modulation_dipole, amplitude, plasma_dipole; Ψ0=Ψ0)
 
 
-# Find the resonance latitude
-ω_start = wave_frequency(wave, 0.0)
-λ_resonance = [resonance_latitude(ω_start, p, wave.plasma)[1] for p in particles]
+# Find the resonance latitudes
+ω_start_tsyg = wave_frequency(wave_tsyg, 0.0)
+λ_resonance_tsyg = [resonance_latitude(ω_start_tsyg, p, wave_tsyg.plasma)[1] for p in particles_tsyg]
 
-## Run Boris-mover
+ω_start_dipole = wave_frequency(wave_dipole, 0.0)
+λ_resonance_dipole = [resonance_latitude(ω_start_dipole, p, wave_dipole.plasma)[1] for p in particles_dipole]
 ## Run Boris-mover (skip particles without resonance)
-results = Vector{Any}(nothing, length(E_grid))
+results_tsyg = Vector{Any}(nothing, length(E_grid))
+results_dipole = Vector{Any}(nothing, length(E_grid))
 
-@showprogress for (i, p) in enumerate(particles)
-    isnan(λ_resonance[i]) && continue
-    results[i] = boris_mover(p;
-        wave             = wave,
-        n_T              = 100_000,
-        resolution       = 10,
-        store_trajectory = true,
-        λ_start          = λ_resonance[i],
-        stop_when_bouncing = true,
-    )
+@showprogress for i in eachindex(particles_tsyg)
+    if !isnan(λ_resonance_tsyg[i])
+        results_tsyg[i] = boris_mover(particles_tsyg[i];
+            wave               = wave_tsyg,
+            n_T                = 100_000,
+            resolution         = 10,
+            store_trajectory   = true,
+            λ_start            = λ_resonance_tsyg[i],
+            stop_when_bouncing = true,
+        )
+    end
+    if !isnan(λ_resonance_dipole[i])
+        results_dipole[i] = boris_mover(particles_dipole[i];
+            wave               = wave_dipole,
+            n_T                = 100_000,
+            resolution         = 10,
+            store_trajectory   = true,
+            λ_start            = λ_resonance_dipole[i],
+            stop_when_bouncing = true,
+        )
+    end
 end
-
-
-## Time window to highlight [s]
-t0, t1 = 0.085, 0.175
-
-## Split one result into full path and highlighted window
-function split_trajectory(r, t0, t1)
-    n = findlast(>(0), r.time)            # last filled entry (time[1] = 0 is the start)
-    isnothing(n) && return nothing
-    full = 1:n
-    in_window = findall(t -> t0 <= t <= t1, r.time[full])
-    return (
-        full   = full,
-        window = in_window,
-    )
-end
-
-parts = [isnothing(r) ? nothing : split_trajectory(r, t0, t1) for r in results]
 
 ## Figure
-colors    = cgrad(:viridis, length(E_grid), categorical=true)
-thin_full = 1     # plot every 10th point of the full path
-thin_win  = 1      # plot every 2nd point of the highlighted window
+colors = cgrad(:viridis, length(E_grid), categorical=true)
 
-fig = Figure(size=(1300, 600))
+fig = Figure(size=(900, 700))
 ax3 = Axis3(fig[1, 1];
     xlabel = "X [RE]",
     ylabel = "Y [RE]",
     zlabel = "Z [RE]",
-    title  = "Trajectories, thick line: t = $(t0) to $(t1) s",
     aspect = :data,
 )
-ax2 = Axis(fig[1, 2];
-    xlabel = "X [RE]",
-    ylabel = "Z [RE]",
-    title  = "xz-projection",
-    aspect = DataAspect(),
-)
 
-for (i, p) in enumerate(parts)
-    (isnothing(p) || isnothing(results[i])) && continue
-    r = results[i]
 
-    # Full trajectory, thin
-    idx = p.full[1:thin_full:end]
-    xf = r.position[idx, 1] ./ RE
-    yf = r.position[idx, 2] ./ RE
-    zf = r.position[idx, 3] ./ RE
-
-    lines!(ax3, xf, yf, zf;
-        color     = colors[i],
-        linewidth = 1,
-        label     = "E = $(round(E_grid[i] / 1e3, digits=1)) keV",
-    )
-    lines!(ax2, xf, zf; color = colors[i], linewidth = 1)
-
-    # Highlighted window, thick, drawn after so it sits on top
-    isempty(p.window) && continue
-    iw = p.window[1:thin_win:end]
-    xw = r.position[iw, 1] ./ RE
-    yw = r.position[iw, 2] ./ RE
-    zw = r.position[iw, 3] ./ RE
-
-    lines!(ax3, xw, yw, zw; color = colors[i], linewidth = 4)
-    lines!(ax2, xw, zw;     color = colors[i], linewidth = 4)
-end
-
-## Earth
+## Earth (drawn first, so the trajectories are layered on top of it)
 u = range(0, π,  length=30)
 v = range(0, 2π, length=30)
 surface!(ax3,
@@ -134,13 +124,10 @@ surface!(ax3,
     [cos(ui)         for ui in u, vi in v];
     colormap = :blues, alpha = 0.3, shading = NoShading,
 )
-θ = range(0, 2π, length=200)
-lines!(ax2, cos.(θ), sin.(θ); color = :blue)
 
 ## L-bin edges from the Denton density model [RE]
-L_edges = [6.6] #[6.6, 7.4, 8.2] #[3.3, 3.7, 4.15, 4.65, 5.2, 5.85, 6.6, 7.4, 8.2]
+L_edges = [L_dipole]
 
-## Option A: spheres of radius L (what you asked for)
 θ_s = range(0, π,  length=40)
 φ_s = range(0, 2π, length=60)
 
@@ -151,21 +138,28 @@ for Lc in L_edges
     wireframe!(ax3, xs, ys, zs; color = (:gray40, 0.5), linewidth = 0.5)
 end
 
-## Option B: constant-L surfaces, r = L cos(λ)^2 (the real bin boundaries)
-φ_s = range(0, 2π, length=60)
+## Trajectories
+function plot_trajectories!(ax3, results, field_name, linestyle)
+    for (i, r) in enumerate(results)
+        isnothing(r) && continue
+        n = findlast(>(0), r.time)                 # drop unfilled trailing entries
+        isnothing(n) && continue
 
-#for Lc in L_edges
-#    λ_max = acos(sqrt((RE + z_ionosphere) / (Lc * RE)))
-#    λ_s   = range(-λ_max, λ_max, length=40)
-#
-#    xs = [Lc * cos(l)^3 * cos(p)       for l in λ_s, p in φ_s]
-#    ys = [Lc * cos(l)^3 * sin(p)       for l in λ_s, p in φ_s]
-#    zs = [Lc * cos(l)^2 * sin(l)       for l in λ_s, p in φ_s]
-#    wireframe!(ax3, xs, ys, zs; color = (:orange, 0.5), linewidth = 0.5)
-#end
+        lines!(ax3,
+            r.position[1:n, 1] ./ RE,
+            r.position[1:n, 2] ./ RE,
+            r.position[1:n, 3] ./ RE;
+            color     = colors[i],
+            linewidth = 1.5,
+            linestyle = linestyle,
+            label     = "E = $(round(E_grid[i] / 1e3, digits=1)) keV, $(field_name)",
+        )
+    end
+end
 
-Legend(fig[1, 3], ax3)
+xlims!(ax3, -8, 1)
+ylims!(ax3, -8, 1)
+zlims!(ax3, -4, 5)
 
-## Serve in the browser
-isdefined(Main, :server) && close(server)
-server = Bonito.Server(Bonito.App(fig), "0.0.0.0", 8888)
+plot_trajectories!(ax3, results_tsyg,   "Tsyg",   :solid)
+plot_trajectories!(ax3, results_dipole, "dipole", :dash)
