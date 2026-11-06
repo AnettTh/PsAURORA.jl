@@ -149,7 +149,7 @@ function find_R_max(
             if step > 10
                 R_current ≤ RE + z_ionosphere && break
             end
-            R_current > 10 * RE && break
+            R_current > 15 * RE && break
         end
     end
 
@@ -318,16 +318,17 @@ function find_footpoint(
 end
 
 
-# TODO: Make this make sense, DEFINITELY some coordinate issues here
 function find_L_shell(
     magnetic_field::AbstractMagneticField,
     lat::Float64,
     lon::Float64;
     ds::Float64=0.0005*RE,
     n_steps::Int=100_000,
+    r_start::Float64=RE+z_ionosphere,
 )
     # Radius of the ionsphere with Earth in center
-    r_iono = RE + z_ionosphere
+    #r_iono = RE + z_ionosphere
+    r_iono = r_start
 
     # Find cartesian coordinates of initial position
     x0 = r_iono * cos(lat) * cos(lon)
@@ -337,6 +338,7 @@ function find_L_shell(
     function trace_fieldline(x0, y0, z0)
         # Define and store initial position
         xs, ys, zs = [x0], [y0], [z0]
+
         x, y, z = x0, y0, z0
 
         # Determine outward direction
@@ -366,8 +368,8 @@ function find_L_shell(
             # Save current position
             push!(xs, x); push!(ys, y); push!(zs, z)
 
-            # Quit if outside the limit of 10RE
-            sqrt(x^2 + y^2 + z^2) > 10 * RE && break
+            # Quit if outside the limit
+            sqrt(x^2 + y^2 + z^2) > 15RE && break
         end
         return xs, ys, zs
     end
@@ -385,5 +387,18 @@ function find_L_shell(
     r_eq = sqrt(xs[idx_eq]^2 + ys[idx_eq]^2 + zs[idx_eq]^2)
     L = r_eq / RE
 
-    return xs, ys, zs, L
+    return (L=L, xs=xs, ys=ys, zs=zs)
+end
+
+
+function find_L_shell(
+    magnetic_field::AbstractMagneticField,
+    ref::LTPReference,
+    t::DateTime;
+    kwargs...
+)
+    SM_ref = LLA_to_SM(ref.lat_deg, ref.lon_deg, 0.0, t)
+    SM_ref_dipole = Dipolar(Cartesian(SM_ref...))
+
+    return find_L_shell(magnetic_field, SM_ref_dipole.λ, SM_ref_dipole.ϕ; kwargs...)
 end
