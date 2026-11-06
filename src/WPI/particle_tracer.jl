@@ -58,6 +58,7 @@ function boris_mover(
     particle::ParticleState;
     wave::Union{WaveState, Nothing}=nothing,
     λ_start::Union{Float64, Nothing}=nothing,
+    r_start::Union{Cartesian, Nothing}=nothing,
     φ0::Float64=0.0,
     n_T::Int=100_000,
     resolution::Int=10,
@@ -104,11 +105,15 @@ function boris_mover(
         #@info "\nUsing latitude λ=$(round(rad2deg(λ_start), digits=1))° as initial position"
         # Get position of resonance
         # TODO: Using ϕ_eq here is just temporary, figure out the accurate position?
-        r_start = Cartesian(Dipolar(particle.L, λ_start, particle.ϕ_eq))
-        x, y, z = r_start.x, r_start.y, r_start.z
+        #r_start = Cartesian(Dipolar(particle.L, λ_start, particle.ϕ_eq))
+        #x, y, z = r_start.x, r_start.y, r_start.z
 
         # Find v0 at resonance latitude: Evaluate the exact magnetic field once
-        B_start = particle.magnetic_field(Dipolar(particle.L, λ_start, particle.ϕ_eq))
+        #B_start = particle.magnetic_field(Dipolar(particle.L, λ_start, particle.ϕ_eq))
+
+        pos = isnothing(r_start) ? Cartesian(Dipolar(particle.L, λ_start, particle.ϕ_eq)) : r_start   # CHANGED
+        x, y, z = pos.x, pos.y, pos.z
+        B_start = particle.magnetic_field(pos)
         b̂, e1, e2, B_start_mag = magnetic_basis(B_start)
 
         # Use initial pitch angle to decompose velocity
