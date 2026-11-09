@@ -186,12 +186,22 @@ function LLA_to_SM(lat_deg, lon_deg, alt_m, t::DateTime)
     return ref_sm
 end
 
-function EastNorthUp(r::Cartesian, ref::LTPReference)
+
+function SM_to_GEO(r::Cartesian, t::DateTime)
+    x̂, ŷ, ẑ = axis_SM(t)
+    geo = r.x .* x̂ .+ r.y .* ŷ .+ r.z .* ẑ
+    return Cartesian(geo...)
+end
+
+
+function SM_to_ENU(r_sm::Cartesian, ref::LTPReference, t::DateTime)
+    r_geo = SM_to_GEO(r_sm, t)
+
     # Make ECEF Geodesy-element of position
-    ecef = ECEF(r.x, r.y, r.z)
+    ecef = ECEF(r_geo.x, r_geo.y, r_geo.z)
 
     # Make ECEF Geodesy-element of reference
-    ref_lla = LLA(ref.lat_deg, ref.lon_deg, ref.alt)
+    ref_lla = LLA(ref.lat_deg, ref.lon_deg, ref.alt_m)
     ref_ecef = ECEF(ref_lla, wgs84)
 
     # Convert position to ENU with reference
@@ -200,18 +210,23 @@ function EastNorthUp(r::Cartesian, ref::LTPReference)
     return EastNorthUp(enu.e, enu.n, enu.u)
 end
 
-function EastNorthUp(r::Cartesian, ref::Symbol)
-    return EastNorthUp(r, LTPReference(ref))
+function SM_to_ENU(r_sm::Cartesian, ref::Symbol, t::DateTime)
+    return SM_to_ENU(r_sm, LTPReference(ref), t)
 end
 
-function EastNorthUp(r::Dipolar, ref::LTPReference)
-    return EastNorthUp(Cartesian(r), ref)
+function SM_to_ENU(r_sm::Dipolar, ref::LTPReference, t::DateTime)
+    return SM_to_ENU(Cartesian(r_sm), ref, t)
 end
 
-function EastNorthUp(r::Dipolar, ref::Symbol)
-    return EastNorthUp(Cartesian(r), LTPReference(ref))
+function SM_to_ENU(r_sm::Dipolar, ref::Symbol, t::DateTime)
+    return SM_to_ENU(Cartesian(r_sm), LTPReference(ref), t)
 end
 
+function FP_to_ENU(fp, ref::LTPReference, t::DateTime)
+    any(isnan, fp) && return [NaN, NaN, NaN]
+    enu = SM_to_ENU(Cartesian(fp...), ref, t)
+    return [enu.e, enu.n, enu.u]
+end
 
 """
     longitude_to_MLT(ϕ; degrees::Bool=true)
