@@ -324,11 +324,11 @@ function find_L_shell(
     lon::Float64;
     ds::Float64=0.0005*RE,
     n_steps::Int=100_000,
-    r_start::Float64=RE+z_ionosphere,
+    r_trace_start::Float64=RE+z_ionosphere,
 )
     # Radius of the ionsphere with Earth in center
     #r_iono = RE + z_ionosphere
-    r_iono = r_start
+    r_iono = r_trace_start
 
     # Find cartesian coordinates of initial position
     x0 = r_iono * cos(lat) * cos(lon)
@@ -387,7 +387,12 @@ function find_L_shell(
     r_eq = sqrt(xs[idx_eq]^2 + ys[idx_eq]^2 + zs[idx_eq]^2)
     L = r_eq / RE
 
-    return (L=L, xs=xs, ys=ys, zs=zs)
+    # Return minimum B and position of minimum B also
+    position_eq = Cartesian(xs[idx_eq], ys[idx_eq], zs[idx_eq])
+    ϕ_eq        = mod2pi(atan(ys[idx_eq], xs[idx_eq]))
+    B_eq        = Bs[idx_eq]
+
+    return (L=L, xs=xs, ys=ys, zs=zs, position_eq=position_eq, ϕ_eq=ϕ_eq, B_eq=B_eq)
 end
 
 
