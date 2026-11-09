@@ -17,8 +17,8 @@ tsyg = TsyganenkoMagneticField(ref; time=time, dst=dst, bzimf=bzimf, byimf=byimf
 
 
 ## Run function
-xs_tsyg, ys_tsyg, zs_tsyg, L_tsyg = find_L_shell(tsyg, ref, time; r_start=RE+10)
-xs_dipole, ys_dipole, zs_dipole, L_dipole = find_L_shell(dipole, ref, time; r_start=RE+10)
+xs_tsyg, ys_tsyg, zs_tsyg, L_tsyg = find_L_shell(tsyg, ref, time; r_trace_start=RE+10)
+xs_dipole, ys_dipole, zs_dipole, L_dipole = find_L_shell(dipole, ref, time; r_trace_start=RE+10)
 
 ##
 rs_tsyg = sqrt.(xs_tsyg.^2 .+ ys_tsyg.^2 .+ zs_tsyg.^2) ./ RE

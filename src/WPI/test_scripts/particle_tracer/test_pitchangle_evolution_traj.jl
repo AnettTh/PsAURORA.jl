@@ -18,8 +18,8 @@ dipole = DipoleMagneticField()
 
 ## Define the particles
 μ = -cos(deg2rad(0.5))
-L_tsyg = find_L_shell(tsyg, ref, t; r_start=RE+10).L
-L_dipole = find_L_shell(dipole, ref, t; r_start=RE+10).L
+L_tsyg = find_L_shell(tsyg, ref, t; r_trace_start=RE+10).L
+L_dipole = find_L_shell(dipole, ref, t; r_trace_start=RE+10).L
 
 ϕ_eq = tsyg.ϕ
 

@@ -6,14 +6,14 @@ using Dates
 
 
 ## Define method
-name = "src/WPI/data/11-06-2026/TOF.jld2"
+name = "src/WPI/data/11-09-2026/TOF.jld2"
 use_boris = true
 relativistic = true
 duct_enhancement = 0.0
 WPI = true
 field_dependent = true
 n = 1
-adjusted_model = true
+adjusted_model = false
 station = :sodankyla
 
 ## Define magnetic field
@@ -35,10 +35,14 @@ magnetic_field = TsyganenkoMagneticField(
 
 ## Define the particles
 μ = -cos(deg2rad(0.5))
-L = find_L_shell(magnetic_field, ref, t).L
+
+trace_L_shell = find_L_shell(magnetic_field, ref, t)
+L = trace_L_shell.L
+position_eq = trace_L_shell.position_eq
+
 ϕ_eq = magnetic_field.ϕ
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
-E_grid = range(7e3, 40e3, length=2)
+E_grid = range(7e3, 50e3, length=50)
 
 particles = Vector{ParticleState}(undef, length(E_grid))
 @showprogress for (i, E) in enumerate(E_grid)
@@ -57,7 +61,7 @@ end
 lb_low, lb_high = 0.1, 0.5
 density = DentonDensity(
     magnetic_field,
-    L,
+    8.2,
     ϕ_eq;
     duct_enhancement=duct_enhancement,
     adjusted_model=adjusted_model,
@@ -87,7 +91,7 @@ Threads.@threads for i in eachindex(particles)
         use_boris=use_boris,
         field_dependent=field_dependent,
         n=n,
-        r_start=nothing,
+        r_start=position_eq,
     )
     next!(progress)
 end
@@ -106,7 +110,6 @@ parameters = (
     dst = dst,
     byimf = byimf,
     bzimf = bzimf,
-    ps = ps,
     use_boris = use_boris,
     relativistic = relativistic,
     duct_enhancement = duct_enhancement,
@@ -125,7 +128,7 @@ ax = Axis(
     fig[1,1],
     xlabel="TOF [s]",
     ylabel="E [keV]",
-    title="TOF at $(longitude_to_MLT(ϕ_eq; degrees=false)) MLT with α = " *
+    title="TOF at $(round(longitude_to_MLT(ϕ_eq; degrees=false), digits=2)) MLT with α = " *
     "$(round(rad2deg(acos(abs(μ))), digits=1))°",
 )
 
@@ -138,14 +141,13 @@ for (i, ω) in enumerate(ωs)
 end
 
 information = [
-    "L = $(L)",
+    "L = $(round(L, digits=2))",
     "$(magnetic_field_model) field model",
     "$(t)",
     "pdyn = $(pdyn)",
     "dst = $(dst)",
     "byimf = $(byimf)",
     "bzimf = $(bzimf)",
-    "ps = $(ps)",
     "use_boris = $(use_boris)",
     "relativistic = $(relativistic)",
     "$(duct_enhancement) duct enhancement",
@@ -164,4 +166,4 @@ Legend(fig[1,2], ax)
 #ylims!(ax, 100, 1000)
 
 #save("src/WPI/test_scripts/energies/tsyg_tof.png", fig)
-#save("src/WPI/test_scripts/TOF/figures/TOF.png", fig)
+#save("src/WPI/test_scripts/TOF/figures/09112026TOF.png", fig)

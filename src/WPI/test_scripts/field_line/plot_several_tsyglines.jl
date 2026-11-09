@@ -24,8 +24,8 @@ traces_tsyg   = []
 traces_dipole = []
 for t in times
     tsyg = TsyganenkoMagneticField(ref; time=t, dst=dst, bzimf=bzimf, byimf=byimf)
-    push!(traces_tsyg,   find_L_shell(tsyg,   ref, t; r_start=r_start))
-    push!(traces_dipole, find_L_shell(dipole, ref, t; r_start=r_start))
+    push!(traces_tsyg,   find_L_shell(tsyg,   ref, t; r_trace_start=r_trace_start))
+    push!(traces_dipole, find_L_shell(dipole, ref, t; r_trace_start=r_trace_start))
 end
 
 

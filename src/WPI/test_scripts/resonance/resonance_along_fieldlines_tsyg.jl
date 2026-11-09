@@ -8,7 +8,7 @@ using CairoMakie
 ϕ_eq = deg2rad(120.0)
 magnetic_field = TsyganenkoMagneticField(ϕ)
 ## Make the data
-L_vals = [3, 4, 5, 6, 7, 8]
+L_vals = [4.0, 5.0, 6.0, 7.0, 8.0]
 colors = [:blue, :red, :green, :orange, :purple, :brown]
 
 θ = deg2rad(0.0)

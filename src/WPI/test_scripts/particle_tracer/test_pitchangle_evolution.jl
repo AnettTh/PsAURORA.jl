@@ -20,7 +20,7 @@ magnetic_field = DipoleMagneticField()
 
 ## Define the particles
 μ = -cos(deg2rad(0.5))
-L = find_L_shell(magnetic_field, ref, t; r_start=RE+10).L
+L = find_L_shell(magnetic_field, ref, t; r_trace_start=RE+10).L
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 E_grid = 15e3:5e3:40e3 #[1e3; 5e3:5e3:40e3]

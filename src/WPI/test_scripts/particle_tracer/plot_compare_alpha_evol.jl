@@ -18,8 +18,8 @@ dipole = DipoleMagneticField()
 
 ## Define the particles
 μ = -cos(deg2rad(0.5))
-L_tsyg = find_L_shell(tsyg, ref, t; r_start=RE+10).L
-L_dipole = find_L_shell(dipole, ref, t; r_start=RE+10).L
+L_tsyg = find_L_shell(tsyg, ref, t; r_trace_start=RE+10).L
+L_dipole = find_L_shell(dipole, ref, t; r_trace_start=RE+10).L
 
 ϕ_eq = tsyg.ϕ
 
@@ -54,7 +54,7 @@ particles_dipole = [
 ## Define the plasmas
 λ_grid = range(deg2rad(-50.0), deg2rad(50.0), length=200)
 
-density_tsyg = DentonDensity(tsyg, L_tsyg, ϕ_eq; adjusted_model=true, hemisphere=:north)
+density_tsyg = DentonDensity(tsyg, L_tsyg, ϕ_eq; adjusted_model=false, hemisphere=:north)
 density_dipole = DentonDensity(dipole, L_dipole, ϕ_eq; adjusted_model=false)
 
 plasma_tsyg = PlasmaState(λ_grid, density_tsyg; lb_low=0.1, lb_high=0.5)
@@ -130,7 +130,7 @@ Label(fig[0, :], "Pitch-angle evolution for $(station) at $(t) ($(round(longitud
     tellwidth = false,
 )
 
-ax_tsyg = Axis(fig[2, 1], xlabel = "t [s]", ylabel = "α [°]", title = "Tsyganenko")
+ax_tsyg = Axis(fig[2, 1], xlabel = "t [s]", ylabel = "α [°]", title = "Tsyganenko (not adjusted model)")
 ax_dipole = Axis(fig[1, 1], xlabel = "t [s]", ylabel = "α [°]", title = "Dipole")
 
 scatter!(ax_tsyg, [NaN], [NaN], label="Energy", color=:transparent)
@@ -153,10 +153,10 @@ end
 
 linkaxes!(ax_tsyg, ax_dipole)
 hidexdecorations!(ax_dipole; grid=false)
-#ylims!(ax_tsyg, -0.5, 15)
-#xlims!(ax_tsyg, 0.0, 1.3)
+ylims!(ax_tsyg, -0.1, 1.0)
+xlims!(ax_tsyg, 0.0, 0.3)
 Legend(fig[1:2, 2], ax_tsyg)
 
 
-#save("src/WPI/test_scripts/particle_tracer/figures/compare_alpha_evolution_bzimf$(bzimf)_zoomed.png", fig)
-#save("src/WPI/test_scripts/particle_tracer/figures/compare_alpha_evolution_bzimf$(bzimf).png", fig)
+save("src/WPI/test_scripts/particle_tracer/figures/original_compare_alpha_evolution_bzimf$(bzimf)_zoomed.png", fig)
+#save("src/WPI/test_scripts/particle_tracer/figures/original_compare_alpha_evolution_bzimf$(bzimf).png", fig)
