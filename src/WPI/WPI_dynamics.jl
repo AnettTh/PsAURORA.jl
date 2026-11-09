@@ -124,6 +124,7 @@ function particle_transit(
     field_dependent::Bool=true,
     use_boris::Bool=false,
     r_start::Union{Cartesian, Nothing}=nothing,
+    get_footpoint::Bool=false,
 )
 
     # If Boris-mover is to be used, shortcuts the function
@@ -140,7 +141,13 @@ function particle_transit(
 
         # If the particle precipitates, return the TOF
         # TODO: Figure out how to solve this!
-        return isnothing(result.footpoint) ? nothing : result.time
+        if !get_footpoint
+            return isnothing(result.footpoint) ? nothing : result.time
+        else
+            return isnothing(result.footpoint) ?
+            (time=nothing, footpoint=nothing) :
+            (time=result.time, footpoint=result.footpoint)
+        end
     end
 
     # Decides which hemisphere the particle travels towards
@@ -403,13 +410,15 @@ function WPI_TOF(
     θ::Float64=0.0,
     n::Int=1,
     fast::Bool=false,
-    r_start::Union{Cartesian, Nothing}=nothing
+    r_start::Union{Cartesian, Nothing}=nothing,
+    get_footpoint::Bool=false,
 )
 
     # Calculate wave-launch time based on given model
     t_l = wave_launch_time(wave, ω_grid)
 
     tof = zeros(length(ω_grid))
+    footpoint = fill(NaN, 3, length(ω_grid))
 
     # Loop over all frequencies as they have different resonance regions
     for (i, ω) in enumerate(ω_grid)
@@ -430,7 +439,7 @@ function WPI_TOF(
             field_dependent=field_dependent
         )
 
-        t_e = particle_transit(
+        p_t_result = particle_transit(
             particle,
             λ_res;
             wave=wave,
@@ -438,7 +447,16 @@ function WPI_TOF(
             use_boris=use_boris,
             field_dependent=field_dependent,
             r_start=r_start,
+            get_footpoint=get_footpoint,
         )
+
+        if get_footpoint
+            t_e = isnothing(p_t_result) ? nothing : p_t_result.time
+            fp  = isnothing(p_t_result) ? nothing : p_t_result.footpoint
+            isnothing(fp) || (footpoint[:, i] .= fp)
+        else
+            t_e = p_t_result
+        end
 
         # Total time = wave-to-λ + particle-to-ionosphere + delay of current ω based on wave
         if !isnothing(t_e)
@@ -447,7 +465,7 @@ function WPI_TOF(
             tof[i] = 0.0  # TODO: Is there a better way to do this maybe?
         end
     end
-    return tof
+    return get_footpoint ? (tof=tof, footpoint=footpoint) : tof
 end
 
 # Also allows for single frequencies
