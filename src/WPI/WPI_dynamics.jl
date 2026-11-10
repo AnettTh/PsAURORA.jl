@@ -350,6 +350,14 @@ function resonance_latitude(
 end
 
 
+function point_on_line(line, λ)
+    r   = sqrt.(line.xs.^2 .+ line.ys.^2 .+ line.zs.^2)
+    lat = asin.(line.zs ./ r)
+    j   = argmin(abs.(lat .- λ))
+    return Cartesian(line.xs[j], line.ys[j], line.zs[j])
+end
+
+
 """
     WPI_TOF(
     ω_grid::AbstractVector,
@@ -412,6 +420,7 @@ function WPI_TOF(
     fast::Bool=false,
     r_start::Union{Cartesian, Nothing}=nothing,
     get_footpoint::Bool=false,
+    line=nothing,
 )
 
     # Calculate wave-launch time based on given model
@@ -439,6 +448,7 @@ function WPI_TOF(
             field_dependent=field_dependent
         )
 
+        r_case = isnothing(line) ? r_start : point_on_line(line, λ_res)
         p_t_result = particle_transit(
             particle,
             λ_res;
@@ -446,7 +456,7 @@ function WPI_TOF(
             V_r=V_r,
             use_boris=use_boris,
             field_dependent=field_dependent,
-            r_start=r_start,
+            r_start=r_case,
             get_footpoint=get_footpoint,
         )
 
