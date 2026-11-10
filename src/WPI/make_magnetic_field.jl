@@ -51,6 +51,7 @@ struct TsyganenkoMagneticField <: AbstractMagneticField
     ps        :: Float64
     ϕ         :: Float64
     component :: String
+    r_limit   :: Float64
 end
 
 function TsyganenkoMagneticField(
@@ -61,10 +62,21 @@ function TsyganenkoMagneticField(
     byimf     = 1.0,
     bzimf     = 2.0,
     ps        = nothing,
-    component = "both"
+    component = "both",
+    r_limit   = 15 * RE,
 )
     ps_used = isnothing(ps) ? dipole_tilt(time) : Float64(ps)
-    return TsyganenkoMagneticField(time, pdyn, dst, byimf, bzimf, ps_used, ϕ, component)
+    return TsyganenkoMagneticField(
+        time,
+        pdyn,
+        dst,
+        byimf,
+        bzimf,
+        ps_used,
+        ϕ,
+        component,
+        r_limit
+    )
 end
 
 # Print this and check that it works
