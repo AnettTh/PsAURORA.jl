@@ -96,7 +96,7 @@ function ParticleState(
     r0::Cartesian,
     magnetic_field::AbstractMagneticField,
     ϕ_eq;
-    relativistic::Bool=false,
+    relativistic::Bool=false,       # TODO: Make default true!
     φ0=deg2rad(0.0),
 )
 
