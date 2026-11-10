@@ -104,7 +104,7 @@ struct WaveState{M<:AbstractWaveModulation, A<:AbstractAmplitude}
     wave_direction :: Int
 end
 
-# NOTE: rand() here might be an issue?
+
 function WaveState(modulation, amplitude, plasma; Ψ0=2π*rand(), wave_direction=-1)
     return WaveState(modulation, amplitude, plasma, Ψ0, wave_direction)
 end
@@ -177,6 +177,7 @@ end
 
 function wave_launch_time(modulation::Chirp, ω_grid)
     chirp_rate = (modulation.ω1 - modulation.ω0) / modulation.t_duration
+    iszero(chirp_rate) && return zeros(length(ω_grid))
     return [(ω - modulation.ω0) / chirp_rate for ω in ω_grid]
 end
 
@@ -188,9 +189,9 @@ function wave_launch_time(wave::WaveState, ω_grid)
     return wave_launch_time(wave.modulation, ω_grid)
 end
 
-# NOTE: Temporary solution to no wave
 function wave_launch_time(wave::Nothing, ω_grid; t_duration=0.2)
     chirp_rate = (ω_grid[end] - ω_grid[1]) / t_duration
+    iszero(chirp_rate) && return zeros(length(ω_grid))
     return [(ω - ω_grid[1]) / chirp_rate for ω in ω_grid]
 end
 
@@ -259,8 +260,8 @@ end
 
 function Base.show(io::IO, w::WaveState)
     println(io, "WaveState:")
+    println(io, "  Wave propagating " * (w.wave_direction>0 ? "northward" : "southward"))
     println(io, "  Modulation = $(w.modulation)")
-    println(io, "  Amplitude = $(w.amplitude)")
-    println(io, "  Ψ₀ = $(w.Ψ0)")
-    println(io, "  Wave propagating " * (w.wave_direction>0 ? "northward" : "southward")) # TODO: Check if this is correct!
+    println(io, "  Amplitude  = $(w.amplitude)")
+    println(io, "  Ψ₀         = $(w.Ψ0)")
 end
