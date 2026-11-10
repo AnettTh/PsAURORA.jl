@@ -248,10 +248,10 @@ function boris_mover(
                     #@info "\nBounced (and told to stop at that), no footpoint detected"
                     if store_trajectory
                         return (
-                            position=r_array[1:i, :],
-                            velocity=v_array[1:i, :],
-                            time=t_array[1:i],
-                            α=α_array[1:i],
+                            position=r_array[1:i-1, :],
+                            velocity=v_array[1:i-1, :],
+                            time=t_array[1:i-1],
+                            α=α_array[1:i-1],
                             footpoint=nothing,
                             n_bounces=count_bounces ? n_bounces : nothing,
                         )
