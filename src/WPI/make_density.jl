@@ -65,7 +65,13 @@ function DentonDensity(
     if !adjusted_model
         # Based on R_max regardless of the magnetic field model used
         R_max = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ_eq))
-        return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L, magnetic_field)
+
+        # If above threshold for model, use the upper limit but with extended distance
+        if L > 8.2
+            return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, 8.2, magnetic_field)
+        else
+            return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L, magnetic_field)
+        end
     else
         # Find the footpoint of the Tsyganenko fieldline
         result = find_footpoint(
