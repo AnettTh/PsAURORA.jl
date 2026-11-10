@@ -89,8 +89,13 @@ modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 
 Ψ0_grid = collect(range(0.0, 2π, length=5))[1:end-1]
 waves = [
-    WPI ? WaveState(modulation, amplitude, plasma; Ψ0=Ψ0, wave_direction=wave_direction) : nothing
-    for Ψ0 in Ψ0_grid
+    WPI ? WaveState(
+        modulation,
+        amplitude,
+        plasma;
+        Ψ0=Ψ0,
+        wave_direction=wave_direction
+    ) : nothing for Ψ0 in Ψ0_grid
 ]
 
 
@@ -163,7 +168,8 @@ params = (
     nthreads         = Threads.nthreads(),
     notes            = "TOF [s]: NaN = no resonance, 0.0 = bounced. " *
                        "FP in metres, SM frame at `time` (needs SM to GEO before ENU). " *
-                       "Particles built at r0 = Dipolar(L, 0, ϕ_eq); r_start = position_eq for every case.",
+                       "Particles built at r0 = Dipolar(L, 0, ϕ_eq); " *
+                       "r_start = position_eq for every case.",
 )
 
 jldsave(name;
@@ -260,10 +266,10 @@ config_info = join([
 ], "\n")
 
 Label(fig[1:n_rows, n_cols + 2], config_info;
-    justification = :left,        # left-aligned lines inside the box
+    justification = :left,
     halign        = :left,
     valign        = :top,
-    tellheight    = false,        # the box does not set the height of the rows
+    tellheight    = false,
     fontsize      = 11,
 )
 

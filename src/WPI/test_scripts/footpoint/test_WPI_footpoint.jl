@@ -10,7 +10,7 @@ use_boris = true
 relativistic = true
 WPI = true
 field_dependent = true
-n = 1
+ns = [1, 2]
 adjusted_model = false
 duct_enhancement = 0.0
 station = :sodankyla
@@ -62,7 +62,7 @@ end
 lb_low, lb_high = 0.1, 0.5
 density = DentonDensity(
     magnetic_field,
-    8.2,
+    L,
     ϕ_eq;
     duct_enhancement=duct_enhancement,
     adjusted_model=adjusted_model,
@@ -71,45 +71,51 @@ density = DentonDensity(
 plasma = PlasmaState(λ_grid, density; lb_low=lb_low, lb_high=lb_high)
 
 ## Define the wave
-ωs = range(plasma.ω_lb[1], plasma.ω_lb[end], length=5)
-ω_frac = range(lb_low, lb_high, length=length(ωs))
+ωs = [minimum(plasma.Ω_e) * 0.3]
+ω_frac = 0.3
 amplitude = ConstantAmplitude(100e-12)
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 
 wave = WPI ? WaveState(modulation, amplitude, plasma; wave_direction=-1) : nothing
 
-##
 ## Calculate TOF and footpoints
-TOF = zeros(length(E_grid), length(ωs))
-FP = fill(NaN, 3, length(E_grid), length(ωs))
+TOF = zeros(length(E_grid), length(ωs), length(ns))
+FP = fill(NaN, 3, length(E_grid), length(ωs), length(ns))
+
+_, line = find_R_max(magnetic_field, position_eq; store_trace = true)
 
 progress = Progress(length(particles))
 Threads.@threads for i in eachindex(particles)
-
-    result = WPI_TOF(
-        ωs,
-        particles[i],
-        plasma;
-        wave=wave,
-        use_boris=use_boris,
-        field_dependent=field_dependent,
-        n=n,
-        r_start=position_eq,
-        get_footpoint=true,
-    )
-    @show result
-    TOF[i, :] = result.tof
-    FP[:, i, :] = result.footpoint
+    for (j, nn) in enumerate(ns)
+        result = try
+            WPI_TOF(
+                ωs,
+                particles[i],
+                plasma;
+                wave=wave,
+                use_boris=use_boris,
+                field_dependent=field_dependent,
+                n=nn,
+                r_start=position_eq,
+                get_footpoint=true,
+                line=line
+            )
+        catch e
+            @warn "WPI_TOF failed" i n=nn exception=e
+            continue
+        end
+        TOF[i, :, j]     = result.tof
+        FP[:, i, :, j]  .= result.footpoint
+    end
 
     next!(progress)
 end
 
-
 ## Convert to East-North-Up coordinates with chosen station as reference
 reference = LTPReference(station)
 fp_enu = fill(NaN, size(FP))
-for iω in axes(FP, 3), iE in axes(FP, 2)
-    fp_enu[:, iE, iω] .= FP_to_ENU(FP[:, iE, iω], reference, t)
+for j in axes(FP, 4), iω in axes(FP, 3), iE in axes(FP, 2)
+    fp_enu[:, iE, iω, j] .= FP_to_ENU(FP[:, iE, iω, j], reference, t)
 end
 
 
@@ -117,8 +123,8 @@ E_keV  = collect(E_grid) ./ 1e3
 ω_norm = collect(ωs) ./ minimum(plasma.Ω_e)           # ω/Ω_eq, for the legend
 markers = [:circle, :rect, :diamond, :utriangle, :star5, :cross]
 
-east  = fp_enu[1, :, :] ./ 1e3                         # n_E × n_ω, in km
-north = fp_enu[2, :, :] ./ 1e3
+east  = fp_enu[1, :, :, :] ./ 1e3                         # n_E × n_ω, in km
+north = fp_enu[2, :, :, :] ./ 1e3
 
 ##
 fig = Figure(size = (800, 300))
@@ -130,13 +136,14 @@ ax  = Axis(fig[1, 1];
 )
 
 # One scatter per frequency, coloured by energy
+markers = Dict(1 => :circle, 2 => :utriangle)
 sc = nothing
-for iω in axes(east, 2)
-    sc = scatter!(ax, east[:, iω], north[:, iω];
+for (j, nn) in enumerate(ns)
+    sc = scatter!(ax, east[:, 1, j], north[:, 1, j];
         color      = E_keV,
         colormap   = :turbo,
         colorrange = extrema(E_keV),
-        marker     = markers[mod1(iω, length(markers))],
+        marker     = markers[nn],
         markersize = 15,
     )
 end
@@ -144,10 +151,9 @@ Colorbar(fig[1, 2], sc; label = "E [keV]")
 
 # Legend for the marker shapes
 Legend(fig[1, 3],
-    [MarkerElement(color = :gray, marker = markers[mod1(i, length(markers))], markersize = 12)
-     for i in eachindex(ω_norm)],
-    ["ω/Ωₑ = $(round(w, digits=2))" for w in ω_norm],
+    [MarkerElement(color = :gray, marker = markers[nn], markersize = 12) for nn in ns],
+    ["n = $(nn)" for nn in ns],
 )
 
-
-save("src/WPI/test_scripts/TOF/figures/footpoints_enu.png", fig)
+#ylims!(-0.8, -0.4)
+#save("src/WPI/test_scripts/TOF/figures/footpoints_enu.png", fig)
