@@ -54,6 +54,7 @@ struct TsyganenkoMagneticField <: AbstractMagneticField
     r_limit   :: Float64
 end
 
+# TODO: Try to remove this?
 function TsyganenkoMagneticField(
     ϕ;
     time      = DateTime("2020-01-01T00:01:40"),

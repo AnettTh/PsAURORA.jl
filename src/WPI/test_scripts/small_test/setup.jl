@@ -1,4 +1,5 @@
 using AURORA
+using Dates
 
 use_boris        = true
 field_dependent  = true
@@ -26,4 +27,10 @@ magnetic_field = TsyganenkoMagneticField(
     bzimf=bzimf
 )
 
-##
+## Define the stations fieldline
+fieldline = StationFieldLine(magnetic_field, ref, t)
+
+## Define particle
+E0 = 30e3
+μ0 = -cos(deg2rad(1.0))
+particle = ParticleState(E0, μ0, fieldline; relativistic=true)

@@ -2,7 +2,7 @@ using AURORA
 using AURORA; mₑ, qₑ, ε₀
 using LinearAlgebra
 
-# IDEA: Figure out how to define λ_grid from the plasma state itself? Maybe use find_R_max to locate where the fieldline hits the ionosphere?
+# IDEA: Figure out how to define λ_grid from the plasma state itself? Maybe use statiion fieldlone to locate where the fieldline hits the ionosphere?
 """
     PlasmaState
 
