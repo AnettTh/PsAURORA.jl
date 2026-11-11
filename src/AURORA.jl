@@ -2,7 +2,7 @@ module AURORA
 
 # TODO: Check all files for radians/degrees-consistency!!!
 include("constants.jl")
-export RE, μ₀, M, z_ionosphere, eV_in_J, mₑ, c₀, BE, qₑ, ε₀, ps
+export RE, mu0, M, z_ionosphere, eV_in_J, mₑ, c₀, BE, qₑ, ε₀, ps
 
 include("grids/abstract_grid.jl")
 include("grids/altitude_grid.jl")
