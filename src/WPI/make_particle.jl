@@ -142,31 +142,31 @@ function ParticleState(
     α0 = acos(abs(μ))
 
     # Latitude of the ionosphere based on the L-shell
+    # NOTE: This is dipole-approx, check where it is used!
     λ_ionosphere = acos(sqrt((RE + z_ionosphere) / (L * RE)))
 
     # Find field-strength and pitch angle at the equator
-    # TODO: These are not correct for the tsyganenko-model, look into how to handle it
-    B_eq = minimum(B_line) #BE / L^3
+    B_eq = minimum(B_line)
     α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq)
 
     return ParticleState(
         E_eV,
-        v,
-        μ,
+        v,                          # NOTE: Rename?
+        μ,                          # NOTE: Rename?
         α0,
         SVector(r0.x, r0.y, r0.z),
         v0,
         SVector{3}(B0),
         SVector{3}(E0),
         SVector{3}(b̂),
-        L,
+        L,                  # NOTE: Rename?
         B_eq,
         α_eq,
-        α_lc,
+        α_lc,               # NOTE: Rename?
         λ_ionosphere,
         magnetic_field,
         γ,
-        ϕ_eq,
+        ϕ_eq,              # NOTE: Rename?
         φ0
     )
 end
