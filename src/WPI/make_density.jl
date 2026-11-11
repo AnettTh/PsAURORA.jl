@@ -60,39 +60,16 @@ function DentonDensity(
     ϕ_eq;
     duct_enhancement=0.0,
     hemisphere::Symbol=:north,
-    adjusted_model=false,
 )
-    if !adjusted_model
-        # Based on R_max regardless of the magnetic field model used
-        R_max = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ_eq))
 
-        # If above threshold for model, use the upper limit but with extended distance
-        if L > 8.2
-            return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, 8.2, magnetic_field)
-        else
-            return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L, magnetic_field)
-        end
+    # Based on R_max regardless of the magnetic field model used
+    R_max = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ_eq))
+
+    # If above threshold for model, use the upper limit but with extended distance
+    if L > 8.2
+        return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, 8.2, magnetic_field)
     else
-        # Find the footpoint of the Tsyganenko fieldline
-        result = find_footpoint(
-            magnetic_field,
-            Dipolar(L, 0.0, ϕ_eq);
-            hemisphere=hemisphere
-        )
-
-        # Use the result of the dipolar L with the same footpoint as the Tsyganenko line to
-        # specify which Denton bin to use. This allows for one smooth model, avoiding jumps
-        # in density around L∼7
-        L_Denton_bin = result.L_dipolar
-
-        return DentonDensity(
-            result.L_tsyg_max * RE,
-            ϕ_eq,
-            duct_enhancement,
-            L,
-            L_Denton_bin,
-            DipoleMagneticField(),
-        )
+        return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L, magnetic_field)
     end
 end
 
