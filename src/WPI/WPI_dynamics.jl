@@ -56,7 +56,7 @@ function wave_transit(
     R0 = particle.L * RE
 
     # Define function to integrate
-    function f(λ)
+    function wave_traveltime_integrand(λ)
         # If field-dependent, choose based on position, else use equatorial Ω_e
         Ω_e = field_dependent ?
             Ωe_at_λ(λ, particle.L, particle.ϕ_eq, particle.magnetic_field) :
@@ -74,7 +74,7 @@ function wave_transit(
     end
 
     # Integrate from equator to the resonance region and return result
-    t_w, _ = quadgk(f, 0.0, λ_resonance)
+    t_w, _ = quadgk(wave_traveltime_integrand, 0.0, λ_resonance)
     return abs.(t_w)
 end
 
@@ -158,7 +158,7 @@ function particle_transit(
     end
 
     # Function along a dipole fieldline to be integrated over
-    function f(λ)
+    function particle_traveltime_integrand(λ)
         if field_dependent
             # Velocity as a function of latitude
             B_λ = particle.magnetic_field(Dipolar(particle.L, λ, particle.ϕ_eq))
@@ -186,7 +186,7 @@ function particle_transit(
     end
 
     # Integrate from the resonance region to the ionosphere and return
-    t_e, _ = quadgk(f, λ_resonance, λ_iono)
+    t_e, _ = quadgk(particle_traveltime_integrand, λ_resonance, λ_iono)
     return abs.(t_e)
 end
 
