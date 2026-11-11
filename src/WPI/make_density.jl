@@ -35,7 +35,7 @@ struct DentonDensity{F<:AbstractMagneticField} <: AbstractDensityModel
     magnetic_field::F           # Magnetic field model.
 end
 
-
+# TODO: Update docstring
 """
     DentonDensity(magnetic_field, L, ϕ_eq)
     DentonDensity(::typeof(dipole_field), L, ϕ_eq)
@@ -55,52 +55,26 @@ using an analytical solution for a dipole field.
 - A `struct` holding the necessary information to run the Denton density model.
 
 """
-#function DentonDensity(
-#    magnetic_field::AbstractMagneticField,
-#    L,
-#    ϕ0;
-#    duct_enhancement=0.0,
-#)
-#
-#    # Based on R_max regardless of the magnetic field model used
-#    R_max, trace = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ0); store_trace=true)
-#
-#    # Find ϕ_eq
-#    B = [norm(magnetic_field(Cartesian(x, y, z)))
-#            for (x, y, z) in zip(trace.xs, trace.ys, trace.zs)]
-#    i = argmin(B)
-#    ϕ_eq = mod2pi(atan(trace.ys[i], trace.xs[i]))
-#
-#    # If above threshold for model, use the upper limit but with extended distance,
-#    # still throws below
-#    L_bin = min(L, 8.2)
-#
-#    return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L_bin, magnetic_field)
-#
-#end
-# TODO: Update docstring
-function DentonDensity(
-    magnetic_field::AbstractMagneticField,
-    position_eq::Cartesian;
-    duct_enhancement=0.0
-)
-    # Find maximal distance from Earth
-    R_max = find_R_max(magnetic_field, position_eq)
-
-    # Find positional variables needed for the Denton density model
-    ϕ_eq = mod2pi(atan(position_eq.y, position_eq.x))
-    R_eq = sqrt(position_eq.x^2 + position_eq.y^2 + position_eq.z^2)
-
+function DentonDensity(fieldline::AbstractFieldLine; duct_enhancement::Float64=0.0)
     # If the max distance is above the treshold, use the threshold as the bin. Still throws
     # for lower limit
-    L_bin = min(R_eq/RE, 8.2)
-    return DentonDensity(R_max, ϕ_eq, duct_enhancement, R_eq/RE, L_bin, magnetic_field)
+    R_eq = fieldline.r_eq / RE
+    L_bin = min(R_eq, 8.2)
+
+    return DentonDensity(
+        fieldline.r_max,
+        fieldline.ϕ_eq,
+        duct_enhancement,
+        R_eq,
+        L_bin,
+        fieldline.magnetic_field
+        )
 end
 
 
 function DentonDensity(
     magnetic_field::DipoleMagneticField,
-    L;
+    L::Real;
     duct_enhancement=0.0,
 )
     R_max = Float64(L) * RE
