@@ -17,7 +17,6 @@ use_boris        = true             # Use particle tracer or direct integration
 field_dependent  = true             # Account for the field, if direct integration is used
 relativistic     = true             # Account for relativistic energies
 WPI              = true             # Include wave-particle-interactions
-adjusted_model   = false            # Use adjusted form of Dentons density model
 n                = 1                # Resonance, 1 is the fundamental cyclotron resonance
 duct_enhancement = 0.5              # Fraction of density enhancement applied
 station          = :sodankyla       # Coordinates of the station simulated for
@@ -42,7 +41,7 @@ magnetic_field = TsyganenkoMagneticField(
 
 ## Define the particle
 α_grid = deg2rad.([0.25, 0.5, 0.75, 1.0])
-μ_grid = -cos.(α_grid)
+μ0_grid = -cos.(α_grid)
 
 # Find the L-shell and equatorial position of the fieldline belonging to the station at the
 # requested time
@@ -54,11 +53,11 @@ position_eq = trace_L_shell.position_eq
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 E_grid = range(7e3, 40e3, length=20)
 
-particles = Matrix{ParticleState}(undef, length(E_grid), length(μ_grid))
+particles = Matrix{ParticleState}(undef, length(E_grid), length(μ0_grid))
 @showprogress for iα in eachindex(α_grid), (iE, E) in enumerate(E_grid)
     particles[iE, iα] = ParticleState(
         E,
-        μ_grid[iα],
+        μ0_grid[iα],
         r0,
         magnetic_field,
         ϕ_eq;
@@ -74,7 +73,6 @@ density = DentonDensity(
     L,
     ϕ_eq;
     duct_enhancement=duct_enhancement,
-    adjusted_model=adjusted_model,
 )
 
 plasma = PlasmaState(λ_grid, density; lb_low=lb_low, lb_high=lb_high)
@@ -100,10 +98,10 @@ waves = [
 
 
 ## Calculate TOF and footpoints
-TOF = fill(NaN, length(E_grid), length(μ_grid), length(Ψ0_grid))
-FP  = fill(NaN, 3, length(E_grid), length(μ_grid), length(Ψ0_grid))
+TOF = fill(NaN, length(E_grid), length(μ0_grid), length(Ψ0_grid))
+FP  = fill(NaN, 3, length(E_grid), length(μ0_grid), length(Ψ0_grid))
 
-pairs_Eα = CartesianIndices((length(E_grid), length(μ_grid)))
+pairs_Eα = CartesianIndices((length(E_grid), length(μ0_grid)))
 progress = Progress(length(pairs_Eα))
 Threads.@threads for k in eachindex(pairs_Eα)
     iE, iα = Tuple(pairs_Eα[k])
@@ -134,7 +132,6 @@ params = (
     WPI              = WPI,
     field_dependent  = field_dependent,
     n                = n,
-    adjusted_model   = adjusted_model,
     duct_enhancement = duct_enhancement,
     # station and field
     station          = station,
@@ -177,7 +174,7 @@ jldsave(name;
     FP,                           # FP [xyz, E, α, Ψ0]
     E_grid  = collect(E_grid),
     α_grid,
-    μ_grid,
+    μ0_grid,
     Ψ0_grid,
     ωs,
     params,
@@ -255,7 +252,6 @@ config_info = join([
     "Bw = $(round(a_Bw * 1e12, digits=0)) pT",
     "Phases: $(length(Ψ0_grid))",
     "",
-    "Adjusted density: $(adjusted_model)",
     "n = $(n)",
     "Duct enhancement: $(duct_enhancement)nₑ₀",
     "",

@@ -54,17 +54,17 @@ position_eq = trace_L_shell.position_eq
 ## Define the particles
 stage("Building the particles")
 α_grid = deg2rad.([0.01, 1.0])
-μ_grid = -cos.(α_grid)
+μ0_grid = -cos.(α_grid)
 
 ϕ_eq = magnetic_field.ϕ
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 E_grid = range(7e3, 40e3, length=20)
 
-particles = Matrix{ParticleState}(undef, length(E_grid), length(μ_grid))
+particles = Matrix{ParticleState}(undef, length(E_grid), length(μ0_grid))
 @showprogress for iα in eachindex(α_grid), (iE, E) in enumerate(E_grid)
     particles[iE, iα] = ParticleState(
         E,
-        μ_grid[iα],
+        μ0_grid[iα],
         r0,
         magnetic_field,
         ϕ_eq;
@@ -105,8 +105,8 @@ wave = WPI ? WaveState(
 
 ## Calculate TOF and FP
 stage("Running the boris-mover")
-TOF = fill(NaN, length(E_grid), length(μ_grid), length(ωs))
-FP  = fill(NaN, 3, length(E_grid), length(μ_grid), length(ωs))
+TOF = fill(NaN, length(E_grid), length(μ0_grid), length(ωs))
+FP  = fill(NaN, 3, length(E_grid), length(μ0_grid), length(ωs))
 
 idx      = CartesianIndices(particles)
 progress = Progress(length(idx))
@@ -181,7 +181,7 @@ jldsave(name;
     FP,                           # FP [xyz, E, α, ω]
     E_grid  = collect(E_grid),
     α_grid,
-    μ_grid,
+    μ0_grid,
     ωs,
     params,
 )

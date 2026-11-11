@@ -11,7 +11,6 @@ relativistic = true
 WPI = true
 field_dependent = true
 ns = [1, 2]
-adjusted_model = false
 duct_enhancement = 0.0
 station = :sodankyla
 
@@ -33,7 +32,7 @@ magnetic_field = TsyganenkoMagneticField(
 )
 
 ## Define the particle
-μ = -cos(deg2rad(0.5))
+μ0 = -cos(deg2rad(0.5))
 
 # Find the L-shell and equatorial position of the fieldline belonging to the station at the
 # requested time
@@ -49,7 +48,7 @@ particles = Vector{ParticleState}(undef, length(E_grid))
 @showprogress for (i, E) in enumerate(E_grid)
     particles[i] = ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         magnetic_field,
         ϕ_eq;
@@ -65,7 +64,6 @@ density = DentonDensity(
     L,
     ϕ_eq;
     duct_enhancement=duct_enhancement,
-    adjusted_model=adjusted_model,
 )
 
 plasma = PlasmaState(λ_grid, density; lb_low=lb_low, lb_high=lb_high)

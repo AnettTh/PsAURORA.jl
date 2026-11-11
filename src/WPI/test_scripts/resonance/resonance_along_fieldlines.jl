@@ -13,7 +13,7 @@ colors = [:blue, :red, :green, :orange, :purple, :brown]
 θ = deg2rad(0.0)
 n = 1
 E_eV = 30e3
-μ = -cos(deg2rad(3.0))
+μ0 = -cos(deg2rad(3.0))
 
 ω_frac = 0.2
 
@@ -34,7 +34,7 @@ poly!(ax, Point2f.(cos.(Φ), sin.(Φ)); color=:black, strokecolor=:black, stroke
 ## Compute
 field_line_data = map(L_vals) do L
 
-    particle = ParticleState(E_eV, μ, Cartesian(RE*L, 0.0, 0.0), magnetic_field, ϕ_eq; relativistic=true)
+    particle = ParticleState(E_eV, μ0, Cartesian(RE*L, 0.0, 0.0), magnetic_field, ϕ_eq; relativistic=true)
 
     λ_max    = acos(sqrt((RE + z_ionosphere) / (L * RE)))
     λ_grid_L = range(0.0, λ_max * 0.99, length=500)
@@ -78,7 +78,7 @@ parameters_text = """
     n_e = Denton-model
     n = $n
     E = $(E_eV/1e3) keV
-    α = $(round(rad2deg(acos(abs(μ))), digits=1))°
+    α = $(round(rad2deg(acos(abs(μ0))), digits=1))°
     ω = $(ω_frac) Ωₑ
     θ = 0°
     """

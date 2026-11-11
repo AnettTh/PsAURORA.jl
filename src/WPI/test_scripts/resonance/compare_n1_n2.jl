@@ -8,13 +8,13 @@ using ProgressMeter
 magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
-μ = -cos(deg2rad(2))       # Almost field-aligned
+μ0 = -cos(deg2rad(2))       # Almost field-aligned
 L = 6.5
 r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
 E_grid = range(10e3, 40e3, length=100)
 
-particles = @showprogress [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
+particles = @showprogress [ParticleState(E, μ0, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
@@ -71,7 +71,7 @@ end
 params = """
     Parameters:
     L = $L
-    α = $(round(rad2deg(acos(abs(μ))), digits=1))°
+    α = $(round(rad2deg(acos(abs(μ0))), digits=1))°
     n_e = denton-model
     """
 

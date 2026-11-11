@@ -7,7 +7,7 @@ using CairoMakie
 magnetic_field = DipoleMagneticField()
 
 ## Define the particles
-μ = -cos(deg2rad(5))
+μ0 = -cos(deg2rad(5))
 L = 6.5
 r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
@@ -15,7 +15,7 @@ E_grid = range(1e3, 40e3, length=100)
 particles = [
     ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         magnetic_field,
         ϕ_eq;
@@ -53,7 +53,7 @@ ax = Axis(
     fig[1,1],
     xlabel="time-of-flight [s]",
     ylabel="E [keV]",
-    title="Dipole approximation with pitch-angle α=$(round(rad2deg(acos(abs(μ)))))°",
+    title="Dipole approximation with pitch-angle α=$(round(rad2deg(acos(abs(μ0)))))°",
 )
 
 #ax.yticks = [1, 10, 100, 1000]
@@ -82,4 +82,4 @@ lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,   label="Field-independe
 Legend(fig[1,2], ax)
 
 ##
-#save("src/WPI/test_scripts/field_independent_model/figures/several_energies_$(round(rad2deg(acos(abs(μ))))).png", fig)
+#save("src/WPI/test_scripts/field_independent_model/figures/several_energies_$(round(rad2deg(acos(abs(μ0))))).png", fig)

@@ -11,13 +11,13 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
 α0, α1 = deg2rad(0.01), deg2rad(10)
-μ_grid = -cos.(range(α0, α1, length=50))
+μ0_grid = -cos.(range(α0, α1, length=50))
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 E = 25e3
 
-particle = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for μ in μ_grid]
+particle = [ParticleState(E, μ0, r0, magnetic_field, ϕ_eq; relativistic=true) for μ0 in μ0_grid]
 
 ## Define the plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=200)
@@ -32,7 +32,7 @@ amplitude = ConstantAmplitude(100e-12)                      # 100 pT
 wave = WaveState(modulation, amplitude, plasma)
 
 ## Calculate TOF
-TOF = zeros(length(μ_grid), length(ωs))
+TOF = zeros(length(μ0_grid), length(ωs))
 use_boris = true
 progress = Progress(length(particle))
 
@@ -62,7 +62,7 @@ ax = Axis(
     * ", L=$(L)",
 )
 
-hm = heatmap!(ax, ωs ./ Ω_e_eq, rad2deg.(acos.(-μ_grid)), TOF'; colormap=:turbo)
+hm = heatmap!(ax, ωs ./ Ω_e_eq, rad2deg.(acos.(-μ0_grid)), TOF'; colormap=:turbo)
 Colorbar(fig[1,2], hm; label="TOF [s]")
 ##
 #xlims!(ax, 0.8, 1.0)

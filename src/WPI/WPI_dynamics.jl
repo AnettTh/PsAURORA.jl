@@ -59,10 +59,12 @@ function wave_transit(
     function wave_traveltime_integrand(λ)
         # If field-dependent, choose based on position, else use equatorial Ω_e
         Ω_e = field_dependent ?
-            Ωe_at_λ(λ, particle.L, particle.ϕ_eq, particle.magnetic_field) :
+            # TODO: Check if this can be done using the station fieldline instead
+            Ωe_at_λ(λ, particle.L, particle.ϕ0, particle.magnetic_field) :
             plasma.Ω_e[1]
 
         ω_pe = field_dependent ?
+            # TODO: Check if this can be done using the station fieldline instead
             ωpe_at_λ(plasma.ne_model, particle.L, λ) :
             plasma.ω_pe[1]
 
@@ -151,6 +153,7 @@ function particle_transit(
     end
 
     # Decides which hemisphere the particle travels towards
+    # TODO: Check if this can be done using other values in ParticleState
     λ_iono = if isnothing(V_r)
         sign(λ_resonance) * particle.λ_ionosphere   # If non given, use λ at resonance
     else
@@ -161,6 +164,7 @@ function particle_transit(
     function particle_traveltime_integrand(λ)
         if field_dependent
             # Velocity as a function of latitude
+            # TODO: Change to particle.position_eq
             B_λ = particle.magnetic_field(Dipolar(particle.L, λ, particle.ϕ_eq))
             α_λ = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
 
@@ -266,6 +270,7 @@ function resonance_latitude(
             B_mag = Ω_e * mₑ / abs(qₑ)
         else
             # Evaluate magnetic field at current position
+            # TODO: Change to particle.position_eq
             B = particle.magnetic_field(Dipolar(particle.L, λ, particle.ϕ_eq))
             B_mag = norm(B)
 
@@ -282,7 +287,7 @@ function resonance_latitude(
         α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_mag)
 
         isnothing(α) && return NaN
-        v_parallel = particle.v * cos(α) * (-sign(particle.μ))
+        v_parallel = particle.v * cos(α) * (-sign(particle.μ0))
 
         # Return resonance condition for given λ (from for example eq.4 in Hsieh 2022)
         return ω - k_parallel * v_parallel - (n*Ω_e / particle.γ)

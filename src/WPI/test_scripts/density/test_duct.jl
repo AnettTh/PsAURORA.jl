@@ -7,7 +7,7 @@ using ProgressMeter
 magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Make particle
-μ = -cos(deg2rad(2))
+μ0 = -cos(deg2rad(2))
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
@@ -17,7 +17,7 @@ particles = Vector{ParticleState}(undef, length(E_grid))
 @showprogress for (i, E) in enumerate(E_grid)
     particles[i] = ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         magnetic_field,
         ϕ_eq;
@@ -75,7 +75,7 @@ scatter!(ax, TOF_ducted, E_grid ./1e3, label="Ducted")
 
 # Add info to Legend
 info = [
-    "α = $(round(rad2deg(acos(abs(μ))), digits=1))°",
+    "α = $(round(rad2deg(acos(abs(μ0))), digits=1))°",
     "L = $L",
     "ω = $(frac)Ωₑ",
     "$(round(longitude_to_MLT(ϕ_eq; degrees=false), digits=1)) MLT",

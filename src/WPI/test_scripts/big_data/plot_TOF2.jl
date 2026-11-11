@@ -8,7 +8,7 @@ Make figures with one ax per E and α(ω), for given L
 
 ===#
 
-## Ψ0, E_grid, L_grid, μ_grid, Bw, α_grid, iL_done, use_boris, ϕ_eq, ω_frac, TOF, Ω_e_eq
+## Ψ0, E_grid, L_grid, μ0_grid, Bw, α_grid, iL_done, use_boris, ϕ_eq, ω_frac, TOF, Ω_e_eq
 data = load("src/WPI/data/02112026_TOF_4D_MLT4.0.jld2")
 
 size6x3 = (1300, 700)
@@ -23,11 +23,11 @@ end
 favorite_L, i_favorite_L = nearest(data["L_grid"], 6.0)
 
 ## Gather the data
-TOF = data["TOF"][:, :, :, i_favorite_L]         #[E, μ, ω, L]
+TOF = data["TOF"][:, :, :, i_favorite_L]         #[E, μ0, ω, L]
 x_axis = data["ω_frac"]
-y_axis = data["μ_grid"]
+y_axis = data["μ0_grid"]
 
-## Find the panel indices, n_panels indices spread evenly over μ_grid
+## Find the panel indices, n_panels indices spread evenly over μ0_grid
 E_grid = data["E_grid"]
 i_E_panels = round.(Int, range(1, length(E_grid), length=6))
 E_panels = E_grid[i_E_panels]

@@ -7,11 +7,11 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define a particle
 E = 30e3
-μ = -cos(deg2rad(2))
+μ0 = -cos(deg2rad(2))
 L = 6.5
 r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
-particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq)
+particle = ParticleState(E, μ0, r0, magnetic_field, ϕ_eq)
 
 ## Define a plasma
 λ_grid = range(deg2rad(-20.0), deg2rad(20.0), length=100)

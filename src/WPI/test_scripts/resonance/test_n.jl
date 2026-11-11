@@ -30,7 +30,7 @@ magnetic_field = TsyganenkoMagneticField(
 
 ## Define the particle
 α_deg = 0.5
-μ = -cos(deg2rad(α_deg))
+μ0 = -cos(deg2rad(α_deg))
 
 trace_L_shell = find_L_shell(magnetic_field, ref, t)
 L = trace_L_shell.L
@@ -41,7 +41,7 @@ r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 Es = [7e3, 15e3, 25e3, 40e3]
 
 particles = [
-    ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=relativistic)
+    ParticleState(E, μ0, r0, magnetic_field, ϕ_eq; relativistic=relativistic)
     for E in Es
 ]
 

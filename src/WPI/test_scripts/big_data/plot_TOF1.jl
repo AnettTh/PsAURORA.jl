@@ -7,7 +7,7 @@ using JLD2
 Make figures with one ax per α and E(ω), for given L
 
 ===#
-## Ψ0, E_grid, L_grid, μ_grid, Bw, α_grid, iL_done, use_boris, ϕ_eq, ω_frac, TOF, Ω_e_eq
+## Ψ0, E_grid, L_grid, μ0_grid, Bw, α_grid, iL_done, use_boris, ϕ_eq, ω_frac, TOF, Ω_e_eq
 data = load("src/WPI/data/02112026_TOF_4D_MLT4.0.jld2")
 
 size6x3 = (1300, 700)
@@ -21,28 +21,28 @@ function nearest(grid, target)
 end
 
 favorite_L, i_favorite_L = nearest(data["L_grid"], 6.0)
-#favorite_μ, i_favorite_μ = nearest(data["μ_grid"], -cos(deg2rad(2)))
+#favorite_μ0, i_favorite_μ0 = nearest(data["μ0_grid"], -cos(deg2rad(2)))
 #favorite_E, i_favorite_E = nearest(data["E_grid"], 25*1e3)
 #favorite_ω, i_favorite_ω = nearest(data["ω_frac"], 0.3)
 
 
 ## Gather the data
-TOF = data["TOF"][:, :, :, i_favorite_L]         #[E, μ, ω, L]
+TOF = data["TOF"][:, :, :, i_favorite_L]         #[E, μ0, ω, L]
 x_axis = data["ω_frac"]
 y_axis = data["E_grid"] ./ 1e3
 
-## Find the panel indices, n_panels indices spread evenly over μ_grid
-μ_grid = data["μ_grid"]
-i_μ_panels = 1:1:n_panels # the six first
-μ_panels = μ_grid[i_μ_panels]
+## Find the panel indices, n_panels indices spread evenly over μ0_grid
+μ0_grid = data["μ0_grid"]
+i_μ0_panels = 1:1:n_panels # the six first
+μ0_panels = μ0_grid[i_μ0_panels]
 
 ## Functions to get data- and title to use on panel k
 function panel_data(k)
-    return view(TOF, :, i_μ_panels[k], :)
+    return view(TOF, :, i_μ0_panels[k], :)
 end
 
 function panel_title(k)
-    α = rad2deg(acos(abs(μ_grid[i_μ_panels[k]])))
+    α = rad2deg(acos(abs(μ0_grid[i_μ0_panels[k]])))
     return "α = $(round(α, digits=1))°"
 end
 

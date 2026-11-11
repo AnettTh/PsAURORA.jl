@@ -11,11 +11,11 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 ## Define particle and plasma
 L = 6.5
 E = 30e3
-μ = -cos(deg2rad(3))
+μ0 = -cos(deg2rad(3))
 r0 = Cartesian(L*RE, 0.0, 0.0)
 θ = deg2rad(60)
 
-particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq)
+particle = ParticleState(E, μ0, r0, magnetic_field, ϕ_eq)
 
 ## Define the plasma
 λ_grid = range(0.0, deg2rad(50), length=500)
@@ -36,7 +36,7 @@ parameters_text = """
     n_e = Denton-model
     L = $L
     E = $(E/1e3) keV
-    α = $(round(rad2deg(acos(abs(μ))), digits=1))°
+    α = $(round(rad2deg(acos(abs(μ0))), digits=1))°
     ω = 0.1 Ωₑ - 0.5 Ωₑ
     θ = $(round(rad2deg(θ), digits=1))°
     """

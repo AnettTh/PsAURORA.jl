@@ -11,7 +11,7 @@ dipole = DipoleMagneticField()
 tsyganenko = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
-μ = -cos(deg2rad(1))
+μ0 = -cos(deg2rad(1))
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
@@ -21,7 +21,7 @@ particle_dipole = Vector{ParticleState}(undef, length(E_grid))
 @showprogress for (i, E) in enumerate(E_grid)
     particle_dipole[i] = ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         dipole,
         ϕ_eq;
@@ -32,7 +32,7 @@ particle_tsyg = Vector{ParticleState}(undef, length(E_grid))
 @showprogress for (i, E) in enumerate(E_grid)
     particle_tsyg[i] = ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         tsyganenko,
         ϕ_eq;
@@ -78,7 +78,7 @@ end
 
 
 ## Save the data
-@save "src/WPI/data/28102026TOF.jld2" TOF_dipole TOF_tsyg E_grid ωs_dipole ωs_tsyg L μ ϕ_eq lb_low lb_high
+@save "src/WPI/data/28102026TOF.jld2" TOF_dipole TOF_tsyg E_grid ωs_dipole ωs_tsyg L μ0 ϕ_eq lb_low lb_high
 
 ## Make the figure
 fig = Figure(size=(900, 500))
@@ -86,7 +86,7 @@ ax = Axis(
     fig[1,1],
     xlabel="TOF [s]",
     ylabel="E [keV]",
-    title="Energy as a function of time-of-flight at $(longitude_to_MLT(ϕ_eq; degrees=false)) MLT with pitch-angle $(round(rad2deg(acos(abs(μ))), digits=1))°"
+    title="Energy as a function of time-of-flight at $(longitude_to_MLT(ϕ_eq; degrees=false)) MLT with pitch-angle $(round(rad2deg(acos(abs(μ0))), digits=1))°"
     #yscale=log10
 )
 

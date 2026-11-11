@@ -1,4 +1,5 @@
 using AURORA
+using LinearAlgebra
 
 # Density models for plasma electron number density along field lines.
 # Implements AbstractDensityModel interface with ConstantDensity and DentonDensity.
@@ -29,7 +30,7 @@ struct DentonDensity{F<:AbstractMagneticField} <: AbstractDensityModel
     R_max::Float64              # Maximum radial distance along field line [m].
     ϕ_eq::Float64               # Equatorial longitude [rad].
     duct_enhancement::Float64   # Fraction of density enhancement, 0.0 = not ducted.
-    L::Float64                  # Original equatorial L, used for initial position.
+    L::Float64                  # Original equatorial L, used for initial position. #TODO: Should be R_eq
     L_Denton_bin::Float64       # L for the bin used when constructing the density model.
     magnetic_field::F           # Magnetic field model.
 end
@@ -54,35 +55,56 @@ using an analytical solution for a dipole field.
 - A `struct` holding the necessary information to run the Denton density model.
 
 """
+#function DentonDensity(
+#    magnetic_field::AbstractMagneticField,
+#    L,
+#    ϕ0;
+#    duct_enhancement=0.0,
+#)
+#
+#    # Based on R_max regardless of the magnetic field model used
+#    R_max, trace = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ0); store_trace=true)
+#
+#    # Find ϕ_eq
+#    B = [norm(magnetic_field(Cartesian(x, y, z)))
+#            for (x, y, z) in zip(trace.xs, trace.ys, trace.zs)]
+#    i = argmin(B)
+#    ϕ_eq = mod2pi(atan(trace.ys[i], trace.xs[i]))
+#
+#    # If above threshold for model, use the upper limit but with extended distance,
+#    # still throws below
+#    L_bin = min(L, 8.2)
+#
+#    return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L_bin, magnetic_field)
+#
+#end
+# TODO: Update docstring
 function DentonDensity(
     magnetic_field::AbstractMagneticField,
-    L,
-    ϕ_eq;
-    duct_enhancement=0.0,
-    hemisphere::Symbol=:north,
+    position_eq::Cartesian;
+    duct_enhancement=0.0
 )
+    # Find maximal distance from Earth
+    R_max = find_R_max(magnetic_field, position_eq)
 
-    # Based on R_max regardless of the magnetic field model used
-    R_max = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ_eq))
+    # Find positional variables needed for the Denton density model
+    ϕ_eq = mod2pi(atan(position_eq.y, position_eq.x))
+    R_eq = sqrt(position_eq.x^2 + position_eq.y^2 + position_eq.z^2)
 
-    # If above threshold for model, use the upper limit but with extended distance
-    if L > 8.2
-        return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, 8.2, magnetic_field)
-    else
-        return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L, magnetic_field)
-    end
+    # If the max distance is above the treshold, use the threshold as the bin. Still throws
+    # for lower limit
+    L_bin = min(R_eq/RE, 8.2)
+    return DentonDensity(R_max, ϕ_eq, duct_enhancement, R_eq/RE, L_bin, magnetic_field)
 end
 
 
 function DentonDensity(
     magnetic_field::DipoleMagneticField,
-    L,
-    ϕ_eq;
+    L;
     duct_enhancement=0.0,
-    kwargs...,      # Accept, but ignore, kwargs about hemispheres and adjusted model
 )
     R_max = Float64(L) * RE
-    return DentonDensity(R_max, ϕ_eq, duct_enhancement, L, L, magnetic_field)
+    return DentonDensity(R_max, 0.0, duct_enhancement, L, L, magnetic_field)
 end
 
 
@@ -107,7 +129,8 @@ function electron_density(model::ConstantDensity, L, λ)
 end
 
 function electron_density(model::DentonDensity, L, λ)
-    n_e = denton_density_model(Dipolar(L, λ, model.ϕ_eq), model.R_max, model.L_Denton_bin)
+    # TODO: Check that model.L makes sense here
+    n_e = denton_density_model(Dipolar(model.L, λ, model.ϕ_eq), model.R_max, model.L_Denton_bin)
     return n_e * (1.0 + model.duct_enhancement)
 end
 

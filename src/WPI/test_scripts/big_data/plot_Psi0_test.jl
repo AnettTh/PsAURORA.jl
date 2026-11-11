@@ -2,7 +2,7 @@ using AURORA
 using JLD2
 using CairoMakie
 
-# [E, μ, ω, L, Ψ₀]
+# [E, μ0, ω, L, Ψ₀]
 data = load("src/WPI/data/02112026_Psi0test_MLT4.0.jld2")
 
 function nearest(grid, target)

@@ -58,7 +58,7 @@ function dipole_field(x::Real, y::Real, z::Real)
 
     r5 = r2^2 * r
 
-    C = - (μ₀ / (4π)) * M
+    C = - (mu0 / (4π)) * M
 
     Bx = C * ((3 * x * z) / r5)
     By = C * ((3 * y * z) / r5)
@@ -92,6 +92,7 @@ end
     dst=-28.0,
     byimf=1.0,
     bzimf=2.0,
+    ps=`nothing`,
     component="both",
 )
     tsyganenko_field(r::AbstractVector; kwargs...)
@@ -110,6 +111,8 @@ end
 - `dst`: Disturbance Storm Time index [nT], default is `-50.0`.
 - `byimf`: IMF By component [nT], default is `1.0`.
 - `bzimf`: IMF Bz component [nT], default is `2.0`.
+- `ps`: Dipole tilt angle, uses `time` to calculate it if the value is `nothing`. The
+  default is `nothing`.
 - `component`: String to chose which component of the field to return; either external
   `ext`, internal `int` or the total field `both`, default is `"both"`.
 
@@ -165,15 +168,21 @@ function tsyganenko_field_gsm(
 end
 
 
-rot_y(v, α) = [cos(α) * v[1] + sin(α) * v[3], v[2], -sin(α) * v[1] + cos(α) * v[3]]
-
 function (model::TsyganenkoMagneticField)(r::Cartesian)
     r_mag = sqrt(r.x^2 + r.y^2 + r.z^2)
     r_mag > model.r_limit && error(
         "Tsyganenko evaluated past the limit, r = $(round(r_mag / RE, digits=2)) RE"
     )
 
-    r_gsm = rot_y([r.x, r.y, r.z], model.ps)             # SM -> GSM
+    # Helper function for rotation
+    function rotate_y(v, α)
+        return [cos(α) * v[1] + sin(α) * v[3], v[2], -sin(α) * v[1] + cos(α) * v[3]]
+    end
+
+    # SM → GSM
+    r_gsm = rotate_y([r.x, r.y, r.z], model.ps)
+
+    # Evaluate field
     B_gsm = tsyganenko_field_gsm(
         r_gsm...;
         time      = model.time,
@@ -184,10 +193,13 @@ function (model::TsyganenkoMagneticField)(r::Cartesian)
         ps        = model.ps,
         component = model.component,
     )
-    return rot_y(B_gsm, -model.ps)                       # GSM -> SM
+
+    # # GSM → SM
+    return rotate_y(B_gsm, -model.ps)
 end
 
 
+# TODO: This might be fishy??
 function (model::TsyganenkoMagneticField)(position::Dipolar)
     #abs(position.λ) > 1e-5 && throw(
     #    ArgumentError("Issue with using Tsyganenko model with dipolar coordinates if λ≠0.")

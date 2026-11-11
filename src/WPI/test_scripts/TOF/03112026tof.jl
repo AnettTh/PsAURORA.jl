@@ -32,7 +32,7 @@ magnetic_field = TsyganenkoMagneticField(
 )
 
 ## Define the particles
-μ = -cos(deg2rad(0.5))
+μ0 = -cos(deg2rad(0.5))
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 E_grid = range(7e3, 40e3, length=20)
@@ -41,7 +41,7 @@ particles = Vector{ParticleState}(undef, length(E_grid))
 @showprogress for (i, E) in enumerate(E_grid)
     particles[i] = ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         magnetic_field,
         ϕ_eq;
@@ -87,7 +87,7 @@ end
 magnetic_field_model = magnetic_field isa TsyganenkoMagneticField ? "Tsyganenko" : "Dipole"
 parameters = (
     L = L,
-    μ = μ,
+    μ0 = μ0,
     ϕ_eq = ϕ_eq,
     ω_frac = ω_frac,
     magnetic_field_model = magnetic_field_model,
@@ -116,7 +116,7 @@ ax = Axis(
     xlabel="TOF [s]",
     ylabel="E [keV]",
     title="TOF at $(longitude_to_MLT(ϕ_eq; degrees=false)) MLT with α = " *
-    "$(round(rad2deg(acos(abs(μ))), digits=1))°",
+    "$(round(rad2deg(acos(abs(μ0))), digits=1))°",
 )
 
 colors = [:blue, :red, :green, :orange, :purple]  # one per ω

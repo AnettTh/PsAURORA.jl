@@ -9,13 +9,13 @@ dipole_field = DipoleMagneticField()
 
 
 ## Make a particle
-μ = -cos(deg2rad(3))
+μ0 = -cos(deg2rad(3))
 L = 7.1
 r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
 # NOTE: This only uses the position of the particle, so the energy is irrelevant
-particle_tsyg = ParticleState(1e4, μ, r0, tsyg_field, ϕ_eq; relativistic=true)
-particle_dipole = ParticleState(1e4, μ, r0, dipole_field, ϕ_eq; relativistic=true)
+particle_tsyg = ParticleState(1e4, μ0, r0, tsyg_field, ϕ_eq; relativistic=true)
+particle_dipole = ParticleState(1e4, μ0, r0, dipole_field, ϕ_eq; relativistic=true)
 
 ## Make a plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)

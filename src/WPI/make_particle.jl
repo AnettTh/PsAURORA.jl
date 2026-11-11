@@ -14,7 +14,7 @@ the magnetic field model.
 
 - `E_eV`: Kinetic energy [eV].
 - `v`: Speed [m/s].
-- `μ`: Pitch-angle cosine.
+- `μ0`: Pitch-angle cosine.
 - `α0`: Pitch angle at initial position [rad].
 - `r0`: Initial position in Cartesian coordinates [m].
 - `v0`: Initial velocity vector [m/s].
@@ -28,13 +28,13 @@ the magnetic field model.
 - `λ_ionosphere`: Magnetic latitude where the L-shell intersects the ionosphere [rad].
 - `magnetic_field`: Magnetic field model function `f(x, y, z)`.
 - `γ`: Lorentz factor.
-- `ϕ_eq`: Longitude at equator [rad].
+- `ϕ0`: Longitude at equator [rad].
 - `φ0`: Initial gyrophase of the particle [rad].
 """
 struct ParticleState{F}
     E_eV           :: Float64
     v              :: Float64
-    μ              :: Float64
+    μ0             :: Float64
     α0             :: Float64
     r0             :: SVector{3, Float64}
     v0             :: SVector{3, Float64}
@@ -48,7 +48,7 @@ struct ParticleState{F}
     λ_ionosphere   :: Float64
     magnetic_field :: F
     γ              :: Float64
-    ϕ_eq           :: Float64
+    ϕ0             :: Float64
     φ0             :: Float64
 end
 
@@ -56,7 +56,7 @@ end
 function find_R_max(particle::ParticleState; kwargs...)
     return find_R_max(
         particle.magnetic_field,
-        Dipolar(particle.L, 0.0, particle.ϕ_eq);
+        Dipolar(particle.L, 0.0, particle.ϕ0);
         kwargs...
     )
 end
@@ -65,7 +65,7 @@ end
 # TODO: See if r0 actually is particle r0, or if it just represents the equatorial distance of the field-line in question
 # TODO: Look into if the particle is defined correctly also for a tsyganenko field
 """
-    ParticleState(E_eV, μ, r0, magnetic_field, ϕ_eq; relativistic::Bool=false)
+    ParticleState(E_eV, μ0, r0, magnetic_field, ϕ0; relativistic::Bool=false)
 
 Construct a `ParticleState` from initial conditions.
 
@@ -76,10 +76,10 @@ position `r0` is used to determine the L-shell and all latitude-dependent quanti
 # Arguments
 
 - `E_eV`: Energy of the electron [eV].
-- `μ`: Cosine of the pitch angle, between -1 and 1.
+- `μ0`: Cosine of the pitch angle, between -1 and 1.
 - `r0`: Initial position vector in Cartesian coordinates [m].
 - `magnetic_field`: Magnetic field function `f(x, y, z)`.
-- `ϕ_eq`: The longitudinal position of the particle at the equator [rad].
+- `ϕ0`: The longitudinal position of the particle at the equator [rad].
 
 # Keyword Arguments
 
@@ -92,10 +92,10 @@ position `r0` is used to determine the L-shell and all latitude-dependent quanti
 """
 function ParticleState(
     E_eV,
-    μ,
+    μ0,
     r0::Cartesian,
     magnetic_field::AbstractMagneticField,
-    ϕ_eq;
+    ϕ0;
     relativistic::Bool=false,       # TODO: Make default true!
     φ0=deg2rad(0.0),
 )
@@ -120,8 +120,8 @@ function ParticleState(
     E0 = 0.0, 0.0, 0.0
 
     # Find initial velocity
-    v_par = -v * μ
-    v_perp = v * sqrt(1 - μ^2)
+    v_par = -v * μ0
+    v_perp = v * sqrt(1 - μ0^2)
     v0 = SVector{3}(
         v_par .* b̂ .+
         v_perp .* cos(φ0) .* e1 .+
@@ -136,10 +136,10 @@ function ParticleState(
              for (x, y, z) in zip(trace.xs, trace.ys, trace.zs)]
 
     # Loss-cone angle at the equator of this L-shell
-    α_lc = losscone_angle(magnetic_field, L, ϕ_eq)
+    α_lc = losscone_angle(magnetic_field, L, ϕ0)
 
     # Current position pitch-angle and equatorial pitch-angle
-    α0 = acos(abs(μ))
+    α0 = acos(abs(μ0))
 
     # Latitude of the ionosphere based on the L-shell
     # NOTE: This is dipole-approx, check where it is used!
@@ -152,7 +152,7 @@ function ParticleState(
     return ParticleState(
         E_eV,
         v,                          # NOTE: Rename?
-        μ,                          # NOTE: Rename?
+        μ0,
         α0,
         SVector(r0.x, r0.y, r0.z),
         v0,
@@ -166,20 +166,20 @@ function ParticleState(
         λ_ionosphere,
         magnetic_field,
         γ,
-        ϕ_eq,              # NOTE: Rename?
+        ϕ0,              # NOTE: Rename?
         φ0
     )
 end
 
 function ParticleState(
     E_eV,
-    μ,
+    μ0,
     r0::Dipolar,
     magnetic_field::AbstractMagneticField,
-    ϕ_eq;
+    ϕ0;
     kwargs...
 )
-    return ParticleState(E_eV, μ, Cartesian(r0), magnetic_field, ϕ_eq; kwargs...)
+    return ParticleState(E_eV, μ0, Cartesian(r0), magnetic_field, ϕ0; kwargs...)
 end
 
 function Base.show(io::IO, p::ParticleState)
@@ -189,8 +189,8 @@ function Base.show(io::IO, p::ParticleState)
     println(io, "  α_eq     = $(round(rad2deg(p.α_eq), digits=2))°")
     println(io, "  α_lc     = $(round(rad2deg(p.α_lc), digits=2))°")
     println(io, "  L        = $(round(p.L, digits=2))")
-    println(io, "  ϕ_eq     = $(round(rad2deg(p.ϕ_eq), digits=1))° " *
-                "($(round(longitude_to_MLT(p.ϕ_eq, degrees=false), digits=1)) MLT)")
+    println(io, "  ϕ0     = $(round(rad2deg(p.ϕ0), digits=1))° " *
+                "($(round(longitude_to_MLT(p.ϕ0, degrees=false), digits=1)) MLT)")
     println(io, "  γ        = $(round(p.γ, digits=4))")
     println(io, "  B_field  = $(typeof(p.magnetic_field))")
 end

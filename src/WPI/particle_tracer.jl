@@ -111,14 +111,15 @@ function boris_mover(
         # Find v0 at resonance latitude: Evaluate the exact magnetic field once
         #B_start = particle.magnetic_field(Dipolar(particle.L, λ_start, particle.ϕ_eq))
 
-        pos = isnothing(r_start) ? Cartesian(Dipolar(particle.L, λ_start, particle.ϕ_eq)) : r_start
+        # TODO: This should be particle.position_resonance, or equivalent!!
+        pos = isnothing(r_start) ? Cartesian(Dipolar(particle.L, λ_start, particle.ϕ0)) : r_start
         x, y, z = pos.x, pos.y, pos.z
         B_start = particle.magnetic_field(pos)
         b̂, e1, e2, B_start_mag = magnetic_basis(B_start)
 
         # Use initial pitch angle to decompose velocity
         α_start = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_start_mag)
-        v_par = -particle.v * cos(α_start) * sign(particle.μ)
+        v_par = -particle.v * cos(α_start) * sign(particle.μ0)
         v_perp = particle.v * sin(α_start)
 
         vx, vy, vz = v_par .* b̂ .+ v_perp * cos(φ0) .* e1 .+ v_perp * sin(φ0) .* e2
@@ -138,7 +139,7 @@ function boris_mover(
         r_array[1, :] .= (x, y, z)
         v_array[1, :] .= (vx, vy, vz)
         t_array[1] = t_current
-        α_array[1] = acos(abs(particle.μ))
+        α_array[1] = acos(abs(particle.μ0))
     end
 
     # Keep track of phase if wave is to be considered

@@ -13,18 +13,18 @@ E = 15e3
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
-μ_grid = -cos.(deg2rad.(0:0.1:3))
+μ0_grid = -cos.(deg2rad.(0:0.1:3))
 
 particles = [
     ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         magnetic_field,
         ϕ_eq;
         relativistic=true,
     )
-    for μ in μ_grid
+    for μ0 in μ0_grid
 ]
 
 ## Define a plasma
@@ -43,9 +43,9 @@ wave = WaveState(modulation, amplitude, plasma)
 λ_resonance = [resonance_latitude(ω_start, p, wave.plasma)[1] for p in particles]
 
 ## Run Boris-mover
-results = Vector{Any}(undef, length(μ_grid))
+results = Vector{Any}(undef, length(μ0_grid))
 
-progress = Progress(length(μ_grid), desc="μ-loop: ")
+progress = Progress(length(μ0_grid), desc="μ0-loop: ")
 for (i, p) in enumerate(particles)
     results[i] = boris_mover(
         p;
@@ -56,14 +56,14 @@ for (i, p) in enumerate(particles)
         λ_start=λ_resonance[i],
         stop_when_bouncing=true
         )
-    next!(progress; showvalues=[(:μ, round(μ_grid[i], digits=1))])
+    next!(progress; showvalues=[(:μ0, round(μ0_grid[i], digits=1))])
 end
 
 
 ## Look at footpoints
-@load "src/WPI/data/boris_results_L6.5_alpha1.0.jld2" results E_grid λ_resonance L μ ϕ_eq
+@load "src/WPI/data/boris_results_L6.5_alpha1.0.jld2" results E_grid λ_resonance L μ0 ϕ_eq
 for (i, r) in enumerate(results)
-    @show μ_grid[i], r.footpoint
+    @show μ0_grid[i], r.footpoint
 end
 
 
@@ -78,7 +78,7 @@ ax  = Axis3(fig[1,1];
 )
 
 # Colormap for energy
-colors = cgrad(:viridis, length(μ_grid), categorical=true)
+colors = cgrad(:viridis, length(μ0_grid), categorical=true)
 
 # Plot footpoints
 for (i, r) in enumerate(results)
@@ -95,7 +95,7 @@ for (i, r) in enumerate(results)
             color      = :red,
             markersize = 15,
             marker     = :xcross,
-            label      = "μ=$(round(μ_grid[i], digits=5))"
+            label      = "μ0=$(round(μ0_grid[i], digits=5))"
         )
 
     end
@@ -103,8 +103,8 @@ end
 
 Colorbar(fig[1,2];
     colormap = :viridis,
-    limits   = (minimum(μ_grid), maximum(μ_grid)),
-    label    = "μ"
+    limits   = (minimum(μ0_grid), maximum(μ0_grid)),
+    label    = "μ0"
 )
 
 axislegend(ax)

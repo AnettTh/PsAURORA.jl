@@ -8,10 +8,10 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 use_boris = true
 L = 6.5
 
-## Grids with TOF(E, μ, ω, Ψ0) = (10, 8, 5, 4)
+## Grids with TOF(E, μ0, ω, Ψ0) = (10, 8, 5, 4)
 E_grid = range(25e3, 30e3, length=10)
 α_grid = range(deg2rad(0.8), deg2rad(1.0), length=8)
-μ_grid = -cos.(α_grid)
+μ0_grid = -cos.(α_grid)
 ω_frac = range(0.3, 0.35, length=5)
 λ_grid = range(-deg2rad(50), deg2rad(50), length=200)
 Ψ0_grid = collect(0:π/2:7π/4)
@@ -54,7 +54,7 @@ plasma = PlasmaState(λ_grid, ϕ_eq, magnetic_field, L)
 modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 
 ## Make all combinations of energies and pitch-angles
-index_pairs = CartesianIndices((length(E_grid), length(μ_grid)))
+index_pairs = CartesianIndices((length(E_grid), length(μ0_grid)))
 
 ## Build the grid of particles for each combination of E and μ
 particles = Matrix{Union{Nothing, ParticleState}}(nothing, size(index_pairs)...)
@@ -62,7 +62,7 @@ Threads.@threads :greedy for k in eachindex(index_pairs)
         iE, iμ = Tuple(index_pairs[k])
         particles[iE, iμ] = ParticleState(
             E_grid[iE],
-            μ_grid[iμ],
+            μ0_grid[iμ],
             r0,
             magnetic_field,
             ϕ_eq;

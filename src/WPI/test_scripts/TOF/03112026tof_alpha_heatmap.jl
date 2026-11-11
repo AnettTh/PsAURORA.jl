@@ -11,13 +11,13 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
 α0, α1 = deg2rad(0.01), deg2rad(10)
-μ_grid = -cos.(range(α0, α1, length=25))
+μ0_grid = -cos.(range(α0, α1, length=25))
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 E = 30e3
 
-particle = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for μ in μ_grid]
+particle = [ParticleState(E, μ0, r0, magnetic_field, ϕ_eq; relativistic=true) for μ0 in μ0_grid]
 
 ## Define the plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=200)
@@ -33,7 +33,7 @@ amplitude = ConstantAmplitude(100e-12)                      # 100 pT
 wave = WaveState(modulation, amplitude, plasma; Ψ0=0.0)
 
 ## Calculate TOF
-TOF = zeros(length(μ_grid), length(ωs))
+TOF = zeros(length(μ0_grid), length(ωs))
 use_boris = true
 progress = Progress(length(particle))
 
@@ -53,7 +53,7 @@ outfile = "src/WPI/data/11-03-2026/03112026-ducted_TOF_energy_heatmap.jld2"
 
 jldsave(outfile;
     TOF,                              # [α, ω], size (25, 25)
-    μ_grid  = collect(μ_grid),        # []
+    μ0_grid  = collect(μ0_grid),        # []
     ωs      = collect(ωs),            # [rad/s]
     ω_frac  = collect(ωs) ./ Ω_e_eq,  # ω/Ωₑ,eq, the axis you plot against
     Ω_e_eq,
@@ -77,7 +77,7 @@ ax = Axis(
     * ", L=$(L)",
 )
 
-hm = heatmap!(ax, ωs ./ Ω_e_eq, rad2deg.(acos.(-μ_grid)), TOF'; colormap=:turbo, colorrange(2.0, 8.0))
+hm = heatmap!(ax, ωs ./ Ω_e_eq, rad2deg.(acos.(-μ0_grid)), TOF'; colormap=:turbo, colorrange(2.0, 8.0))
 Colorbar(fig[1,2], hm; label="TOF [s]")
 ##
 #xlims!(ax, 0.8, 1.0)

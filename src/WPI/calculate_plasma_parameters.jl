@@ -7,7 +7,7 @@ using StaticArrays
     losscone_angle(
     magnetic_field::AbstractMagneticField,
     L,
-    ϕ_eq;
+    ϕ0;
     degrees::Bool=false
     )
 
@@ -23,7 +23,7 @@ ionosphere.
 - `L`: L-shell for where to find the loss cone.
 - `magnetic_field`: Structure holding the magnetic field, doing the calculations without
   using the dipole approximation.
-- `ϕ_eq`: Longitude of the field-line [rad].
+- `ϕ0`: Longitude of the field-line [rad].
 
 # Keyword Arguments
 
@@ -72,11 +72,11 @@ end
 function losscone_angle(
     magnetic_field::AbstractMagneticField,
     L,
-    ϕ_eq;
+    ϕ0;
     degrees::Bool=false
 )
     # Find point of lowest magnetic field strength, i.e. 'equator'
-    _, trace = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ_eq); ds=RE*0.001, store_trace=true)
+    _, trace = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ0); ds=RE*0.001, store_trace=true)
 
     # Compute B along trace
     Bs = [norm(magnetic_field(Cartesian(x, y, z)))
@@ -197,7 +197,7 @@ end
     magnetic_field,
     r0,
     E_eV,
-    μ;
+    μ0;
     ϕ=0.0,
     towards_equator::Bool=true,
     relativistic::Bool=false
@@ -217,7 +217,7 @@ phase of the gyration.
   as the argument.
 - `r_0`: The initial position of the particle [m].
 - `E_eV`: Energy of the particle [eV].
-- `μ`: The cosine of the pitch-angle `α` of the particle, i.e. some value between -1 and 1.
+- `μ0`: The cosine of the pitch-angle `α` of the particle, i.e. some value between -1 and 1.
 
 # Keyword Arguments
 
@@ -231,13 +231,13 @@ function get_v0_from_Eμ(
     magnetic_field,
     r0,
     E_eV,
-    μ;
+    μ0;
     ϕ=0.0,
     towards_equator::Bool=true,
     relativistic::Bool=false
 )
 
-    -1 ≤ μ ≤ 1 || throw(ArgumentError("μ must be between -1 and 1"))
+    -1 ≤ μ0 ≤ 1 || throw(ArgumentError("μ0 must be between -1 and 1"))
 
     v_mag = velocity_from_kinetic_energy(E_eV, mₑ; relativistic=relativistic)
 
@@ -247,16 +247,16 @@ function get_v0_from_Eμ(
     b, e1, e2, _ = magnetic_basis(B)
 
     # Adjust direction based on which hemisphere `r0` is in, meaning that if we are in the
-    # northern hemisphere, towards equator means μ > 0
+    # northern hemisphere, towards equator means μ0 > 0
     if towards_equator
-        μ_corrected = r0[3] > 0 ? -abs(μ) : abs(μ)
+        μ0_corrected = r0[3] > 0 ? -abs(μ0) : abs(μ0)
     else
-        μ_corrected = r0[3] > 0 ? abs(μ) : -abs(μ)
+        μ0_corrected = r0[3] > 0 ? abs(μ0) : -abs(μ0)
     end
 
     # Determine parallel and perpendicular speeds
-    v_parallel = μ_corrected * v_mag
-    v_perp = sqrt(1 - μ_corrected^2) * v_mag
+    v_parallel = μ0_corrected * v_mag
+    v_perp = sqrt(1 - μ0_corrected^2) * v_mag
 
     # Initial velocity
     v0 = v_parallel .* b .+

@@ -10,14 +10,14 @@ using JLD2
 magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 
 ## Define the particles
-μ = -cos(deg2rad(2))       # Almost field-aligned
+μ0 = -cos(deg2rad(2))       # Almost field-aligned
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 E_grid = range(1e3, 40e3, length=60)
 # Minimal energy of precipitation was 6.949 keV for this run
 
-particle = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
+particle = [ParticleState(E, μ0, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=200)
@@ -61,7 +61,7 @@ jldsave(outfile;
     ωs      = collect(ωs),            # [rad/s]
     ω_frac  = collect(ωs) ./ Ω_e_eq,  # ω/Ωₑ,eq, the axis you plot against
     Ω_e_eq,
-    μ, L, ϕ_eq,
+    μ0, L, ϕ_eq,
     Bw      = amplitude.Bw,           # [T]
     Ψ0      = wave.Ψ0,
     t_chirp = modulation.t_duration,
@@ -76,7 +76,7 @@ ax  = Axis(fig[1, 1];
     xlabel = "ω/Ωₑ",
     ylabel = "E [keV]",
     title  = "Time-of-flight using " * (data["use_boris"] ? "boris mover" : "integration") * "\n" *
-             "α = $(round(rad2deg(acos(abs(data["μ"]))), digits=1))°" *
+             "α = $(round(rad2deg(acos(abs(data["μ0"]))), digits=1))°" *
              ", MLT $(round(longitude_to_MLT(data["ϕ_eq"]; degrees=false), digits=1))" *
              ", L = $(data["L"])",
 )

@@ -139,10 +139,10 @@ function PlasmaState(
 end
 
 # TODO: Try to remove all calls like this in the script, using only the one with a λ_grid and density model
-function PlasmaState(λ_grid, ϕ_eq, magnetic_field::AbstractMagneticField, L; kwargs...)
-    ne_model = DentonDensity(magnetic_field, L, ϕ_eq)
-    return PlasmaState(λ_grid, ϕ_eq, ne_model, magnetic_field, Float64(L); kwargs...)
-end
+#function PlasmaState(λ_grid, ϕ_eq, magnetic_field::AbstractMagneticField, L; kwargs...)
+#    ne_model = DentonDensity(magnetic_field, L, ϕ_eq)
+#    return PlasmaState(λ_grid, ϕ_eq, ne_model, magnetic_field, Float64(L); kwargs...)
+#end
 
 function PlasmaState(λ_grid, ne_model::DentonDensity; kwargs...)
     return PlasmaState(

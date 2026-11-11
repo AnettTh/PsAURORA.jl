@@ -4,7 +4,7 @@ using StaticArrays
 
 # Models for estimating the magnetic field.
 # Implements AbstractMagneticField with DipoleMagneticField and TsyganenkoMagneticField.
-
+# TODO: Remove ϕ-call all together, in favor for t?
 """
     AbstractMagneticField
 

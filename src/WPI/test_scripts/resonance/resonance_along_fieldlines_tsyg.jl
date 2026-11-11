@@ -14,7 +14,7 @@ colors = [:blue, :red, :green, :orange, :purple, :brown]
 θ = deg2rad(0.0)
 n = 1
 E_eV = 30e3
-μ = -cos(deg2rad(3.0))
+μ0 = -cos(deg2rad(3.0))
 
 ω_frac = 0.1
 
@@ -37,7 +37,7 @@ field_line_data = map(L_vals) do L
 
     # Starting position at 4 MLT
     r0 = Cartesian(RE*L * cos(ϕ), RE*L * sin(ϕ), 0.0)
-    particle = ParticleState(E_eV, μ, r0, magnetic_field, ϕ_eq; relativistic=true)
+    particle = ParticleState(E_eV, μ0, r0, magnetic_field, ϕ_eq; relativistic=true)
 
     ## Trace field line from starting point
     xs_f, ys_f, zs_f, _ = trace_with_density(magnetic_field, DentonDensity(magnetic_field, L, ϕ), r0.x, r0.y, r0.z; ds= RE*0.02)
@@ -94,7 +94,7 @@ parameters_text = """
     n_e = Denton-model
     n = $n
     E = $(E_eV/1e3) keV
-    α = $(round(rad2deg(acos(abs(μ))), digits=1))°
+    α = $(round(rad2deg(acos(abs(μ0))), digits=1))°
     ω = $(ω_frac) Ωₑ
     θ = 0°
     """

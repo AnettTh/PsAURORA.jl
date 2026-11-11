@@ -8,12 +8,12 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 magnetic_field = DipoleMagneticField()
 
 ## Define the particle
-μ = -cos(deg2rad(2))       # Almost field-aligned
+μ0 = -cos(deg2rad(2))       # Almost field-aligned
 L = 6.0
 r0 = Cartesian(L*RE, 0.0, ϕ_eq)
 
 E = 10e3
-particle = ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true)
+particle = ParticleState(E, μ0, r0, magnetic_field, ϕ_eq; relativistic=true)
 
 ## Define the plasma
 λ_grid = range(deg2rad(-50), deg2rad(50), length=500)
@@ -46,7 +46,7 @@ ax = Axis(
     fig[1,1],
     xlabel="ω / Ωₑ",
     ylabel="TOF [s]",
-    title="Dipole approximation with pitch-angle α=$(round(rad2deg(acos(abs(μ)))))°"
+    title="Dipole approximation with pitch-angle α=$(round(rad2deg(acos(abs(μ0)))))°"
 )
 
 lines!(ax, [NaN], [NaN]; color=:transparent, label="E = $(round(E/1e3, digits=1)) keV")

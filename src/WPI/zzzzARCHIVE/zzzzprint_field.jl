@@ -9,13 +9,13 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 ## Make particle
 L = 6.5
 ϕ = deg2rad(240.0)
-μ = -cos(deg2rad(2.0))
+μ0 = -cos(deg2rad(2.0))
 E = 30e3
 r0 = Cartesian(Dipolar(L, 0.0, ϕ))
 
 p = ParticleState(
     E,
-    μ,
+    μ0,
     r0,
     magnetic_field,
     ϕ_eq;

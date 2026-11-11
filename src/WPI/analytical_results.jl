@@ -127,7 +127,7 @@ lower-limit, and vice versa. The equation is taken from Khazanov et al. (2015).
 function minimal_resonance_energy(ω, plasma, particle)
 
     # NOTE: Should this be minimal(plasma.Ω_e)??
-    E_m = norm(particle.B0)^2 / (2 * μ₀ * plasma.n_e[1])
+    E_m = norm(particle.B0)^2 / (2 * mu0 * plasma.n_e[1])
     E_min = @. E_m * (plasma.Ω_e[1] / ω) * (1 - (ω)/(plasma.Ω_e[1]))^3
 
     return E_min

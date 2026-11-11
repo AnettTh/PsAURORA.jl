@@ -5,7 +5,7 @@ using AURORA
 """
     time_of_flight(
     E_eV,
-    μ,
+    μ0,
     z_distance;
     propagation=:simple,
     magnetic_field=nothing,
@@ -23,7 +23,7 @@ flight.
 # Arguments
 
 - `E_eV`: Particle energy (eV).
-- `μ`: Cosine of particle pitch-angle.
+- `μ0`: Cosine of particle pitch-angle.
 - `z_distance`: Distance traveled before hitting the ionosphere [m]. ONLY USED FOR THE SIMPLE PROPAGATION MODE!!
 
 # Keyword Arguments
@@ -47,7 +47,7 @@ flight.
 """
 function time_of_flight(
     E_eV,
-    μ,
+    μ0,
     z_distance;
     propagation=:simple,
     magnetic_field=nothing,
@@ -58,7 +58,7 @@ function time_of_flight(
     E_eV > 0 || throw(ArgumentError("E_eV must be nonzero and positive"))
 
     if propagation == :simple
-        return z_distance / (abs(μ) * v_of_E(E_eV))
+        return z_distance / (abs(μ0) * v_of_E(E_eV))
 
     elseif propagation == :fieldline
 
@@ -71,7 +71,7 @@ function time_of_flight(
         end
 
         # Construct initial velocity with available information
-        v0 = get_v0_from_Eμ(magnetic_field, r0, E_eV, μ; towards_equator=true)
+        v0 = get_v0_from_Eμ0(magnetic_field, r0, E_eV, μ0; towards_equator=true)
 
         result = boris_mover_TOF(magnetic_field, r0, v0, r_source)
 

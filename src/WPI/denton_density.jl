@@ -78,9 +78,7 @@ function denton_density_model(position::Cartesian, R_max, L_Denton_bin; SI::Bool
     return n_e0 * (R_max / R)^α
 end
 
+# TODO: Check if there is some other way to do this, besides using the Dipolar coordinates
 function denton_density_model(position::Dipolar, R_max, L_Denton_bin; SI::Bool=true)
-    # NOTE: Remove this when not needed anymore
-    #abs(position.λ) > 1e-6 &&
-    #    throw(ArgumentError("Issue using Dipolar coordinates for of-equatorial latitudes."))
     return denton_density_model(Cartesian(position), R_max, L_Denton_bin; SI=SI)
 end

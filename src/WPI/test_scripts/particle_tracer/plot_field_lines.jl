@@ -6,13 +6,13 @@ using LinearAlgebra
 ## Make particle
 L = 6.5
 ϕ_eq = deg2rad(240.0)
-μ = -cos(deg2rad(2.0))
+μ0 = -cos(deg2rad(2.0))
 E = 30e3
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 p_dipole = ParticleState(
     E,
-    μ,
+    μ0,
     r0,
     DipoleMagneticField(),
     ϕ_eq;
@@ -22,7 +22,7 @@ p_dipole = ParticleState(
 
 p_tsyg = ParticleState(
     E,
-    μ,
+    μ0,
     r0,
     TsyganenkoMagneticField(ϕ_eq),
     ϕ_eq;

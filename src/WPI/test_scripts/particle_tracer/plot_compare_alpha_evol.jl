@@ -17,7 +17,7 @@ tsyg = TsyganenkoMagneticField(ref; time=t, byimf=byimf, bzimf=bzimf, dst=dst)
 dipole = DipoleMagneticField()
 
 ## Define the particles
-μ = -cos(deg2rad(0.5))
+μ0 = -cos(deg2rad(0.5))
 L_tsyg = find_L_shell(tsyg, ref, t; r_trace_start=RE+10).L
 L_dipole = find_L_shell(dipole, ref, t; r_trace_start=RE+10).L
 
@@ -30,7 +30,7 @@ E_grid = 15e3:5e3:40e3 #[1e3; 5e3:5e3:40e3]
 particles_tsyg = [
     ParticleState(
         E,
-        μ,
+        μ0,
         r0_tsyg,
         tsyg,
         ϕ_eq;
@@ -42,7 +42,7 @@ particles_tsyg = [
 particles_dipole = [
     ParticleState(
         E,
-        μ,
+        μ0,
         r0_dipole,
         dipole,
         ϕ_eq;
@@ -142,7 +142,7 @@ plot_pitchangle!(ax_dipole, results_dipole, E_grid, colors)
 info = [
     "bzimf = $(bzimf) nT",
     "dst = $(dst) nT",
-    "α₀ = $(round(rad2deg(acos(-μ)), digits=1))°",
+    "α₀ = $(round(rad2deg(acos(-μ0)), digits=1))°",
     "L_tsyg = $(round(L_tsyg, digits=1))",
     "L_dipole = $(round(L_dipole, digits=1))",
 ]

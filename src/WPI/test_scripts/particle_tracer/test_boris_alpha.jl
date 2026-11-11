@@ -9,7 +9,7 @@ using ProgressMeter
 magnetic_field = DipoleMagneticField()
 
 # Define a particle
-μ = -cos(deg2rad(1))
+μ0 = -cos(deg2rad(1))
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
@@ -17,7 +17,7 @@ E_grid = 30e3:5e3:40e3
 particles = [
     ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         magnetic_field,
         ϕ_eq;

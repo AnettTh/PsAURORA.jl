@@ -9,14 +9,14 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 #magnetic_field = DipoleMagneticField()
 
 ## Define the particles
-μ = -cos(deg2rad(2))       # Almost field-aligned
+μ0 = -cos(deg2rad(2))       # Almost field-aligned
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
 E_grid = range(1e3, 40e3, length=10)
 
-p_relativistic = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
-p_classical = [ParticleState(E, μ, r0, magnetic_field, ϕ_eq; relativistic=false) for E in E_grid]
+p_relativistic = [ParticleState(E, μ0, r0, magnetic_field, ϕ_eq; relativistic=true) for E in E_grid]
+p_classical = [ParticleState(E, μ0, r0, magnetic_field, ϕ_eq; relativistic=false) for E in E_grid]
 
 ## Define the plasma
 λ_grid = range(-deg2rad(50), deg2rad(50), length=500)
@@ -53,7 +53,7 @@ end
 fig = Figure(size=(1400, 500))
 Label(fig[0, 1:2],
     "Energy as a function of `time-of-flight`,  " *
-    "α=$(round(rad2deg(acos(abs(μ))), digits=1))°, ϕ=$(round(rad2deg(ϕ), digits=1))°";
+    "α=$(round(rad2deg(acos(abs(μ0))), digits=1))°, ϕ=$(round(rad2deg(ϕ), digits=1))°";
     fontsize=16,
     font=:bold,
     tellwidth=false,

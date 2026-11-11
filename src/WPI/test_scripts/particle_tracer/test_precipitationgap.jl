@@ -9,7 +9,7 @@ magnetic_field = TsyganenkoMagneticField(ϕ_eq)
 #magnetic_field = DipoleMagneticField()
 
 # Define a particle
-μ = -cos(deg2rad(1))
+μ0 = -cos(deg2rad(1))
 L = 6.5
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
@@ -17,7 +17,7 @@ E_grid = 10e3:1e3:40e3
 particles = [
     ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         magnetic_field,
         ϕ_eq;
@@ -58,7 +58,7 @@ end
 
 
 ## Look at footpoints
-@load "src/WPI/data/boris_results_L6.5_alpha1.0.jld2" results E_grid λ_resonance L μ ϕ_eq
+@load "src/WPI/data/boris_results_L6.5_alpha1.0.jld2" results E_grid λ_resonance L μ0 ϕ_eq
 for (i, r) in enumerate(results)
     @show E_grid[i], r.footpoint
 end

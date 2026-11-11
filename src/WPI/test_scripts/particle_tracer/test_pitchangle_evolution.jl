@@ -19,7 +19,7 @@ magnetic_field = DipoleMagneticField()
 ϕ_eq = deg2rad(269.6)
 
 ## Define the particles
-μ = -cos(deg2rad(0.5))
+μ0 = -cos(deg2rad(0.5))
 L = find_L_shell(magnetic_field, ref, t; r_trace_start=RE+10).L
 r0 = Cartesian(Dipolar(L, 0.0, ϕ_eq))
 
@@ -27,7 +27,7 @@ E_grid = 15e3:5e3:40e3 #[1e3; 5e3:5e3:40e3]
 particles = [
     ParticleState(
         E,
-        μ,
+        μ0,
         r0,
         magnetic_field,
         ϕ_eq;
@@ -108,7 +108,7 @@ ylims!(ax_zoom, -0.5, 10.0)
 
 # Add info to Legend
 info = [
-    "α₀ = $(round(rad2deg(acos(-μ)), digits=1))°",
+    "α₀ = $(round(rad2deg(acos(-μ0)), digits=1))°",
     "L = $(round(L, digits=1))",
     "$(round(longitude_to_MLT(ϕ_eq; degrees=false), digits=1)) MLT",
 ]
