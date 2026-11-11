@@ -7,7 +7,6 @@ use_boris        = true
 field_dependent  = true
 relativistic     = true
 WPI              = true
-adjusted_model   = false
 ns               = [1, 2]
 duct_enhancement = 0.0
 station          = :sodankyla
@@ -54,7 +53,6 @@ density = DentonDensity(
     L,
     ϕ_eq;
     duct_enhancement=duct_enhancement,
-    adjusted_model=adjusted_model,
 )
 
 plasma = PlasmaState(λ_grid, density; lb_low=lb_low, lb_high=lb_high)
@@ -116,8 +114,6 @@ config_info = join([
     "By = $(byimf) nT",
     "Bz = $(bzimf) nT",
     "tilt = $(round(rad2deg(magnetic_field.ps), digits=1))°",
-    "",
-    "Adjusted density: $(adjusted_model)",
     "",
     "Pitch-angle: $(α_deg)°"
 ], "\n")

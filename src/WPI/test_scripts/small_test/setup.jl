@@ -4,7 +4,6 @@ use_boris        = true
 field_dependent  = true
 relativistic     = true
 WPI              = true
-adjusted_model   = false
 n                = 1
 duct_enhancement = 0.0
 station          = :sodankyla

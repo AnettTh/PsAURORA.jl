@@ -54,8 +54,8 @@ particles_dipole = [
 ## Define the plasmas
 λ_grid = range(deg2rad(-50.0), deg2rad(50.0), length=200)
 
-density_tsyg = DentonDensity(tsyg, L_tsyg, ϕ_eq; adjusted_model=false, hemisphere=:north)
-density_dipole = DentonDensity(dipole, L_dipole, ϕ_eq; adjusted_model=false)
+density_tsyg = DentonDensity(tsyg, L_tsyg, ϕ_eq; hemisphere=:north)
+density_dipole = DentonDensity(dipole, L_dipole, ϕ_eq)
 
 plasma_tsyg = PlasmaState(λ_grid, density_tsyg; lb_low=0.1, lb_high=0.5)
 plasma_dipole = PlasmaState(λ_grid, density_dipole; lb_low=0.1, lb_high=0.5)

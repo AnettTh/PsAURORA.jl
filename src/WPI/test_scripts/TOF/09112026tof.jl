@@ -13,7 +13,6 @@ duct_enhancement = 0.0
 WPI = true
 field_dependent = true
 n = 1
-adjusted_model = false
 station = :sodankyla
 
 ## Define magnetic field
@@ -64,7 +63,6 @@ density = DentonDensity(
     8.2,
     ϕ_eq;
     duct_enhancement=duct_enhancement,
-    adjusted_model=adjusted_model,
 )
 
 plasma = PlasmaState(λ_grid, density; lb_low=lb_low, lb_high=lb_high)

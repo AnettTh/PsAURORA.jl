@@ -20,7 +20,6 @@ use_boris        = true
 field_dependent  = true
 relativistic     = true
 WPI              = true
-adjusted_model   = false
 n                = 1
 duct_enhancement = 0.0
 station          = :sodankyla
@@ -82,7 +81,6 @@ density = DentonDensity(
     L,
     ϕ_eq;
     duct_enhancement=duct_enhancement,
-    adjusted_model=adjusted_model,
 )
 
 plasma = PlasmaState(λ_grid, density; lb_low=lb_low, lb_high=lb_high)
@@ -141,7 +139,6 @@ params = (
     WPI              = WPI,
     field_dependent  = field_dependent,
     n                = n,
-    adjusted_model   = adjusted_model,
     duct_enhancement = duct_enhancement,
     # station and field
     station          = station,

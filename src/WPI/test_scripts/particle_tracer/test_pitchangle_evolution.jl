@@ -38,7 +38,7 @@ particles = [
 
 ## Define a plasma
 λ_grid = range(deg2rad(-50.0), deg2rad(50.0), length=200)
-density = DentonDensity(magnetic_field, L, ϕ_eq; adjusted_model=true, hemisphere=:north)
+density = DentonDensity(magnetic_field, L, ϕ_eq; hemisphere=:north)
 
 plasma = PlasmaState(λ_grid, density; lb_low=0.1, lb_high=0.5)
 
