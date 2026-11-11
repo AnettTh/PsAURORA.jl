@@ -48,7 +48,6 @@ export solar_coefficients, subsolar_point, sun_unit_vector_GEO, axis_SM, dipole_
 export LLA_to_SM
 export longitude_to_MLT
 
-
 include("WPI/make_magnetic_field.jl")
 export AbstractMagneticField, DipoleMagneticField, TsyganenkoMagneticField
 
@@ -56,12 +55,15 @@ include("WPI/magnetic_field.jl")
 export dipole_field, tsyganenko_field
 
 include("WPI/field_line.jl")
-export magnetic_basis, find_R_max, find_footpoint, find_L_shell
+export magnetic_basis
+
+include("WPI/make_station_fieldline.jl")
+export AbstractFieldLine, StationFieldLine, trace_full_line
 
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy, get_v0_from_Eμ
 export gyro_frequency, larmor_radius, gyrocenter
-export losscone_angle, pitch_angle_at_λ
+export losscone_angle, pitch_angle_at_λ, OLD_losscone_angle
 export quarter_bounceperiod, average_driftvelocity, total_drift
 
 include("WPI/denton_density.jl")
