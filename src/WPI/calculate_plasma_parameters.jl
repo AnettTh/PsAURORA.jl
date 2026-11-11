@@ -2,6 +2,7 @@ using AURORA; dipole_field
 using LinearAlgebra: norm, dot, cross
 using StaticArrays
 
+# TODO: update doc-string
 """
     losscone_angle(L; degree::Bool=false)
     losscone_angle(
@@ -39,51 +40,19 @@ ionosphere.
 - `ArgumentError`: If the equatorial distance is defined wrong.
 - `ArgumentError`: If `B_ratio` is non-physical.
 """
-function losscone_angle(L; degrees::Bool=false)
-    r_mirror = RE + z_ionosphere
-    r_eq_mag = L * RE
-
-    iszero(r_eq_mag) && throw(ArgumentError("Equatorial distance `r_eq` must be nonzero"))
-
-    mirror_arg = r_mirror / r_eq_mag
-
-    λ_mirror = acos(sqrt(mirror_arg))
-
-    x_mirror = r_mirror * cos(λ_mirror)
-    y_mirror = 0.0
-    z_mirror = r_mirror * sin(λ_mirror)
-
-    B_eq = norm(dipole_field(r_eq_mag, 0.0, 0.0))
-    B_mirror = norm(dipole_field(x_mirror, y_mirror, z_mirror))
-
-    B_ratio = B_eq / B_mirror
-
-    if !(0.0 < B_ratio ≤ 1.0)
-        throw(ArgumentError("The chosen positions return non-valid magnetic field vectors"))
-    end
-
-    α_rad = asin(sqrt(B_ratio))
-
-    α = degrees ? rad2deg(α_rad) : α_rad
-
-    return α
-end
-
 function losscone_angle(
-    magnetic_field::AbstractMagneticField,
-    L,
-    ϕ0;
-    degrees::Bool=false
+    fieldline::AbstractFieldLine;
+    degrees::Bool=false,
+    hemisphere::Symbol=:both
 )
-    # Find point of lowest magnetic field strength, i.e. 'equator'
-    _, trace = find_R_max(magnetic_field, Dipolar(L, 0.0, ϕ0); ds=RE*0.001, store_trace=true)
+    # Equatorial fieldstrength already exist
+    B_eq = fieldline.B_eq
 
-    # Compute B along trace
-    Bs = [norm(magnetic_field(Cartesian(x, y, z)))
-          for (x, y, z) in zip(trace.xs, trace.ys, trace.zs)]
-
-    B_eq = minimum(Bs)
-    B_mirror = maximum(Bs)
+    # Find the fieldstrength at the mirrorpoint
+    B_mirror = hemisphere == :north ? fieldline.Bs[end] :
+               hemisphere == :south ? fieldline.Bs[1] :
+               hemisphere == :both  ? maximum(fieldline.Bs) :
+               throw(ArgumentError("hemisphere must be :north, :south or :both"))
 
     B_ratio = B_eq / B_mirror
 
@@ -91,6 +60,7 @@ function losscone_angle(
         throw(ArgumentError("Non-valid B_eq/B_mirror ratio: $B_ratio"))
     end
 
+    # Calculate the losscone angle (TODO: Add reference for formula)
     α_rad = asin(sqrt(B_ratio))
     return degrees ? rad2deg(α_rad) : α_rad
 end
