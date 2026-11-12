@@ -114,18 +114,21 @@ decide the hemisphere of the resonance latitude `λ_res` and direction of travel
 - Particle transit time for each frequency ω [s].
 """
 function particle_transit(
-    particle,
+    particle::ParticleState,
+    fieldline::AbstractFieldLine,
     λ_resonance;
     wave::Union{WaveState, Nothing}=nothing,
-    V_r=nothing,
     field_dependent::Bool=true,
     use_boris::Bool=false,
-    r_start::Union{Cartesian, Nothing}=nothing,
     get_footpoint::Bool=false,
 )
 
+    # Index on the line where the particle and wave meets
+    i_res = clamp(searchsortedfirst(fieldline.λs, λ_resonance), 1, length(fieldline.λs))
+
     # If Boris-mover is to be used, shortcuts the function
     if use_boris
+        r_start = Cartesian(fieldline.xs[i_res], fieldline.ys[i_res], fieldline.zs[i_res])
         # Find the initial position for the boris-mover, i.e. where the particle resonates
         result = boris_mover(
             particle;
@@ -133,11 +136,11 @@ function particle_transit(
             λ_start=λ_resonance,
             store_trajectory=false,
             stop_when_bouncing=true,
-            r_start=r_start,
+            r_start=r_start,    # TODO: Check if this is necessary in the borismover at this point
         )
 
         # If the particle precipitates, return the TOF
-        # TODO: Figure out how to solve this!
+        # TODO: Figure out how to solve this! One for bounce, one for "did not reach"?
         if !get_footpoint
             return isnothing(result.footpoint) ? nothing : result.time
         else
@@ -146,47 +149,32 @@ function particle_transit(
             (time=result.time, footpoint=result.footpoint)
         end
     end
+    # Check if the particle moves in the correct direction
+    toward_end = fieldline.B_along_index == (particle.μ0 < 0)
+    i_end = toward_end ? length(fieldline.λs) : 1
+    position_fp = toward_end ? fieldline.position_fp_north : fieldline.position_fp_south
 
-    # Decides which hemisphere the particle travels towards
-    # TODO: Check if this can be done using other values in ParticleState
-    λ_iono = if isnothing(V_r)
-        sign(λ_resonance) * particle.λ_ionosphere   # If non given, use λ at resonance
+    # Segment the particle travels, i.e. from the resonance to the ionosphere
+    i_particle = i_res ≤ i_end ? (i_res:i_end) : (i_res:-1:i_end)
+    s_particle = fieldline.s[i_particle]
+
+    # Find the parallel speed at  each stored point
+    if field_dependent
+        # TODO: Check what this returns for a mirrored particle and match it up with the behavior
+        α = [pitch_angle_at_λ(particle.α_eq, particle.B_eq, B) for B in fieldline.Bs[i_particle]]
+        # Check if the particle have mirrored, then return nothing
+        any(isnothing, α) && return get_footpoint ? (time=nothing, footpoint=nothing) : nothing
+        v_par = [particle.v0_mag * cos(a) for a in α]
     else
-        -sign(V_r) * particle.λ_ionosphere          # If given, base on velocity direction
+        v_par = fill(abs(particle.v0_mag * cos(particle.α_lc)), length(i_particle))
     end
 
-    # Function along a dipole fieldline to be integrated over
-    function particle_traveltime_integrand(λ)
-        if field_dependent
-            # Velocity as a function of latitude
-            # TODO: Change to particle.position_eq
-            B_λ = particle.magnetic_field(Dipolar(particle.L, λ, particle.ϕ_eq))
-            α_λ = pitch_angle_at_λ(particle.α_eq, particle.B_eq, norm(B_λ))
-
-            # Find velocity, but removing mirrored particles
-            isnothing(α_λ) && return 0.0
-            vz = particle.v * cos(α_λ)
-            iszero(vz) && return 0.0
-        else
-            # Velocity, but constant
-            vz = abs(particle.v * cos(particle.α_lc))
-        end
-
-        # Position in the equatorial plane
-        R0 = particle.L * RE
-
-        # Arc length element along a dipole field line
-        ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
-        result = ds_dλ / vz
-
-        # Removing NaN-values to not break the integration
-        isnan(result) && return 0.0
-        return result
-    end
-
-    # Integrate from the resonance region to the ionosphere and return
-    t_e, _ = quadgk(particle_traveltime_integrand, λ_resonance, λ_iono)
-    return abs.(t_e)
+    # Using the trapezoid method to integrate
+    inverse_v = 1 ./ v_par
+    t_e = sum(0.5 .* (inverse_v[1:end-1] .+ inverse_v[2:end]) .* abs.(diff(s_particle)))
+    return get_footpoint ?
+        (time=t_e, footpoint=(position_fp.x, position_fp.y, position_fp.z)) :
+        t_e
 end
 
 
@@ -439,6 +427,7 @@ function WPI_TOF(
             continue
         end
 
+        # TODO: Change input, will not run as is
         # Calculate the components for the given ω and sum them
         t_w = wave_transit(
             ω,
