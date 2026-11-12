@@ -30,7 +30,7 @@ struct DentonDensity{F<:AbstractMagneticField} <: AbstractDensityModel
     R_max::Float64              # Maximum radial distance along field line [m].
     ϕ_eq::Float64               # Equatorial longitude [rad].
     duct_enhancement::Float64   # Fraction of density enhancement, 0.0 = not ducted.
-    L::Float64                  # Original equatorial L, used for initial position. #TODO: Should be R_eq
+    R_eq::Float64               # Position at equator [RE].
     L_Denton_bin::Float64       # L for the bin used when constructing the density model.
     magnetic_field::F           # Magnetic field model.
 end
