@@ -61,9 +61,9 @@ include("WPI/make_station_fieldline.jl")
 export AbstractFieldLine, StationFieldLine, trace_full_line
 
 include("WPI/calculate_plasma_parameters.jl")
-export velocity_from_kinetic_energy, get_v0_from_Eμ
+export velocity_from_kinetic_energy
 export gyro_frequency, larmor_radius, gyrocenter
-export losscone_angle, pitch_angle_at_λ, OLD_losscone_angle
+export losscone_angle, pitch_angle_at_λ
 export quarter_bounceperiod, average_driftvelocity, total_drift
 
 include("WPI/denton_density.jl")
@@ -76,7 +76,7 @@ include("WPI/analytical_results.jl")
 export minimal_resonance_energy
 
 include("WPI/make_plasma.jl")
-export Ωe_at_λ, ωpe_at_λ, PlasmaState
+export Ωe_at_λ, ωpe_at_λ, PlasmaState, plasma_indices
 
 include("WPI/make_particle.jl")
 export ParticleState
