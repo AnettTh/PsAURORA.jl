@@ -57,9 +57,6 @@ struct ParticleState{F}
     γ :: Float64
 end
 
-# TODO: Test this for non-equatorial r0, check that values makes sense physically
-# TODO: See if r0 actually is particle r0, or if it just represents the equatorial distance of the field-line in question
-# TODO: Look into if the particle is defined correctly also for a tsyganenko field
 """
     ParticleState(E_eV, μ0, r0, magnetic_field, ϕ0; relativistic::Bool=false)
 
@@ -91,7 +88,7 @@ function ParticleState(
     μ0,
     fieldline::AbstractFieldLine;
     r0::Cartesian=fieldline.position_eq,
-    relativistic::Bool=false,               # TODO: Make default true!
+    relativistic::Bool=true,
     φ0=deg2rad(0.0),
 )
     magnetic_field = fieldline.magnetic_field
@@ -164,16 +161,6 @@ function ParticleState(
     )
 end
 
-#function ParticleState(
-#    E_eV,
-#    μ0,
-#    r0::Dipolar,
-#    magnetic_field::AbstractMagneticField,
-#    ϕ0;
-#    kwargs...
-#)
-#    return ParticleState(E_eV, μ0, Cartesian(r0), magnetic_field, ϕ0; kwargs...)
-#end
 
 function Base.show(io::IO, p::ParticleState)
     println(io, "ParticleState:")
