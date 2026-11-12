@@ -11,7 +11,7 @@ Abstract type for electron density models along magnetic field lines.
 """
 abstract type AbstractDensityModel end
 
-
+# TODO: Make this into the ∝ B²(?)-model, for comparison?
 """
     ConstantDensity(n_e)
 
@@ -108,5 +108,16 @@ function electron_density(model::DentonDensity, L, λ)
     return n_e * (1.0 + model.duct_enhancement)
 end
 
+function electron_density(model::DentonDensity, position::Cartesian)
+    n_e = denton_density_model(position, model.R_max, model.L_Denton_bin)
+    return n_e * (1.0 + model.duct_enhancement)
+end
+
+function electron_density(model::ConstantDensity, position::Cartesian)
+    return model.n_e
+end
+
 # Make both callable as functions
 (model::AbstractDensityModel)(L, λ) = electron_density(model, L, λ)
+
+(model::AbstractDensityModel)(position::Cartesian) = electron_density(model, position)
