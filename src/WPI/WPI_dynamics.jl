@@ -76,7 +76,7 @@ end
     wave::Union{WaveState, Nothing}=nothing
     V_r=nothing,
     field_dependent::Bool=true,
-    use_boris::Bool=false,
+    use_boris::Bool=true,
     )
 
 Calculates the transit time of the particle from the resonance latitude to the ionosphere.
@@ -112,8 +112,8 @@ function particle_transit(
     λ_resonance;
     wave::Union{WaveState, Nothing}=nothing,
     field_dependent::Bool=true,
-    use_boris::Bool=false,
-    get_footpoint::Bool=false,
+    use_boris::Bool=true,
+    get_footpoint::Bool=true,
 )
 
     # Index on the line where the particle and wave meets
@@ -177,7 +177,6 @@ end
     plasma::PlasmaState;
     θ::Float64=0.0,
     n::Int=1,
-    fast::Bool=false,
     wave_direction=-1
 )
 
@@ -222,7 +221,8 @@ function point_of_resonance(
     ω::Float64,
     particle::ParticleState,
     fieldline::AbstractFieldLine,
-    plasma::PlasmaState;
+    plasma::PlasmaState,
+    wave::WaveState;
     θ::Float64=0.0,
     n::Int=1,
     wave_direction::Int=-1,
@@ -231,13 +231,16 @@ function point_of_resonance(
     abs(wave_direction) == 1 || throw(
         ArgumentError("Wave direction needs to be `-1` for southward or `1` for northward.")
     )
-    length(plasma.λ) == length(fieldline.λs) || throw(
+    length(plasma.λ_grid) == length(fieldline.λs) || throw(
         ArgumentError("The plasma was not built from this fieldline")
     )
 
     # Decide on the direction of the wave and the particle
-    wave_along_b = wave_direction * (fieldline.B_along_index ? 1 : -1)
+    wave_along_b = wave.wave_along_b
     v_par_sign   = -sign(particle.μ0)
+    wave_along_b * v_par_sign == -1 || throw(ArgumentError(
+        "Wave and particle propagate in the same direction along b̂, so no cyclotron resonance is possible"
+    ))
 
     # Calculate the resonance condition at point `i`, where zero gives resonance
     function resonance_condition(i)
@@ -290,7 +293,8 @@ function point_of_resonance(
     ω_grid::AbstractVector,
     particle::ParticleState,
     fieldline::AbstractFieldLine,
-    plasma::PlasmaState;
+    plasma::PlasmaState,
+    wave::WaveState;
     kwargs...
 )
     return [point_of_resonance(ω, particle, fieldline, plasma; kwargs...) for ω in ω_grid]
@@ -303,11 +307,10 @@ end
     particle::ParticleState,
     plasma::PlasmaState;
     wave::Union{WaveState, Nothing}=nothing,
-    use_boris::Bool=false,
+    use_boris::Bool=true,
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1,
-    fast::Bool=false
 )
 
     WPI_TOF(ω::Real, particle::ParticleState, plasma::PlasmaState; kwargs...)
@@ -353,11 +356,11 @@ function WPI_TOF(
     fieldline::AbstractFieldLine,
     plasma::PlasmaState;
     wave::Union{WaveState, Nothing}=nothing,
-    use_boris::Bool=false,
+    use_boris::Bool=true,
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1,
-    get_footpoint::Bool=false,
+    get_footpoint::Bool=true,
 )
 
     # Calculate wave-launch time based on given model
@@ -368,7 +371,7 @@ function WPI_TOF(
 
     # Loop over all frequencies as they have different resonance regions
     for (i, ω) in enumerate(ω_grid)
-        resonance = point_of_resonance(ω, particle, fieldline, plasma; θ=θ, n=n)
+        resonance = point_of_resonance(ω, particle, fieldline, plasma, wave; θ=θ, n=n)
 
         # For conbinations that don't resonate
         if isnothing(resonance) #|| isnan(λ_res)
