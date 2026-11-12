@@ -57,9 +57,8 @@ bounce is detected.
 function boris_mover(
     particle::ParticleState;
     wave::Union{WaveState, Nothing}=nothing,
-    λ_start::Union{Float64, Nothing}=nothing,
-    r_start::Union{Cartesian, Nothing}=nothing,
-    φ0::Float64=0.0,
+    r_resonance::Union{Cartesian, Nothing}=nothing, # TODO: Change this to r_resonance?
+    φ0::Float64=particle.φ0,
     n_T::Int=100_000,
     resolution::Int=10,
     store_trajectory::Bool=false,
@@ -95,32 +94,25 @@ function boris_mover(
         α_array = zeros(steps + 1)
     end
 
-    # Find position and velocity
-    if isnothing(λ_start)
-        #@info "\nUsing equatorial position as initial position"
-        # Use default positions, usually in the equatorial plane
+    # Find position, velocity and field direction at the start-point
+    if isnothing(r_resonance)
+        # If defined by the particle
         x, y, z = particle.r0
         vx, vy, vz = particle.v0
+        b̂ = particle.b̂
+        α_start = acos(abs(particle.μ0))
     else
-        #@info "\nUsing latitude λ=$(round(rad2deg(λ_start), digits=1))° as initial position"
-        # Get position of resonance
-        # TODO: Using ϕ_eq here is just temporary, figure out the accurate position?
-        #r_start = Cartesian(Dipolar(particle.L, λ_start, particle.ϕ_eq))
-        #x, y, z = r_start.x, r_start.y, r_start.z
-
-        # Find v0 at resonance latitude: Evaluate the exact magnetic field once
-        #B_start = particle.magnetic_field(Dipolar(particle.L, λ_start, particle.ϕ_eq))
-
-        # TODO: This should be particle.position_resonance, or equivalent!!
-        pos = isnothing(r_start) ? Cartesian(Dipolar(particle.L, λ_start, particle.ϕ0)) : r_start
-        x, y, z = pos.x, pos.y, pos.z
-        B_start = particle.magnetic_field(pos)
+        # If given as a position of resonance
+        x, y, z = r_resonance.x, r_resonance.y, r_resonance.z
+        B_start = particle.magnetic_field(r_resonance)
         b̂, e1, e2, B_start_mag = magnetic_basis(B_start)
 
         # Use initial pitch angle to decompose velocity
-        α_start = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_start_mag)
-        v_par = -particle.v * cos(α_start) * sign(particle.μ0)
-        v_perp = particle.v * sin(α_start)
+        α = pitch_angle(particle.α_eq, particle.B_eq, B_start_mag)
+        isnothing(α) && throw(ArgumentError("The particle mirrors before reaching r_start"))
+        α_start = α
+        v_par = -particle.v0_mag * cos(α_start) * sign(particle.μ0)
+        v_perp = particle.v0_mag * sin(α_start)
 
         vx, vy, vz = v_par .* b̂ .+ v_perp * cos(φ0) .* e1 .+ v_perp * sin(φ0) .* e2
     end
@@ -139,11 +131,11 @@ function boris_mover(
         r_array[1, :] .= (x, y, z)
         v_array[1, :] .= (vx, vy, vz)
         t_array[1] = t_current
-        α_array[1] = acos(abs(particle.μ0))
+        α_array[1] = α_start
     end
 
     # Keep track of phase if wave is to be considered
-    Ψ = isnothing(wave) ? 0.0 : wave.Ψ0     # TODO: change name to Ψ_current, for consistency?
+    Ψ_current = isnothing(wave) ? 0.0 : wave.Ψ0
 
     #===
 
@@ -171,7 +163,7 @@ function boris_mover(
                 wave,
                 t_current,
                 s_current,
-                Ψ,
+                Ψ_current,
                 SVector(Bx, By, Bz),
                 λ_current
             )
@@ -294,7 +286,7 @@ function boris_mover(
             v_parallel = vx*b̂x + vy*b̂y + vz*b̂z
 
             # Update the wave-phase (based on Saito et al. 2012)
-            Ψ += k_parallel * v_parallel * dt - ω_t * dt
+            Ψ_current += k_parallel * v_parallel * dt - ω_t * dt
         end
 
         # Update stored values with current values
