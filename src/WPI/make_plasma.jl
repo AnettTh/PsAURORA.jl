@@ -2,7 +2,6 @@ using AURORA
 using AURORA; mₑ, qₑ, ε₀
 using LinearAlgebra
 
-# IDEA: Figure out how to define λ_grid from the plasma state itself? Maybe use statiion fieldlone to locate where the fieldline hits the ionosphere?
 """
     PlasmaState
 
@@ -15,66 +14,18 @@ Cold plasma parameters along a magnetic field line, as a function of magnetic la
 - `Ω_e`: Electron gyrofrequency grid [rad/s].
 - `ω_pe`: Electron plasma frequency grid [rad/s].
 - `ω_lb`: Lower-band chorus wave frequency range [rad/s].
-- `ϕ`: Longitude [rad].
 - `ne_model`: Model used to make density distribution.
 """
 struct PlasmaState{M}
-    λ        :: Vector{Float64}
+    λ        :: Vector{Float64} # TODO: Change name or remove from here and use the one in fieldline
     n_e      :: Vector{Float64}
     Ω_e      :: Vector{Float64}
     ω_pe     :: Vector{Float64}
     ω_lb     :: Vector{Float64}
-    ϕ        :: Float64
     ne_model :: M
 end
 
-# TODO: See if these functions really are needed anymore
-"""
-    Ωe_at_λ(λ, L, ϕ, magnetic_field::AbstractMagneticField)
-
-Calculate the electron gyrofreequency `Ω_e` as a function of magnetic latitude `λ`.
-
-# Arguments
-
-- `λ`: Magnetic latitude [rad].
-- `L`: L-shell position [RE].
-- `ϕ`: Longitude [rad].
-- `magnetic_field`: Function that describes the magnetic field based on position.
-
-# Returns
-
-- The gyrofrequency as a fuction of magnetic latitude [rad/s].
-"""
-function Ωe_at_λ(λ, L, ϕ, magnetic_field::AbstractMagneticField)
-    B = magnetic_field(Dipolar(L, λ, ϕ))
-    return abs(qₑ) * norm(B) / mₑ
-end
-
-
-"""
-    ωpe_at_λ(ne_model::Function, L, λ)
-
-Calculate the plasma frequency of electrons for some latitude `λ` and L-shell `L`, given
-some density model.
-
-# Arguments
-
-- `ne_model`: Function describing the density model in use, dependent on `L` and `λ`.
-- `L`: Position L-shell.
-- `λ`: Position latitude [rad].
-
-# Returns
-
-- Electron plasma frequency [rad/s].
-"""
-function ωpe_at_λ(ne_model::AbstractDensityModel, L, λ)
-
-    ne = ne_model(L, λ)
-
-    return @. sqrt(ne * qₑ^2 / (mₑ * ε₀))
-end
-
-
+# TODO: Update docstring, major revisions!
 """
     PlasmaState(
     λ_grid::AbstractVector,
@@ -113,47 +64,33 @@ of Ω_e.
 - A `PlasmaState` with all quantities evaluated on `λ_grid`.
 """
 function PlasmaState(
-    λ_grid::AbstractVector,
-    ϕ::Float64,
-    ne_model::AbstractDensityModel,
-    magnetic_field::AbstractMagneticField,
-    L;
+    fieldline::AbstractFieldLine,
+    ne_model::DentonDensity;
     lb_low=0.1,
-    lb_high=0.5
+    lb_high=0.5,
+    n_ω=5,
 )
+    issorted(fieldline.λs) || throw(ArgumentError(
+        "Latitude is not monotonic along the line, so it cannot be used as a lookup grid"
+    ))
 
-    n_λ = length(λ_grid)
+    # Calculate gyrofrequency along the fieldline
+    Ω_e = @. abs(qₑ) * fieldline.Bs / mₑ
 
-    # Electron plasma frequency
-    n_e = ne_model.(L, λ_grid)
+    # Calculate the density and plasma frequency along the fieldline
+    n_e = [
+        ne_model(Cartesian(x, y, z))
+        for (x, y, z) in zip(fieldline.xs, fieldline.ys, fieldline.zs)
+    ]
     ω_pe = @. sqrt(n_e * qₑ^2 / (mₑ * ε₀))
 
-    # Electron cyclotron frequency
-    Ω_e = Ωe_at_λ.(λ_grid, L, ϕ, Ref(magnetic_field))
+    # Find the gyrofrequency at the equator, used to define the whistler frequency range
+    Ω_eq = abs(qₑ) * fieldline.B_eq / mₑ
+    ω_lb = collect(range(Ω_eq*lb_low, Ω_eq*lb_high, length=n_ω))
 
-    # Whistler-mode chorus wave frequencies
-    Ω_eq = minimum(Ω_e)
-    ω_lb = range(Ω_eq*lb_low, Ω_eq*lb_high, length=n_λ)
-
-    return PlasmaState(collect(λ_grid), n_e, Ω_e, ω_pe, collect(ω_lb), ϕ, ne_model)
+    return PlasmaState(fieldline.λs, n_e, Ω_e, ω_pe, ω_lb, ne_model)
 end
 
-# TODO: Try to remove all calls like this in the script, using only the one with a λ_grid and density model
-#function PlasmaState(λ_grid, ϕ_eq, magnetic_field::AbstractMagneticField, L; kwargs...)
-#    ne_model = DentonDensity(magnetic_field, L, ϕ_eq)
-#    return PlasmaState(λ_grid, ϕ_eq, ne_model, magnetic_field, Float64(L); kwargs...)
-#end
-
-function PlasmaState(λ_grid, ne_model::DentonDensity; kwargs...)
-    return PlasmaState(
-        λ_grid,
-        ne_model.ϕ_eq,
-        ne_model,
-        ne_model.magnetic_field,
-        Float64(ne_model.L);
-        kwargs...
-    )
-end
 
 function Base.show(io::IO, plasma::PlasmaState)
     # Plasma frequency corresponding to λ of the lowest Ω_e (not stored in the struct)
@@ -164,8 +101,6 @@ function Base.show(io::IO, plasma::PlasmaState)
     println(io, "PlasmaState:")
     println(io, "  λ range   = $(round(rad2deg(plasma.λ[1]), digits=1))° to " *
                 "$(round(rad2deg(plasma.λ[end]), digits=1))° ($(length(plasma.λ)) points)")
-    println(io, "  ϕ         = $(round(rad2deg(plasma.ϕ), digits=1))° " *
-                "($(round(longitude_to_MLT(plasma.ϕ, degrees=false), digits=1)) MLT)")
     println(io, "  n_e range = $(round(minimum(plasma.n_e)/1e6, digits=2)) - " *
                 "$(round(maximum(plasma.n_e)/1e6, digits=2)) cm⁻³")
     println(io, "  Ω_e(eq)   = $(round(Ω_e_eq, digits=1)) rad/s")
