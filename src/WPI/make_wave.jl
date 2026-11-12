@@ -102,11 +102,27 @@ struct WaveState{M<:AbstractWaveModulation, A<:AbstractAmplitude}
     plasma         :: PlasmaState
     Ψ0             :: Float64
     wave_direction :: Int
+    wave_along_b   :: Int
 end
 
 
-function WaveState(modulation, amplitude, plasma; Ψ0=2π*rand(), wave_direction=-1)
-    return WaveState(modulation, amplitude, plasma, Ψ0, wave_direction)
+function WaveState(
+    modulation,
+    amplitude,
+    plasma,
+    fieldline::AbstractFieldLine;
+    Ψ0=2π*rand(),
+    wave_direction=-1
+)
+    abs(wave_direction) == 1 || throw(ArgumentError("wave_direction must be 1 or -1"))
+
+    length(plasma.λ_grid) == length(fieldline.λs) || throw(
+        ArgumentError("The plasma was not built from this fieldline")
+    )
+
+    wave_along_b = wave_direction * (fieldline.B_along_index ? 1 : -1)
+
+    return WaveState(modulation, amplitude, plasma, Ψ0, wave_direction, wave_along_b)
 end
 
 """
@@ -243,23 +259,23 @@ function wave_fields(
     b̂, e1, e2, B_mag = magnetic_basis(B0)
 
     # Find the latitude (and thus plasma parameters) in the λ_grid of the plasma closest to the one we're looking for
-    i = searchsortedfirst(wave.plasma.λ, λ)
+    i = searchsortedfirst(wave.plasma.λ_grid, λ)
     i = clamp(i, 1, length(wave.plasma.Ω_e))
     Ω_e = wave.plasma.Ω_e[i]
     ω_pe = wave.plasma.ω_pe[i]
 
-    # Use the dispersion relation to find the wave number of this position
+    # Use the dispersion relation to find the SIGNED wave number of this position
     θ = 0.0     # Wave-normal angle, approximation is only valid for non-oblique waves.
-    k = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
+    k_parallel = wave.wave_along_b * dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
 
     # Find the field perturbations from equations 10 and 11 in Saito 2012
     # TODO: Check polarization and directions compared to the paper!
     δB = Bw * (cos(Ψ) .* e1 .- sin(Ψ) .* e2)
 
-    Ew = (ω/k) * Bw   # From the cold plasma approximation
+    Ew = (ω/k_parallel) * Bw   # From the cold plasma approximation
     δE = Ew * (-sin(Ψ) .* e1 .- cos(Ψ) .* e2)
 
-    return δB, δE
+    return (δB=δB, δE=δE, k_parallel=k_parallel, ω=ω)
 end
 
 
