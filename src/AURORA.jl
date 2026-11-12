@@ -52,10 +52,7 @@ include("WPI/make_magnetic_field.jl")
 export AbstractMagneticField, DipoleMagneticField, TsyganenkoMagneticField
 
 include("WPI/magnetic_field.jl")
-export dipole_field, tsyganenko_field
-
-include("WPI/field_line.jl")
-export magnetic_basis
+export dipole_field, tsyganenko_field_gsm, magnetic_basis
 
 include("WPI/make_station_fieldline.jl")
 export AbstractFieldLine, StationFieldLine, trace_full_line
