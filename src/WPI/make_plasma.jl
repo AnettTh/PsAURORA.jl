@@ -9,7 +9,7 @@ Cold plasma parameters along a magnetic field line, as a function of magnetic la
 
 # Fields
 
-- `λ`: Magnetic latitude grid [rad].
+- `λ_grid`: Magnetic latitude grid [rad].
 - `n_e`: Cold electron number density grid [m⁻³].
 - `Ω_e`: Electron gyrofrequency grid [rad/s].
 - `ω_pe`: Electron plasma frequency grid [rad/s].
@@ -17,7 +17,7 @@ Cold plasma parameters along a magnetic field line, as a function of magnetic la
 - `ne_model`: Model used to make density distribution.
 """
 struct PlasmaState{M}
-    λ        :: Vector{Float64} # TODO: Change name or remove from here and use the one in fieldline
+    λ_grid   :: Vector{Float64} # TODO: Remove from here and use the one in fieldline?
     n_e      :: Vector{Float64}
     Ω_e      :: Vector{Float64}
     ω_pe     :: Vector{Float64}
@@ -99,8 +99,8 @@ function Base.show(io::IO, plasma::PlasmaState)
     ω_pe_eq = plasma.ω_pe[idx_eq]
 
     println(io, "PlasmaState:")
-    println(io, "  λ range   = $(round(rad2deg(plasma.λ[1]), digits=1))° to " *
-                "$(round(rad2deg(plasma.λ[end]), digits=1))° ($(length(plasma.λ)) points)")
+    println(io, "  λ range   = $(round(rad2deg(plasma.λ_grid[1]), digits=1))° to " *
+                "$(round(rad2deg(plasma.λ_grid[end]), digits=1))° ($(length(plasma.λ_grid)) points)")
     println(io, "  n_e range = $(round(minimum(plasma.n_e)/1e6, digits=2)) - " *
                 "$(round(maximum(plasma.n_e)/1e6, digits=2)) cm⁻³")
     println(io, "  Ω_e(eq)   = $(round(Ω_e_eq, digits=1)) rad/s")
