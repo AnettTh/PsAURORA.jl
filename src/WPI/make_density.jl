@@ -102,12 +102,6 @@ function electron_density(model::ConstantDensity, L, λ)
     return model.n_e
 end
 
-function electron_density(model::DentonDensity, L, λ)
-    # TODO: Check that model.L makes sense here
-    n_e = denton_density_model(Dipolar(model.L, λ, model.ϕ_eq), model.R_max, model.L_Denton_bin)
-    return n_e * (1.0 + model.duct_enhancement)
-end
-
 function electron_density(model::DentonDensity, position::Cartesian)
     n_e = denton_density_model(position, model.R_max, model.L_Denton_bin)
     return n_e * (1.0 + model.duct_enhancement)
@@ -119,5 +113,10 @@ end
 
 # Make both callable as functions
 (model::AbstractDensityModel)(L, λ) = electron_density(model, L, λ)
-
 (model::AbstractDensityModel)(position::Cartesian) = electron_density(model, position)
+
+function Base.show(io::IO, d::DentonDensity)
+    println(io, "DentonDensity:")
+    println(io, "  L-bin:            $(d.L_Denton_bin)")
+    println(io, "  Duct enhancement: $(d.duct_enhancement)")
+end
