@@ -137,8 +137,8 @@ with or without relativistic corrections.
 function velocity_from_kinetic_energy(
     E_eV,
     m;
-    relativistic::Bool=false,
-    return_gamma::Bool=false
+    relativistic::Bool=true,
+    return_gamma::Bool=false,
     )
 
     m > 0 || throw(ArgumentError("Mass must be positive"))
