@@ -177,13 +177,13 @@ end
 
 function Base.show(io::IO, p::ParticleState)
     println(io, "ParticleState:")
-    println(io, "  E        = $(round(p.E0_eV/1e3, digits=2)) keV")
-    println(io, "  α₀       = $(round(rad2deg(p.α0), digits=2))°")
-    println(io, "  α_eq     = $(round(rad2deg(p.α_eq), digits=5))°")
-    println(io, "  α_lc     = $(round(rad2deg(p.α_eq_lc), digits=5))°")
-    println(io, "  R_eq     = $(round(p.r_eq/RE, digits=2)) RE")
-    println(io, "  ϕ0     = $(round(rad2deg(p.ϕ0), digits=1))° " *
+    println(io, "  E       = $(round(p.E0_eV/1e3, digits=2)) keV")
+    println(io, "  α₀      = $(round(rad2deg(p.α0), digits=2))°")
+    println(io, "  α_eq    = $(round(rad2deg(p.α_eq), digits=5))°")
+    println(io, "  α_lc    = $(round(rad2deg(p.α_eq_lc), digits=5))°")
+    println(io, "  R_eq    = $(round(p.r_eq/RE, digits=2)) RE")
+    println(io, "  ϕ0      = $(round(rad2deg(p.ϕ0), digits=1))° " *
                 "($(round(longitude_to_MLT(p.ϕ0, degrees=false), digits=1)) MLT)")
-    println(io, "  γ        = $(round(p.γ, digits=4))")
-    println(io, "  B_field  = $(typeof(p.magnetic_field))")
+    println(io, "  γ       = $(round(p.γ, digits=4))")
+    println(io, "  B_field = $(typeof(p.magnetic_field))")
 end
