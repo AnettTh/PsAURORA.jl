@@ -244,8 +244,8 @@ magnetic local time.
 
 - `degrees`: Indicates the units of the input longitude, default is degrees.
 """
-function longitude_to_MLT(ϕ; degrees::Bool=true)
-    if degrees
+function longitude_to_MLT(ϕ; degrees::Bool=false)
+    if !degrees
         return  mod(12.0 + (ϕ / 15.0), 24.0)
     else
         return mod(12.0 + (rad2deg(ϕ) / 15.0), 24.0)
