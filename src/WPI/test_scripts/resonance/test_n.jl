@@ -63,7 +63,7 @@ plasma = PlasmaState(λ_grid, density; lb_low=lb_low, lb_high=lb_high)
 ## Do computation
 results = Dict{Tuple{Int, Int}, Any}()
 for n in ns, iE in eachindex(Es)
-    results[(n, iE)] = resonance_latitude(ω_grid, particles[iE], plasma; n=n)
+    results[(n, iE)] = point_of_resonance(ω_grid, particles[iE], plasma; n=n)
 end
 
 ## Make figure

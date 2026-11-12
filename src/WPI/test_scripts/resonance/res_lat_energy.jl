@@ -42,7 +42,7 @@ for (L, color) in zip(L_vals, colors)
     @info "Computing resonance..."
     λ_res_grid = @showprogress map(E_grid) do E
         p = ParticleState(E, μ0, r0, magnetic_field, ϕ_eq; relativistic=true)
-        λ_res, Vr_res = resonance_latitude(ω, p, plasma_L; n=n, θ=θ)
+        λ_res, Vr_res = point_of_resonance(ω, p, plasma_L; n=n, θ=θ)
         isnan(λ_res) ? NaN : rad2deg(λ_res)
     end
 

@@ -72,10 +72,10 @@ wave_dipole = WaveState(modulation_dipole, amplitude, plasma_dipole; Ψ0=Ψ0)
 
 # Find the resonance latitudes
 ω_start_tsyg = wave_frequency(wave_tsyg, 0.0)
-λ_resonance_tsyg = [resonance_latitude(ω_start_tsyg, p, wave_tsyg.plasma)[1] for p in particles_tsyg]
+λ_resonance_tsyg = [point_of_resonance(ω_start_tsyg, p, wave_tsyg.plasma)[1] for p in particles_tsyg]
 
 ω_start_dipole = wave_frequency(wave_dipole, 0.0)
-λ_resonance_dipole = [resonance_latitude(ω_start_dipole, p, wave_dipole.plasma)[1] for p in particles_dipole]
+λ_resonance_dipole = [point_of_resonance(ω_start_dipole, p, wave_dipole.plasma)[1] for p in particles_dipole]
 ## Run Boris-mover (skip particles without resonance)
 results_tsyg = Vector{Any}(nothing, length(E_grid))
 results_dipole = Vector{Any}(nothing, length(E_grid))

@@ -51,7 +51,7 @@ wave = WaveState(modulation, amplitude, plasma; Ψ0=Ψ0)
 
 ## Find the resonance latitude
 ω_start = wave_frequency(wave, 0.0)
-λ_resonance = [resonance_latitude(ω_start, p, wave.plasma)[1] for p in particles]
+λ_resonance = [point_of_resonance(ω_start, p, wave.plasma)[1] for p in particles]
 
 ## Run Boris-mover (skip particles without resonance)
 results = Vector{Any}(nothing, length(E_grid))

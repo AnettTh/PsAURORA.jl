@@ -42,8 +42,8 @@ plasma_tsyg = PlasmaState(λ_grid, DentonDensity(TsyganenkoMagneticField(ϕ_eq),
 ω_dip  = Ω_e_eq_dip  * 0.3
 ω_tsyg = Ω_e_eq_tsyg * 0.3
 
-λ_res_dip,  V_r_dip  = resonance_latitude(ω_dip,  p_dipole, plasma_dipole; n=1)
-λ_res_tsyg, V_r_tsyg = resonance_latitude(ω_tsyg, p_tsyg,   plasma_tsyg;   n=1)
+λ_res_dip,  V_r_dip  = point_of_resonance(ω_dip,  p_dipole, plasma_dipole; n=1)
+λ_res_tsyg, V_r_tsyg = point_of_resonance(ω_tsyg, p_tsyg,   plasma_tsyg;   n=1)
 
 ## Find trace
 R_max_dipole, trace_dipole = find_R_max(p_dipole; store_trace=true)

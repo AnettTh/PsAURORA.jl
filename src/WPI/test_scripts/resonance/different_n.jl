@@ -49,7 +49,7 @@ text!(ax, 0.02, 0.98;
 )
 ##
 for n in ns
-    λ_res, Vr_res = resonance_latitude(ω_grid, particle, plasma; n=n, θ=θ, fast=false)
+    λ_res, Vr_res = point_of_resonance(ω_grid, particle, plasma; n=n, θ=θ, fast=false)
     lines!(ax, ω_grid./1e3, rad2deg.(λ_res), label="n = $(Int(n))")
 end
 
