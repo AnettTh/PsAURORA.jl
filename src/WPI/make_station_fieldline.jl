@@ -100,6 +100,7 @@ function trace_fieldline(
     return xs, ys, zs, Bs
 end
 
+
 function StationFieldLine(
     magnetic_field,
     ref::LTPReference,
