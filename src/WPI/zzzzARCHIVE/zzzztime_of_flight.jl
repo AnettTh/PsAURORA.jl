@@ -1,5 +1,80 @@
 using AURORA
 
+
+"""
+    get_v0_from_Eμ(
+    magnetic_field,
+    r0,
+    E_eV,
+    μ0;
+    ϕ=0.0,
+    towards_equator::Bool=true,
+    relativistic::Bool=false
+)
+
+Calculate the electron velocity vector given initial values.
+
+Using the given magnetic field model, initial position, particle energy and pitch-angle to
+find the appropriate initial velocity for the electron. To choose the direction of the
+resulting velocity (i.e. away from or towards the Earth), specify `flip`, `false` being
+towards the Earth, `true` being away from. If needed, it is also possible to control the
+phase of the gyration.
+
+# Arguments
+
+- `magnetic_field`: Function describing the magnetic field, taking three positional values
+  as the argument.
+- `r_0`: The initial position of the particle [m].
+- `E_eV`: Energy of the particle [eV].
+- `μ0`: The cosine of the pitch-angle `α` of the particle, i.e. some value between -1 and 1.
+
+# Keyword Arguments
+
+- `ϕ`: The phase of the gyration, default is 0.0.
+- `towards_equator`: Decides if the valocity is parallel or anti-parallel with the magnetic
+  field, parallel being towards the equator IF in the northern hemisphere. The default is
+  `true`.
+- `relativistic`: Option to correct for relativistic effects, default is `false`.
+"""
+function get_v0_from_Eμ(
+    magnetic_field,
+    r0,
+    E_eV,
+    μ0;
+    ϕ=0.0,
+    towards_equator::Bool=true,
+    relativistic::Bool=false
+)
+
+    -1 ≤ μ0 ≤ 1 || throw(ArgumentError("μ0 must be between -1 and 1"))
+
+    v_mag = velocity_from_kinetic_energy(E_eV, mₑ; relativistic=relativistic)
+
+    # Construct the magnetic basis
+    B = magnetic_field(r0...)
+
+    b, e1, e2, _ = magnetic_basis(B)
+
+    # Adjust direction based on which hemisphere `r0` is in, meaning that if we are in the
+    # northern hemisphere, towards equator means μ0 > 0
+    if towards_equator
+        μ0_corrected = r0[3] > 0 ? -abs(μ0) : abs(μ0)
+    else
+        μ0_corrected = r0[3] > 0 ? abs(μ0) : -abs(μ0)
+    end
+
+    # Determine parallel and perpendicular speeds
+    v_parallel = μ0_corrected * v_mag
+    v_perp = sqrt(1 - μ0_corrected^2) * v_mag
+
+    # Initial velocity
+    v0 = v_parallel .* b .+
+         v_perp .* (cos(ϕ) .* e1 .+ sin(ϕ) .* e2)
+
+    return Tuple(v0)
+end
+
+
 #===================================Run preferred method===================================#
 # IDEA: Rewrite this to also fit with the WPI-versions?
 """
