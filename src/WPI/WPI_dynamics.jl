@@ -4,18 +4,11 @@ using QuadGK
 using LinearAlgebra
 using Roots
 
-#===
-
-TODO: Several places in this file, the change in arc-length with latitude (ds/dλ) uses a
-dipole approximation, also for the Tsyganenko model. This must either be fixed or jusitfied!
-
-===#
-
 """
     wave_transit(
     ω,
     λ_resonance,
-    particle::ParticleState,
+    fieldline::AbstractFieldLine,
     plasma::PlasmaState;
     field_dependent::Bool=true,
     )
@@ -177,9 +170,9 @@ function particle_transit(
         t_e
 end
 
-
+# TODO: Update
 """
-    resonance_latitude(
+    point_of_resonance(
     ω::Float64,
     particle::ParticleState,
     plasma::PlasmaState;
@@ -189,7 +182,7 @@ end
     wave_direction=-1
 )
 
-    resonance_latitude(
+    point_of_resonance(
     ω_grid::AbstractVector,
     particle::ParticleState,
     plasma::PlasmaState;
@@ -226,126 +219,85 @@ northern hemisphere comes from latitudes in the southern hemisphere.
 - The resonance velocity, used to decide which hemsiphere the resonating particles are
   located in [m/s].
 """
-function resonance_latitude(
+function point_of_resonance(
     ω::Float64,
     particle::ParticleState,
+    fieldline::AbstractFieldLine,
     plasma::PlasmaState;
     θ::Float64=0.0,
     n::Int=1,
-    fast::Bool=false,
-    wave_direction=-1
+    wave_direction::Int=-1,
 )
-    if abs(wave_direction) != 1
-        throw(ArgumentError("Wave direction needs to be `-1` for southward or `1` for nothward."))
-    end
+    # Add some throws
+    abs(wave_direction) == 1 || throw(
+        ArgumentError("Wave direction needs to be `-1` for southward or `1` for northward.")
+    )
+    length(plasma.λ) == length(fieldline.λs) || throw(
+        ArgumentError("The plasma was not built from this fieldline")
+    )
 
-    # Define the resonance condition (equation that should be zero for resonance to occure)
-    function resonance_condition(λ; n=n, θ=θ, fast=fast)
+    # Decide on the direction of the wave and the particle
+    wave_along_b = wave_direction * (fieldline.B_along_index ? 1 : -1)
+    v_par_sign   = -sign(particle.μ0)
 
-        if fast
-            # Choose latitude that matches closest to the precomputed grid
-            i = searchsortedfirst(plasma.λ, λ)
-            i = clamp(i, 1, length(plasma.Ω_e))
-            Ω_e = plasma.Ω_e[i]
-            ω_pe = plasma.ω_pe[i]
+    # Calculate the resonance condition at point `i`, where zero gives resonance
+    function resonance_condition(i)
+        # Current frequencies
+        Ω_e = plasma.Ω_e[i]
+        ω_pe = plasma.ω_pe[i]
 
-            # Compute field strength from known values
-            B_mag = Ω_e * mₑ / abs(qₑ)
-        else
-            # Evaluate magnetic field at current position
-            # TODO: Change to particle.position_eq
-            B = particle.magnetic_field(Dipolar(particle.L, λ, particle.ϕ_eq))
-            B_mag = norm(B)
-
-            # Plasma-parameters based on current latitude
-            Ω_e = abs(qₑ) * B_mag / mₑ
-            ω_pe = ωpe_at_λ(plasma.ne_model, particle.L, λ)
-        end
-
-        # Find parallel component of wavenumber
-        k = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
-        k_parallel = wave_direction * k * cos(θ)
-
-        # Find parallel velocity, keeping the sign of μ and returning NaN if mirrored
-        α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, B_mag)
-
+        # Check if the particle have mirrored already
+        α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, fieldline.Bs[i])
         isnothing(α) && return NaN
-        v_parallel = particle.v * cos(α) * (-sign(particle.μ0))
 
-        # Return resonance condition for given λ (from for example eq.4 in Hsieh 2022)
-        return ω - k_parallel * v_parallel - (n*Ω_e / particle.γ)
+        # Use the dispersion relation to find k, if any
+        k = dispersion_relation_whistler_branch(ω, θ, ω_pe, Ω_e)
+
+        # Pick out only parallel components
+        k_parallel = wave_along_b * k * cos(θ)
+        v_parallel = particle.v0_mag * cos(α) * v_par_sign
+
+        # Return the equation that is to be zero for resonance to happen
+        return ω - (k_parallel * v_parallel) - (n * Ω_e / particle.γ)
     end
 
-    # Find λ that causes the resonance condition to change sign, return NaN if there is none
-    λ_grid = plasma.λ
-    f_possible = resonance_condition.(λ_grid, n=n)
+    # Look at the resonance condition along the entire fieldline
+    f = [resonance_condition(i) for i in eachindex(fieldline.λs)]
 
-    idx = nothing
+    # Find the indices where `f` changes sign and is not-empty
+    is_crossing(j) = !isnan(f[j]) && !isnan(f[j+1]) && f[j] * f[j+1] < 0
+    i = findfirst(is_crossing, 1:length(f)-1)
+    isnothing(i) && return nothing
 
-    # Look for index of change in sign
-    for i in 1:length(f_possible)-1
-        f_i = f_possible[i]
-        f_i1 = f_possible[i+1]
-        if !isnan(f_i) && !isnan(f_i1) && f_i * f_i1 < 0
-            idx = i
-            break
-        end
-    end
+    # Use linear interpolation to find the root between point i and i+1
+    weight = f[i] / (f[i] - f[i+1])
+    intrp(value) = value[i] + weight * (value[i+1] - value[i])
 
-    # Return if none is found
-    isnothing(idx) && return NaN, NaN
+    # Get the values to return
+    Ω_e_resonance = intrp(plasma.Ω_e)
+    ω_pe_resonance = intrp(plasma.ω_pe)
+    λ_resonance = intrp(fieldline.λs)
 
-    # Figure out the latitude where the funciton changed sign, i.e. index `idx`
-    λ_resonance = find_zero(resonance_condition, (λ_grid[idx], λ_grid[idx+1]))
+    r_resonance = Cartesian(intrp(fieldline.xs), intrp(fieldline.ys), intrp(fieldline.zs))
 
-    # Find also the resonance velocity at this position to decide the hemisphere
-    i_res = searchsortedfirst(plasma.λ , λ_resonance)
-    i_res = clamp(i_res, 1, length(plasma.Ω_e))
-    Ω_e_res = plasma.Ω_e[i_res]
-    ω_pe_res = plasma.ω_pe[i_res]
-    k_res = dispersion_relation_whistler_branch(ω, θ, ω_pe_res, Ω_e_res)
-    k_par_res = wave_direction * k_res * cos(θ)
+    k_resonance = dispersion_relation_whistler_branch(ω, θ, ω_pe_resonance, Ω_e_resonance)
+    v_resonance = (ω - (n*Ω_e_resonance/particle.γ)) / (wave_along_b * k_resonance * cos(θ))
 
-    # Calculate the resonance velocity (Saito et al. 2012 #NOTE: Verify this!)
-    V_r = (ω - (n * Ω_e_res / particle.γ)) / k_par_res
-
-    return λ_resonance, V_r
+    return (λ=λ_resonance, r=r_resonance, v=v_resonance, i=i)
 end
 
-function resonance_latitude(
+# TODO: This can be done faster, as Ω_e, ω_pe and α don't change with ω
+function point_of_resonance(
     ω_grid::AbstractVector,
     particle::ParticleState,
+    fieldline::AbstractFieldLine,
     plasma::PlasmaState;
     kwargs...
 )
-    # Loop over the function if there is several frequencies
-    λ_out = zeros(length(ω_grid))
-    Vr_out = zeros(length(ω_grid))
-
-    for (i, ω) in enumerate(ω_grid)
-        result = resonance_latitude(ω, particle, plasma; kwargs...)
-
-        if isnan(result[1])
-            λ_out[i]  = NaN
-            Vr_out[i] = NaN
-        else
-            λ_out[i]  = result[1]
-            Vr_out[i] = result[2]
-        end
-    end
-
-    return λ_out, Vr_out
+    return [point_of_resonance(ω, particle, fieldline, plasma; kwargs...) for ω in ω_grid]
 end
 
-
-function point_on_line(line, λ)
-    r   = sqrt.(line.xs.^2 .+ line.ys.^2 .+ line.zs.^2)
-    lat = asin.(line.zs ./ r)
-    j   = argmin(abs.(lat .- λ))
-    return Cartesian(line.xs[j], line.ys[j], line.zs[j])
-end
-
-
+# TODO: Update docstring
 """
     WPI_TOF(
     ω_grid::AbstractVector,
@@ -399,16 +351,14 @@ electron plasma frequency `ω_pe` and the electron cyclotron frequency `Ω_e`, b
 function WPI_TOF(
     ω_grid::AbstractVector,
     particle::ParticleState,
+    fieldline::AbstractFieldLine,
     plasma::PlasmaState;
     wave::Union{WaveState, Nothing}=nothing,
     use_boris::Bool=false,
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1,
-    fast::Bool=false,
-    r_start::Union{Cartesian, Nothing}=nothing,
     get_footpoint::Bool=false,
-    line=nothing,
 )
 
     # Calculate wave-launch time based on given model
@@ -419,33 +369,30 @@ function WPI_TOF(
 
     # Loop over all frequencies as they have different resonance regions
     for (i, ω) in enumerate(ω_grid)
-        λ_res, V_r = resonance_latitude(ω, particle, plasma; θ=θ, n=n, fast=fast)
+        resonance = point_of_resonance(ω, particle, fieldline, plasma; θ=θ, n=n)
 
         # For conbinations that don't resonate
-        if isnothing(λ_res) || isnan(λ_res)
+        if isnothing(resonance) #|| isnan(λ_res)
             tof[i] = NaN
             continue
         end
 
-        # TODO: Change input, will not run as is
         # Calculate the components for the given ω and sum them
         t_w = wave_transit(
             ω,
-            λ_res,
-            particle,
+            resonance.λ,
+            fieldline,
             plasma;
-            field_dependent=field_dependent
+            field_dependent=field_dependent,
         )
 
-        r_case = isnothing(line) ? r_start : point_on_line(line, λ_res)
         p_t_result = particle_transit(
             particle,
-            λ_res;
+            fieldline,
+            resonance.λ;
             wave=wave,
-            V_r=V_r,
             use_boris=use_boris,
             field_dependent=field_dependent,
-            r_start=r_case,
             get_footpoint=get_footpoint,
         )
 
@@ -458,16 +405,18 @@ function WPI_TOF(
         end
 
         # Total time = wave-to-λ + particle-to-ionosphere + delay of current ω based on wave
-        if !isnothing(t_e)
-            tof[i] = t_w + t_e + t_l[i]
-        else
-            tof[i] = 0.0  # TODO: Is there a better way to do this maybe?
-        end
+        tof[i] = isnothing(t_e) ? 0.0 : t_w + t_e + t_l[i]
     end
     return get_footpoint ? (tof=tof, footpoint=footpoint) : tof
 end
 
 # Also allows for single frequencies
-function WPI_TOF(ω::Real, particle::ParticleState, plasma::PlasmaState; kwargs...)
-    return WPI_TOF([ω], particle, plasma; kwargs...)[1]
+function WPI_TOF(
+    ω::Real,
+    particle::ParticleState,
+    fieldline::AbstractFieldLine,
+    plasma::PlasmaState;
+    kwargs...
+)
+    return WPI_TOF([ω], particle, fieldline, plasma; kwargs...)[1]
 end
