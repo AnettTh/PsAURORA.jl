@@ -3,6 +3,7 @@ using TsyganenkoModels
 using StaticArrays
 using LinearAlgebra
 
+# TODO: Find a solution such that all magnetic fields contain a reference, even a dummy if needed? Will simplify the call
 """
     dipole_field(x, y, z)
     dipole_field(r)
@@ -87,7 +88,7 @@ end
 """
     tsyganenko_field(
     x::Real, y::Real, z::Real;
-    time="2020-01-01T02:00:00",
+    t="2020-01-01T02:00:00",
     pdyn=2.0,
     dst=-28.0,
     byimf=1.0,
@@ -106,12 +107,12 @@ end
 
 # Keyword Arguments
 
-- `time`: Given as a string in ISO8601 format, default is '"2020-01-01T00:01:40"'.
+- `t`: Given as a string in ISO8601 format, default is '"2020-01-01T00:01:40"'.
 - `pdyn`: Solar wind dynamic pressure [nPa], default is `2.0`.
 - `dst`: Disturbance Storm Time index [nT], default is `-50.0`.
 - `byimf`: IMF By component [nT], default is `1.0`.
 - `bzimf`: IMF Bz component [nT], default is `2.0`.
-- `ps`: Dipole tilt angle, uses `time` to calculate it if the value is `nothing`. The
+- `ps`: Dipole tilt angle, uses `t` to calculate it if the value is `nothing`. The
   default is `nothing`.
 - `component`: String to chose which component of the field to return; either external
   `ext`, internal `int` or the total field `both`, default is `"both"`.
@@ -127,34 +128,26 @@ end
 function tsyganenko_field_gsm(
     x::Real,
     y::Real,
-    z::Real;
-    time="2020-01-01T02:00:00",
-    pdyn=2.0,
-    dst=-50.0,
-    byimf=1.0,
-    bzimf=2.0,
-    ps=nothing,
-    component="both",
+    z::Real,
+    t::DateTime,
+    ps::Real;
+    pdyn::Real,
+    dst::Real,
+    byimf::Real,
+    bzimf::Real,
+    component::String,
 )
 
-    # Convert to format needed by TsyganenkoModels
-    t = DateTime(time)
-
     r_RE = [x/RE, y/RE, z/RE]
-
     param = (; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
 
-    # Find dipole tilt-angle at this time
-    ps_used = isnothing(ps) ? dipole_tilt(t) : ps
-
-    # Construct the components and combine
     if component == "both"
-        B_ext_nT = TS04(param)(r_RE, ps_used)
+        B_ext_nT = TS04(param)(r_RE, ps)
         B_int_nT = TsyIGRF()(r_RE, t)
         B_tot_nT = B_ext_nT .+ B_int_nT     # [nT]
         Bx, By, Bz = B_tot_nT .* 1e-9       # [T]
     elseif component == "ext"
-        B_ext_nT = TS04(param)(r_RE, ps_used)  # [nT]
+        B_ext_nT = TS04(param)(r_RE, ps)  # [nT]
         Bx, By, Bz = B_ext_nT .* 1e-9          # [T]
     elseif component == "int"
         B_int_nT = TsyIGRF()(r_RE, t)       # [nT]
@@ -164,9 +157,13 @@ function tsyganenko_field_gsm(
         `both`."))
     end
 
-    return [Bx, By, Bz]
+    return [Bx, By, Bz] # TODO: Make into SVector?
 end
 
+# Helper function for rotation
+function rotate_y(v, α)
+    return [cos(α) * v[1] + sin(α) * v[3], v[2], -sin(α) * v[1] + cos(α) * v[3]]
+end
 
 function (model::TsyganenkoMagneticField)(r::Cartesian)
     r_mag = sqrt(r.x^2 + r.y^2 + r.z^2)
@@ -174,35 +171,21 @@ function (model::TsyganenkoMagneticField)(r::Cartesian)
         "Tsyganenko evaluated past the limit, r = $(round(r_mag / RE, digits=2)) RE"
     )
 
-    # Helper function for rotation
-    function rotate_y(v, α)
-        return [cos(α) * v[1] + sin(α) * v[3], v[2], -sin(α) * v[1] + cos(α) * v[3]]
-    end
-
     # SM → GSM
-    r_gsm = rotate_y([r.x, r.y, r.z], model.ps)
+    r_gsm = rotate_y(SVector(r.x, r.y, r.z), model.ps)
 
     # Evaluate field
     B_gsm = tsyganenko_field_gsm(
-        r_gsm...;
-        time      = model.time,
-        pdyn      = model.pdyn,
-        dst       = model.dst,
-        byimf     = model.byimf,
-        bzimf     = model.bzimf,
-        ps        = model.ps,
+        r_gsm...,
+        model.t,
+        model.ps;
+        pdyn = model.pdyn,
+        dst = model.dst,
+        byimf = model.byimf,
+        bzimf = model.bzimf,
         component = model.component,
     )
 
-    # # GSM → SM
+    # GSM → SM
     return rotate_y(B_gsm, -model.ps)
-end
-
-
-# TODO: This might be fishy??
-function (model::TsyganenkoMagneticField)(position::Dipolar)
-    #abs(position.λ) > 1e-5 && throw(
-    #    ArgumentError("Issue with using Tsyganenko model with dipolar coordinates if λ≠0.")
-    #)
-    return model(Cartesian(position))      # this rotates SM to GSM
 end
