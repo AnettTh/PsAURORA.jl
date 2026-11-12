@@ -47,36 +47,31 @@ direction of the wave propagation.
 function wave_transit(
     ω,
     λ_resonance,
-    particle::ParticleState,
+    fieldline::AbstractFieldLine,
     plasma::PlasmaState;
     field_dependent::Bool=true,
     )
 
-    # Initial position of the wave in the equatorial plane
-    R0 = particle.L * RE
+    # Index of the resonance and equator on the line
+    i_res = clamp(searchsortedfirst(fieldline.λs, λ_resonance), 1, length(fieldline.λs))
+    i_eq = fieldline.i_eq
 
-    # Define function to integrate
-    function wave_traveltime_integrand(λ)
-        # If field-dependent, choose based on position, else use equatorial Ω_e
-        Ω_e = field_dependent ?
-            # TODO: Check if this can be done using the station fieldline instead
-            Ωe_at_λ(λ, particle.L, particle.ϕ0, particle.magnetic_field) :
-            plasma.Ω_e[1]
+    # Get segment of the line where the wave travels
+    i_wave = min(i_eq, i_res):max(i_eq, i_res)
+    s_wave = fieldline.s[i_wave]
 
-        ω_pe = field_dependent ?
-            # TODO: Check if this can be done using the station fieldline instead
-            ωpe_at_λ(plasma.ne_model, particle.L, λ) :
-            plasma.ω_pe[1]
-
-        v_g = group_velocity_whistler_wave(ω, Ω_e, ω_pe)
-
-        # Arc length element along a dipole field line
-        ds_dλ = R0 * sqrt(1 + 3sin(λ)^2) * cos(λ)
-        return ds_dλ / v_g
+    if field_dependent
+        Ω_e = plasma.Ω_e[i_wave]
+        ω_pe = plasma.ω_pe[i_wave]
+    else
+        # Use the values at the magnetic equator
+        Ω_e  = fill(plasma.Ω_e[i_eq], length(i_wave))
+        ω_pe = fill(plasma.ω_pe[i_eq], length(i_wave))
     end
 
-    # Integrate from equator to the resonance region and return result
-    t_w, _ = quadgk(wave_traveltime_integrand, 0.0, λ_resonance)
+    # The travel-time is found using the trapezoid method
+    inverse_vg = @. 1 / group_velocity_whistler_wave(ω, Ω_e, ω_pe)
+    t_w = sum(0.5 .* (inverse_vg[1:end-1] .+ inverse_vg[2:end]) .* abs.(diff(s_wave)))
     return abs.(t_w)
 end
 
