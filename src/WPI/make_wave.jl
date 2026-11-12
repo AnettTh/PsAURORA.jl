@@ -140,7 +140,12 @@ function wave_frequency(modulation::Demekhov, wave::WaveState, t)
 
     # Find the wave-vector for the lowest density
     i = argmin(wave.plasma.Ω_e)
-    k = dispersion_relation_whistler_branch(ω0, wave.θ, wave.plasma.ω_pe[i], wave.plasma.Ω_e[i])
+    k = dispersion_relation_whistler_branch(
+        ω0,
+        wave.θ,
+        wave.plasma.ω_pe[i],
+        wave.plasma.Ω_e[i]
+    )
 
     v_perp = 1.0  #TODO: figure out how to get this
 
