@@ -8,7 +8,7 @@ using Roots
     wave_transit(
     ω,
     λ_resonance,
-    fieldline::AbstractFieldLine,
+    particle::ParticleState,
     plasma::PlasmaState;
     field_dependent::Bool=true,
     )
@@ -121,15 +121,14 @@ function particle_transit(
 
     # If Boris-mover is to be used, shortcuts the function
     if use_boris
-        r_start = Cartesian(fieldline.xs[i_res], fieldline.ys[i_res], fieldline.zs[i_res])
+        r_resonance = Cartesian(fieldline.xs[i_res], fieldline.ys[i_res], fieldline.zs[i_res])
         # Find the initial position for the boris-mover, i.e. where the particle resonates
         result = boris_mover(
             particle;
             wave=wave,
-            λ_start=λ_resonance,
             store_trajectory=false,
             stop_when_bouncing=true,
-            r_start=r_start,    # TODO: Check if this is necessary in the borismover at this point
+            r_resonance=r_resonance,
         )
 
         # If the particle precipitates, return the TOF
@@ -154,7 +153,7 @@ function particle_transit(
     # Find the parallel speed at  each stored point
     if field_dependent
         # TODO: Check what this returns for a mirrored particle and match it up with the behavior
-        α = [pitch_angle_at_λ(particle.α_eq, particle.B_eq, B) for B in fieldline.Bs[i_particle]]
+        α = [pitch_angle(particle.α_eq, particle.B_eq, B) for B in fieldline.Bs[i_particle]]
         # Check if the particle have mirrored, then return nothing
         any(isnothing, α) && return get_footpoint ? (time=nothing, footpoint=nothing) : nothing
         v_par = [particle.v0_mag * cos(a) for a in α]
@@ -247,7 +246,7 @@ function point_of_resonance(
         ω_pe = plasma.ω_pe[i]
 
         # Check if the particle have mirrored already
-        α = pitch_angle_at_λ(particle.α_eq, particle.B_eq, fieldline.Bs[i])
+        α = pitch_angle(particle.α_eq, particle.B_eq, fieldline.Bs[i])
         isnothing(α) && return NaN
 
         # Use the dispersion relation to find k, if any
