@@ -190,11 +190,11 @@ function Base.show(io::IO, line::StationFieldLine)
         "    Trace length: $(fmt(length_RE, 4)) RE",
         "    r_eq:         $(fmt(line.r_eq / RE, 4)) RE",
         "    λ_eq:         $(fmt(rad2deg(line.λ_eq), 4))°",
-        "    ϕ_eq:         $(fmt(rad2deg(line.ϕ_eq), 4))° ($(fmt(longitude_to_MLT(line.ϕ_eq; degrees=false), 2)) MLT)",
+        "    ϕ_eq:         $(fmt(rad2deg(line.ϕ_eq), 4))° ($(fmt(longitude_to_MLT(line.ϕ_eq), 2)) MLT)",
         "    B_eq:         $(fmt(line.B_eq * 1e9, 4)) nT",
         "    r_max:        $(fmt(line.r_max / RE, 4)) RE",
-        "    FP south:     λ = $(fmt(latitude(fp_s), 4))°, $(fmt(mlt(fp_s), 4)) MLT, r = $(fmt(radius(fp_s), 3)) RE",
-        "    FP north:     λ = $(fmt(latitude(fp_n), 4))°, $(fmt(mlt(fp_n), 4)) MLT, r = $(fmt(radius(fp_n), 3)) RE",
+        "    FP south:     λ = $(fmt(latitude(fp_s), 4))°, $(fmt(mlt(fp_s), 4)) MLT",
+        "    FP north:     λ = $(fmt(latitude(fp_n), 4))°, $(fmt(mlt(fp_n), 4)) MLT",
     ]
     print(io, join(lines, "\n"))
 end
