@@ -28,6 +28,7 @@ struct StationFieldLine{F<:AbstractMagneticField} <: AbstractFieldLine
 
     position_fp_south::Cartesian    # Cartesian southern footpoint [m]
     position_fp_north::Cartesian    # Cartesian northern footpoint [m]
+    B_along_index::Bool             # Motion of particle relative to indexation.
 end
 
 
@@ -121,6 +122,12 @@ function StationFieldLine(
     # Get index of equator
     i_eq = argmin(Bs)
 
+    # Direction of particles movement compared to the indexation of the fieldline
+    # NOTE: This might not be necessary, check it!
+    j = clamp(i_eq, 2, length(xs) - 1)
+    tangent = SVector(xs[j+1] - xs[j-1], ys[j+1] - ys[j-1], zs[j+1] - zs[j-1])
+    B_along_index = dot(magnetic_field(Cartesian(xs[j], ys[j], zs[j])), tangent) > 0
+
     # Get arc-length from magnetic equator, negative is towards the south
     total_s = [0.0; cumsum(sqrt.(diff(xs).^2 .+ diff(ys).^2 .+ diff(zs).^2))]
     s = total_s .- total_s[i_eq]
@@ -164,6 +171,7 @@ function StationFieldLine(
 
         position_fp_south,
         position_fp_north,
+        B_along_index
         )
 end
 
