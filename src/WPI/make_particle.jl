@@ -130,7 +130,7 @@ function ParticleState(
 
     # Values at equator, minimum(|B|), needed to fill the struct
     B_eq = fieldline.B_eq
-    α_eq = pitch_angle_at_λ(α0, norm(B0), B_eq) # Figure out if α_eq should be equal α0 here
+    α_eq = pitch_angle(α0, norm(B0), B_eq) # Figure out if α_eq should be equal α0 here
 
     # Loss cone and ionospheric latitude for correct hemisphere
     hemisphere = μ0 < 0 ? :north : :south
