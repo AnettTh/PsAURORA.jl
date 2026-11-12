@@ -11,7 +11,7 @@ using ProgressMeter
     resolution::Int=10,
     store_trajectory::Bool=false
     count_bounces::Bool=false,
-    stop_when_bouncing::Bool=false,
+    stop_when_bouncing::Bool=true,
 )
 
 Simulate the trajectory of a charged particle using the Boris mover.
@@ -57,13 +57,13 @@ bounce is detected.
 function boris_mover(
     particle::ParticleState;
     wave::Union{WaveState, Nothing}=nothing,
-    r_resonance::Union{Cartesian, Nothing}=nothing, # TODO: Change this to r_resonance?
+    r_resonance::Union{Cartesian, Nothing}=nothing,
     φ0::Float64=particle.φ0,
     n_T::Int=100_000,
     resolution::Int=10,
     store_trajectory::Bool=false,
     count_bounces::Bool=false,
-    stop_when_bouncing::Bool=false,
+    stop_when_bouncing::Bool=true,
 )
 
     #===
@@ -159,7 +159,7 @@ function boris_mover(
             s_current = 0.0
 
             # Find perturbation and update the current field
-            δB, δE = wave_fields(
+            w = wave_fields(
                 wave,
                 t_current,
                 s_current,
@@ -168,13 +168,13 @@ function boris_mover(
                 λ_current
             )
 
-            Bx += δB[1]
-            By += δB[2]
-            Bz += δB[3]
+            Bx += w.δB[1]
+            By += w.δB[2]
+            Bz += w.δB[3]
 
-            Ex += δE[1]
-            Ey += δE[2]
-            Ez += δE[3]
+            Ex += w.δE[1]
+            Ey += w.δE[2]
+            Ez += w.δE[3]
         end
 
         # Find current magnitude and direction of the magnetic field
@@ -267,26 +267,13 @@ function boris_mover(
         z += vz * dt
 
         # Update the phase, if wave is to be considered
+        # TODO: Check that this works for waves propagating in any direction, still being righthanded
         if !isnothing(wave)
-            # Find current frequency (based on modulation)
-            ω_t = wave_frequency(wave, t_current)
-
-            # Find current wave vector based on current plasma state and wave frequency
-            j = searchsortedfirst(wave.plasma.λ, λ_current)
-            j = clamp(j, 1, length(wave.plasma.Ω_e))
-            θ = 0.0     # NOTE: Does WNA need to be 0 for all possible models?
-            k_parallel = dispersion_relation_whistler_branch(
-                ω_t,
-                θ,
-                wave.plasma.ω_pe[j],
-                wave.plasma.Ω_e[j]
-            )
-
             # The current velocity parallel to the magnetic field b̂
             v_parallel = vx*b̂x + vy*b̂y + vz*b̂z
 
             # Update the wave-phase (based on Saito et al. 2012)
-            Ψ_current += k_parallel * v_parallel * dt - ω_t * dt
+            Ψ_current += w.k_parallel * v_parallel * dt - w.ω * dt
         end
 
         # Update stored values with current values
