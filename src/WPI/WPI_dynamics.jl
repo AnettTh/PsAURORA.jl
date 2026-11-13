@@ -141,6 +141,7 @@ function particle_transit(
             (time=result.time, footpoint=result.footpoint)
         end
     end
+
     # Check if the particle moves in the correct direction
     toward_end = fieldline.B_along_index == (particle.μ0 < 0)
     i_end = toward_end ? length(fieldline.λs) : 1
@@ -158,7 +159,7 @@ function particle_transit(
         any(isnothing, α) && return get_footpoint ? (time=nothing, footpoint=nothing) : nothing
         v_par = [particle.v0_mag * cos(a) for a in α]
     else
-        v_par = fill(abs(particle.v0_mag * cos(particle.α_lc)), length(i_particle))
+        v_par = fill(abs(particle.v0_mag * cos(particle.α_eq_lc)), length(i_particle))
     end
 
     # Using the trapezoid method to integrate
@@ -418,6 +419,7 @@ function WPI_TOF(
     particle::ParticleState,
     fieldline::AbstractFieldLine,
     plasma::PlasmaState;
+    get_footpoint::Bool=true,
     kwargs...
 )
     result = WPI_TOF(
