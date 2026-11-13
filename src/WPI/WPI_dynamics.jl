@@ -355,7 +355,7 @@ function WPI_TOF(
     particle::ParticleState,
     fieldline::AbstractFieldLine,
     plasma::PlasmaState;
-    wave::Union{WaveState, Nothing}=nothing,
+    wave::Union{WaveState, Nothing}=nothing, # TODO: Make wave non-kwarg!!
     use_boris::Bool=true,
     field_dependent::Bool=true,
     θ::Float64=0.0,
@@ -420,5 +420,18 @@ function WPI_TOF(
     plasma::PlasmaState;
     kwargs...
 )
-    return WPI_TOF([ω], particle, fieldline, plasma; kwargs...)[1]
+    result = WPI_TOF(
+        [ω],
+        particle,
+        fieldline,
+        plasma;
+        get_footpoint=get_footpoint,
+        kwargs...
+    )
+
+    if get_footpoint
+        return (tof=result.tof[1], footpoint=result.footpoint[:, 1])
+    else
+        return result[1]
+    end
 end
