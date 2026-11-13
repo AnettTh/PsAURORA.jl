@@ -6,7 +6,7 @@ using Dates
 
 ##
 t = DateTime("2020-01-01T10:00:00")
-x̂, ŷ, ẑ = sm_axes(t)
+x̂, ŷ, ẑ = axis_SM(t)
 s = sun_unit_vector_GEO(t)
 
 ## Make figure
@@ -39,9 +39,9 @@ function draw_axis!(ax, vec, color, label; length = 1.6, linewidth = 4, linestyl
 end
 
 # GEO axes, for reference
-draw_axis!(ax, [1.0, 0.0, 0.0], :gray, "GEO x"; length = 1.3, linewidth = 2, linestyle = :dash)
-draw_axis!(ax, [0.0, 1.0, 0.0], :gray, "GEO y"; length = 1.3, linewidth = 2, linestyle = :dash)
-draw_axis!(ax, [0.0, 0.0, 1.0], :gray, "GEO z"; length = 1.3, linewidth = 2, linestyle = :dash)
+draw_axis!(ax, [1.0, 0.0, 0.0], :gray, "GEO x̂"; length = 1.3, linewidth = 2, linestyle = :dash)
+draw_axis!(ax, [0.0, 1.0, 0.0], :gray, "GEO ŷ"; length = 1.3, linewidth = 2, linestyle = :dash)
+draw_axis!(ax, [0.0, 0.0, 1.0], :gray, "GEO ẑ"; length = 1.3, linewidth = 2, linestyle = :dash)
 
 # SM axes
 draw_axis!(ax, x̂, :red,   "x_SM")
@@ -54,3 +54,7 @@ draw_axis!(ax, s, :orange, "Sun"; linewidth = 3)
 ##
 isdefined(Main, :server) && close(server)
 server = Bonito.Server(Bonito.App(fig), "0.0.0.0", 8888)
+
+##
+CairoMakie.activate!()
+fig

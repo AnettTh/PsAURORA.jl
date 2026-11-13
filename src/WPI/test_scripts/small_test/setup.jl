@@ -1,7 +1,6 @@
 using AURORA
 using Dates
 
-WPI              = true
 duct_enhancement = 0.0
 station          = :sodankyla
 
@@ -41,4 +40,5 @@ wave = WaveState(modulation, amplitude, plasma, fieldline)
 
 
 ## Run the TOF calculations
-result = WPI_TOF(plasma.ω_lb, particle, fieldline, plasma; wave=wave, use_boris=false)
+ω = 0.3 * minimum(plasma.Ω_e)
+WPI_TOF(ω, particle, fieldline, plasma; wave=wave, use_boris=true)
