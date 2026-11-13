@@ -137,6 +137,9 @@ function boris_mover(
     # Keep track of phase if wave is to be considered
     Ψ_current = isnothing(wave) ? 0.0 : wave.Ψ0
 
+    # Get the magnetic fieldstrength at the start of the run, for addaptive resolution
+    B_ref = norm(particle.magnetic_field(Cartesian(x, y, z)))
+
     #===
 
     Update the particle and fill the arrays containing the trajectory
@@ -185,8 +188,9 @@ function boris_mover(
         Ω_e = (B_mag * abs(qₑ)) / mₑ
         T = 2π / Ω_e
 
-        # Define adaptive timestep
-        dt = T / resolution
+        # Define adaptive timestep, halving the resolution when the field strength has decreased by more than 30%
+        steps_per_gyro = B_mag > 3.0 * B_ref ? (resolution / 2) : resolution
+        dt = T / steps_per_gyro #resolution
 
         # Half electric acceleration
         q_prime = dt * (-qₑ) / 2mₑ      # NOTE: qₑ here is signed, should this be done in the constant-file instead? Check consistency!
