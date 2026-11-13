@@ -189,6 +189,8 @@ function boris_mover(
         T = 2π / Ω_e
 
         # Define adaptive timestep, halving the resolution when the field strength has decreased by more than 30%
+        # TODO: Add logic to also increase resolution when approaching the ionosphere
+        # TODO: Figure out if the logic here must be reversed
         steps_per_gyro = B_mag > 3.0 * B_ref ? (resolution / 2) : resolution
         dt = T / steps_per_gyro #resolution
 
