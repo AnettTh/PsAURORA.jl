@@ -29,7 +29,7 @@ E_all = repeat(E_keV, 1, size(east, 2), size(east, 3), size(east, 4))
 colors = ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]
 
 ##
-fig = Figure(size = (900, 750))
+fig = Figure(size = (800, 650))
 ax = Axis3(fig[1, 1];
     xlabel = "Time of flight [s]",
     ylabel = "East [km]",

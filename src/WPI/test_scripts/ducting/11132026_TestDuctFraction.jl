@@ -27,7 +27,7 @@ ref = LTPReference(station)
 fieldline = StationFieldLine(magnetic_field, ref, t)
 
 ## Make particle
-α0 = 0.5
+α0 = 2.0
 μ0 = -cos(deg2rad(α0))
 
 E_grid = range(7e3, 40e3, length=500)
@@ -44,13 +44,14 @@ nes = [DentonDensity(fieldline; duct_enhancement=d) for d in duct_fractions]
 plasmas = [PlasmaState(fieldline, ne) for ne in nes]
 
 ## Make the wave
+# NOTE: Is the waves identical? Looks like it...
 amplitude = ConstantAmplitude(100e-12)
 modulation = Chirp(plasmas[1].ω_lb[1], plasmas[1].ω_lb[end], 0.2)
 
 waves = [WaveState(modulation, amplitude, plasma, fieldline) for plasma in plasmas]
 
 ## Choose frequency to simulate for
-frac = 0.3
+frac = 0.5
 ω = frac * minimum(plasmas[1].Ω_e)
 
 ## Calculate TOF
@@ -64,6 +65,7 @@ Threads.@threads for i in eachindex(particles)
     next!(progress)
 end
 
+println("$(count(x -> isfinite(x) && x > 0, TOF))/$(length(TOF)) precipitaded ($(round(count(x -> isfinite(x) && x > 0, TOF) / length(TOF) * 100, digits=1))%)")
 
 ## Make figure
 fig = Figure()
@@ -99,4 +101,4 @@ end
 
 Legend(fig[1,2], ax)
 
-save("src/WPI/test_scripts/ducting/figures/11132026_CompareFrac$(frac)Ωe.png", fig)
+save("src/WPI/test_scripts/ducting/figures/11162026_CompareFrac$(frac)Ωe.png", fig)
