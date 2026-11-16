@@ -301,6 +301,7 @@ function boris_mover(
         Return if the particle precipitates
 
         ===#
+        # TODO: Change variable names in the named tupples?
         if x^2 + y^2 + z^2 ≤ r_ionosphere^2
             #@info "\nPrecipitation!"
             if store_trajectory
@@ -310,12 +311,14 @@ function boris_mover(
                     time=t_array[1:i],
                     α=α_array[1:i],
                     footpoint=(x, y, z),
+                    #α_footpoint=α_footpoint,
                     n_bounces=count_bounces ? n_bounces : nothing,
                 )
             else
                 return (
                     time=t_current,
                     footpoint=(x, y, z),
+                    #α_footpoint=α_footpoint,
                     n_bounces=count_bounces ? n_bounces : nothing,
                 )
             end
