@@ -24,8 +24,8 @@ F = [subtracted_bimaxwellian(vpa, vpe, N, T_parallel, A, α_lc, Δ, r, M)
 ## Make plot
 fig = Figure(size=(700, 600))
 ax  = Axis(fig[1, 1];
-    xlabel = "v∥",
-    ylabel = "v⊥",
+    xlabel = "v∥ / c",
+    ylabel = "v⊥ / c",
     title  = "Subtracted bi-Maxwellian \n
     T∥=$(round(T_parallel*1e-3, digits=1)) keV, A=$(round(A, digits=1)) keV, Δ=$Δ, r=$r",
     aspect=DataAspect()
@@ -36,11 +36,12 @@ F_log = log10.(max.(F, maximum(F) * 1e-6))
 clims = (minimum(F_log), maximum(F_log))
 
 hm = heatmap!(ax,
-    collect(v_par_grid),
-    collect(v_perp_grid),
+    collect(v_par_grid) / c₀,
+    collect(v_perp_grid) / c₀,
     F_log';
     colormap = :turbo,
     colorrange = clims
 )
 
 Colorbar(fig[1, 2], hm; label="log(Phase space density [m⁻⁶s³])", tellheight=false)
+save("src/WPI/test_scripts/distributions/figures/SBM_Liu.png", fig)

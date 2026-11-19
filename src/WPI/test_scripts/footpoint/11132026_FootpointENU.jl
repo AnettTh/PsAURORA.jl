@@ -110,11 +110,14 @@ jldsave(name;
     Ψ0_grid,
     params,
 )
+
+@load "src/WPI/data/11-16-2026/FootpointENU_nonducted.jld2"
+
 ## Convert to East-North-Up coordinates with chosen station as reference
-reference = LTPReference(station)
+reference = LTPReference(params.station)
 fp_enu = fill(NaN, size(FP))
 for iΨ in axes(FP, 4), iα in axes(FP, 3), iE in axes(FP, 2)
-    fp_enu[:, iE, iα, iΨ] .= FP_to_ENU(FP[:, iE, iα, iΨ], reference, t)
+    fp_enu[:, iE, iα, iΨ] .= FP_to_ENU(FP[:, iE, iα, iΨ], LTPReference(params.station), DateTime(params.time))
 end
 
 
@@ -169,20 +172,20 @@ rowgap!(fig.layout, 10)
 Colorbar(fig[1:n_rows, n_cols + 1], scs; label = "E [keV]")
 
 config_info = join([
-    "Coorinates: $(LTPReference(station).lat_deg)°, $(LTPReference(station).lon_deg)°",
-    "Time: $(t)",
+    "Coorinates: $(LTPReference(params.station).lat_deg)°, $(LTPReference(params.station).lon_deg)°",
+    "Time: $(params.time)",
     "",
-    "pdyn = $(pdyn) nPa",
-    "Dst = $(dst) nT",
-    "By = $(byimf) nT",
-    "Bz = $(bzimf) nT",
-    "tilt = $(round(rad2deg(magnetic_field.ps), digits=1))°",
+    "pdyn = $(params.pdyn) nPa",
+    "Dst = $(params.dst) nT",
+    "By = $(params.byimf) nT",
+    "Bz = $(params.bzimf) nT",
+    "tilt = $(round(rad2deg(params.ps), digits=1))°",
     "",
-    "ω / Ωₑ = $(frac)",
-    "Bw = $(round(amplitude.Bw * 1e12, digits=0)) pT",
+    "ω / Ωₑ = $(params.ω_frac)",
+    "Bw = $(round(params.a_Bw * 1e12, digits=0)) pT",
     "Phases: $(length(Ψ0_grid))",
-    "",
-    "Duct enhancement: $(duct_enhancement)nₑ₀",
+    #"",
+    #"Duct enhancement: $(duct_enhancement)nₑ₀",
     "",
     "# Particles: $(n_total)",
     "# Precipitated: $(n_precip)",
@@ -199,10 +202,10 @@ Label(fig[1:n_rows, n_cols + 2], config_info;
 )
 
 Label(fig[0, 1:n_cols + 2],
-    "Particle drift relative to fieldline footpoint of $(station) station";
+    "Particle drift relative to fieldline footpoint of $(params.station) station";
     fontsize=16, font=:bold, tellwidth=false)
 
 ylims!(axs[1], 4.2, 5.0)
 
 
-save("src/WPI/test_scripts/footpoint/figures/11162026_DuctedFP$(duct_enhancement)_ENU.png", fig)
+#save("src/WPI/test_scripts/footpoint/figures/11162026_NonDuctedFP_ENU.png", fig)
