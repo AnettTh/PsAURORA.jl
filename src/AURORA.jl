@@ -60,7 +60,7 @@ export AbstractFieldLine, StationFieldLine, trace_fieldline
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy
 export gyro_frequency, larmor_radius, gyrocenter
-export losscone_angle, pitch_angle_at_λ
+export losscone_angle, pitch_angle
 export quarter_bounceperiod, average_driftvelocity, total_drift
 
 include("WPI/denton_density.jl")
