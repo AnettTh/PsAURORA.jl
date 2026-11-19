@@ -298,7 +298,7 @@ function point_of_resonance(
     wave::WaveState;
     kwargs...
 )
-    return [point_of_resonance(ω, particle, fieldline, plasma; kwargs...) for ω in ω_grid]
+    return [point_of_resonance(ω, particle, fieldline, plasma, wave; kwargs...) for ω in ω_grid]
 end
 
 # TODO: Update docstring
@@ -419,6 +419,7 @@ function WPI_TOF(
     particle::ParticleState,
     fieldline::AbstractFieldLine,
     plasma::PlasmaState;
+    wave::WaveState,
     get_footpoint::Bool=true,
     kwargs...
 )
@@ -427,6 +428,7 @@ function WPI_TOF(
         particle,
         fieldline,
         plasma;
+        wave=wave,
         get_footpoint=get_footpoint,
         kwargs...
     )
