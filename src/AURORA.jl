@@ -55,7 +55,7 @@ include("WPI/magnetic_field.jl")
 export dipole_field, tsyganenko_field_gsm, magnetic_basis
 
 include("WPI/make_station_fieldline.jl")
-export AbstractFieldLine, StationFieldLine, trace_full_line
+export AbstractFieldLine, StationFieldLine, trace_fieldline
 
 include("WPI/calculate_plasma_parameters.jl")
 export velocity_from_kinetic_energy
