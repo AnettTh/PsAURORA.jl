@@ -252,12 +252,14 @@ function boris_mover(
                             time=t_array[1:i-1],
                             α=α_array[1:i-1],
                             footpoint=nothing,
+                            α_footpoint=nothing,
                             n_bounces=count_bounces ? n_bounces : nothing,
                         )
                     else
                         return (
                             time=t_current,
                             footpoint=nothing,
+                            α_footpoint=nothing,
                             n_bounces=count_bounces ? n_bounces : nothing,
                         )
                     end
@@ -304,6 +306,13 @@ function boris_mover(
         # TODO: Change variable names in the named tupples?
         if x^2 + y^2 + z^2 ≤ r_ionosphere^2
             #@info "\nPrecipitation!"
+
+            # Find the current pitch angle
+            b̂_fp, _, _, _ = magnetic_basis(particle.magnetic_field(Cartesian(x, y, z)))
+            v_mag_fp = sqrt(vx^2 + vy^2 + vz^2)
+            v_par_fp = vx*b̂_fp[1] + vy*b̂_fp[2] + vz*b̂_fp[3]
+            α_footpoint = acos(clamp(abs(v_par_fp) / v_mag_fp, 0, 1.0))
+
             if store_trajectory
                 return (
                     position=r_array[1:i, :],
@@ -311,14 +320,14 @@ function boris_mover(
                     time=t_array[1:i],
                     α=α_array[1:i],
                     footpoint=(x, y, z),
-                    #α_footpoint=α_footpoint,
+                    α_footpoint=α_footpoint,
                     n_bounces=count_bounces ? n_bounces : nothing,
                 )
             else
                 return (
                     time=t_current,
                     footpoint=(x, y, z),
-                    #α_footpoint=α_footpoint,
+                    α_footpoint=α_footpoint,
                     n_bounces=count_bounces ? n_bounces : nothing,
                 )
             end
@@ -339,12 +348,14 @@ function boris_mover(
             time=t_array,
             α=α_array,
             footpoint=nothing,
+            α_footpoint=nothing,
             n_bounces=count_bounces ? n_bounces : nothing,
         )
     else
         return (
             time=t_current,
             footpoint=nothing,
+            α_footpoint=nothing,
             n_bounces=count_bounces ? n_bounces : nothing,
         )
     end
