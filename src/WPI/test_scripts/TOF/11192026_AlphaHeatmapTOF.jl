@@ -12,8 +12,8 @@ t = DateTime("2020-12-21T02:00:00")
 magnetic_field = TsyganenkoMagneticField(t; pdyn=2.0, dst=-28.0, byimf=0.0, bzimf=2.0)
 fieldline = StationFieldLine(magnetic_field, LTPReference(station), t)
 
-E_eV = 30e3
-α0_grid = range(0.1, 10, length=2)
+E_eV = 15e3
+α0_grid = range(0.1, 10, length=100)
 μ0_grid = -cosd.(α0_grid)
 particles = [ParticleState(E_eV, μ0, fieldline) for μ0 in μ0_grid]
 
@@ -27,7 +27,7 @@ modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 wave = WaveState(modulation, amplitude, plasma, fieldline)
 
 ## Choose frequencies to run for
-ω_frac = range(0.1, 0.5, length=2)
+ω_frac = range(0.1, 0.5, length=100)
 ωs = ω_frac .* minimum(plasma.Ω_e)
 
 ## Calculate TOF
@@ -49,7 +49,7 @@ ax = Axis(
     title="Time-of-flight for $station station at $t   (E = $(E_eV / 1e3) keV)"
 )
 
-hm = heatmap!(ax, ω_frac, α0_grid, TOF'; colormap=:turbo)
+hm = heatmap!(ax, ω_frac, α0_grid, TOF'; colormap=:turbo, colorrange=(2.5,4.3))
 Colorbar(fig[1,2], hm; label="TOF [s]")
 ##
 save("src/WPI/test_scripts/TOF/figures/11192026_AlphaHeatmapTOF.png", fig)

@@ -80,4 +80,4 @@ linkxaxes!(ax2, ax4)
 hidexdecorations!(ax1; grid=false)
 hidexdecorations!(ax2; grid=false)
 
-save("src/WPI/test_scripts/waves/figures/11192026_InspectWave.png")
+save("src/WPI/test_scripts/waves/figures/11192026_InspectWave.png", fig)

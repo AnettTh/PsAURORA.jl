@@ -32,7 +32,7 @@ fieldline_dipole = StationFieldLine(dipole, ref, t)
 α0 = 0.5
 μ0 = -cos(deg2rad(α0))
 
-E_grid = 15e3:5e3:40e3 #[1e3; 5e3:5e3:40e3]
+E_grid = [7e3; 10e3:10e3:40e3] #[1e3; 5e3:5e3:40e3]
 particles_tsyg = [ParticleState(E, μ0, fieldline_tsyg) for E in E_grid]
 particles_dipole = [ParticleState(E, μ0, fieldline_dipole) for E in E_grid]
 
@@ -72,7 +72,7 @@ end
 
 
 ## Make colorscale
-colors = cgrad(:turbo, length(E_grid), categorical=true)
+colors = ["#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7"] #cgrad(:turbo, length(E_grid), categorical=true)
 
 # Plot every nth energy, or specific indices
 plot_indices = 1:length(E_grid)
@@ -119,10 +119,10 @@ end
 
 linkaxes!(ax_tsyg, ax_dipole)
 hidexdecorations!(ax_dipole; grid=false)
-ylims!(ax_tsyg, -0.1, 10.0)
-xlims!(ax_tsyg, 0.1, 0.4)
 Legend(fig[1:2, 2], ax_tsyg)
 
-
-save("src/WPI/test_scripts/particle_tracer/figures/11162026_AlphaEvolution_bzimf$(bzimf)_zoomed.png", fig)
-save("src/WPI/test_scripts/particle_tracer/figures/11162026_AlphaEvolution_bzimf$(bzimf).png", fig)
+#save("src/WPI/test_scripts/pitch_angle/figures/11192026_CompareAlphaEvolution_DifferentEnergy.png", fig)
+#
+#ylims!(ax_tsyg, -0.1, 15.0)
+#xlims!(ax_tsyg, 0.1, 0.4)
+#save("src/WPI/test_scripts/pitch_angle/figures/11192026_CompareAlphaEvolution_DifferentEnergy_zoomed.png", fig)

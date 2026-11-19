@@ -120,10 +120,11 @@ end
 
 linkaxes!(ax_tsyg, ax_dipole)
 hidexdecorations!(ax_dipole; grid=false)
-#ylims!(ax_tsyg, -0.1, 15.0)
-#xlims!(ax_tsyg, 0.2, 0.3)
 Legend(fig[1:2, 2], ax_tsyg)
 
 
-#save("src/WPI/test_scripts/particle_tracer/figures/11162026_AlphaEvolution_Psitest_E$(round(E/1e3, digits=1))keV_zoomed.png", fig)
-#save("src/WPI/test_scripts/particle_tracer/figures/11162026_AlphaEvolution_Psitest_E$(round(E/1e3, digits=1))keV.png", fig)
+#save("src/WPI/test_scripts/pitch_angle/figures/11192026_CompareAlphaEvolution_DifferentPsi.png", fig)
+#
+#ylims!(ax_tsyg, -0.1, 15.0)
+#xlims!(ax_tsyg, 0.2, 0.3)
+#save("src/WPI/test_scripts/pitch_angle/figures/11192026_CompareAlphaEvolution_DifferentPsi_zoomed.png", fig)

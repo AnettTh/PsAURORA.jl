@@ -31,11 +31,12 @@ E = vec(E_all)[percipitated]
 @show length(percipitated), length(east)      # number of footpoints out of the total
 
 ## Plot footpoints only
-fig_FP = Figure(size = (700, 300))
+fig_FP = Figure(size = (700, 350))
 ax_FP = Axis(fig_FP[1, 1];
     xlabel = "East [km]",
     ylabel = "North [km]",
-    title  = "Footpoints relative to $(station) at $t",
+    title  = "Footpoints relative to $(station) at $t \n" *
+       "$(length(percipitated))/$(length(east)) precipitated",
     aspect = DataAspect(),
 )
 
@@ -49,6 +50,7 @@ sc_FP = scatter!(
     markersize = 6,
 )
 Colorbar(fig_FP[1, 2], sc_FP; label = "E [keV]")
-#ylims!(4.4, 4.9)
+ylims!(4, 5)
+xlims!(0, 2.5)
 display(fig_FP)
-#save("src/WPI/test_scripts/big_data/figures/11132026-FP/FP_only.png", fig_FP)
+save("src/WPI/test_scripts/big_data/figures/11132026-FP/FP_only_full.png", fig_FP)

@@ -73,11 +73,12 @@ colors = ["#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7"]
 for (i, ω) in enumerate(ωs)
     tof1 = replace(TOF_n1[:, i], 0.0 => NaN)
     tof2 = replace(TOF_n2[:, i], 0.0 => NaN)
-    scatter!(ax1, tof1[:, i], E_grid./1e3, label="ω = $(ω_frac[i]) Ωₑ"; color=colors[i])
-    scatter!(ax2, tof2[:, i], E_grid./1e3; color=colors[i])
+    scatter!(ax1, tof1, E_grid./1e3, label="ω = $(ω_frac[i]) Ωₑ"; color=colors[i])
+    scatter!(ax2, tof2, E_grid./1e3; color=colors[i])
 end
 
 linkyaxes!(ax1, ax2)
 linkxaxes!(ax1, ax2)
 
 Legend(fig[1, 3], ax1)
+save("src/WPI/test_scripts/resonance/figures/11192026_CompareTOD_n1n2.png", fig)
