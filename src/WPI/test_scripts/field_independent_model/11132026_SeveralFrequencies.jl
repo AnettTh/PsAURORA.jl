@@ -1,5 +1,6 @@
 using AURORA
 using CairoMakie
+using Dates
 
 ## Define method
 duct_enhancement = 0.0
@@ -13,26 +14,25 @@ dst = -28.0
 byimf = 0.0
 bzimf = 2.0
 
-# TODO: Figure out why this one doesnt run with Tsyganekofield
-magnetic_field = DipoleMagneticField()
-#magnetic_field = TsyganenkoMagneticField(t; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
+#magnetic_field = DipoleMagneticField()
+magnetic_field = TsyganenkoMagneticField(t; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
 
 ## Define the stations fieldline
 ref = LTPReference(station)
 fieldline = StationFieldLine(magnetic_field, ref, t)
 
 ## Define the particle
-α0 = 2.0
+α0 = 0.5        # NOTE: If this is above the loss-cone, returns TOF=0.0
 μ0 = -cos(deg2rad(α0))
 E_grid = [7e3, 10e3, 15e3, 20e3, 30e3, 40e3]
 particles = [ParticleState(E, μ0, fieldline) for E in E_grid]
 
 ## Define the plasma
-desnity = DentonDensity(fieldline)
+density = DentonDensity(fieldline)
 plasma = PlasmaState(fieldline, density)
 
 ## Define the wave
-modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
 wave = WaveState(modulation, amplitude, plasma, fieldline)
 
@@ -42,7 +42,7 @@ wave = WaveState(modulation, amplitude, plasma, fieldline)
 
 ## Calculate TOF
 TOF_fd = [WPI_TOF(ωs, p, fieldline, plasma; wave=wave, use_boris=use_boris, field_dependent=true).tof for p in particles]
-TOF_fi = [WPI_TOF(ωs, particle, fieldline, plasma; wave=wave, use_boris=use_boris, field_dependent=false).tof for p in particles]
+TOF_fi = [WPI_TOF(ωs, p, fieldline, plasma; wave=wave, use_boris=use_boris, field_dependent=false).tof for p in particles]
 
 ## Make Figure
 fig = Figure(size=(800, 400))
@@ -58,7 +58,7 @@ else
         fig[1,1],
         xlabel="ω / Ωₑ",
         ylabel="TOF [s]",
-        title="Tsyganenko model with pitch-angle α = $(α0)°",
+        title="Tsyganenko model with pitch-angle α = $(α0)° at $station $t",
     )
 end
 

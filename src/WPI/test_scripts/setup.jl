@@ -30,7 +30,7 @@ density = DentonDensity(fieldline)
 plasma = PlasmaState(fieldline, density)
 
 ## Define the wave
-modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
+modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 amplitude = ConstantAmplitude(100e-12)
 
 Ψ0 = 0.0

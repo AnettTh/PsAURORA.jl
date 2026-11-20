@@ -44,7 +44,7 @@ plasma = PlasmaState(fieldline, density)
 
 ## Make the wave
 amplitude = ConstantAmplitude(100e-12)
-modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
+modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 
 Ψ0_grid = range(0, 3π/2, length=4)
 waves = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ0) for Ψ0 in Ψ0_grid]
@@ -190,7 +190,7 @@ config_info = join([
     "# Particles: $(n_total)",
     "# Precipitated: $(n_precip)",
     "# Bounced: $(n_bounce)",
-    "# No resonance: $(n_no_res)" #TODO: Check that this is correct
+    "# No resonance: $(n_no_res)"
 ], "\n")
 
 Label(fig[1:n_rows, n_cols + 2], config_info;

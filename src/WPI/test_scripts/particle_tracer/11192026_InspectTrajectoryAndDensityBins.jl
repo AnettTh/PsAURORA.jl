@@ -34,8 +34,8 @@ plasma_tsyg = PlasmaState(fieldline_tsyg, density_tsyg)
 plasma_dipole = PlasmaState(fieldline_dipole, density_dipole)
 
 ## Define the waves
-modulation_tsyg = Chirp(plasma_tsyg.ω_lb[1], plasma_tsyg.ω_lb[end], 0.2)
-modulation_dipole = Chirp(plasma_dipole.ω_lb[1], plasma_dipole.ω_lb[end], 0.2)
+modulation_tsyg = ChirpModulation(plasma_tsyg.ω_lb[1], plasma_tsyg.ω_lb[end], 0.2)
+modulation_dipole = ChirpModulation(plasma_dipole.ω_lb[1], plasma_dipole.ω_lb[end], 0.2)
 amplitude = ConstantAmplitude(100e-12)
 Ψ0 = 0.0
 

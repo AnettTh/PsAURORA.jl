@@ -1,10 +1,9 @@
 using AURORA
 using StaticArrays
 
-# TODO: Finish and test this!
 # Models for defining waves intearcting with the particles.
-# Implements AbstractWaveModulation with Monochromatic, Chirp and Demekhov and
-# AbstractAmplitude with ConstantAmplitude and GaussianAmplitude (TBW).
+# Implements AbstractWaveModulation with MonochromaticModulation, ChirpModulation and Demekhov and
+# AbstractWaveAmplitude with ConstantAmplitude and GaussianAmplitude (TBW).
 
 """
     AbstractWaveModulation
@@ -13,30 +12,28 @@ Abstract type for wave modulation models.
 """
 abstract type AbstractWaveModulation end
 
-# TODO: Change name to AbstractWaveAmplitude, for consistency
 """
-    AbstractAmplitude
+    AbstractWaveAmplitude
 
 Abstract type for wave amplitude models.
 """
-abstract type AbstractAmplitude end
+abstract type AbstractWaveAmplitude end
 
-# TODO: Change name to MonochromaticModulation for consistency (and like for the others)
 """
-    Monochromatic
+    MonochromaticModulation
 
-Monocromatic wave modulation where the frequency stays constant.
+Monochromatic wave modulation where the frequency stays constant.
 
 # Fields
 
 - `ω`: Wave frequency [rad/s].
 """
-struct Monochromatic <: AbstractWaveModulation
+struct MonochromaticModulation <: AbstractWaveModulation
     ω::Float64
 end
 
 """
-    Chirp
+    ChirpModulation
 
 Chirp wave modulation with a linear increase/decrease in frequency over some time.
 
@@ -46,14 +43,14 @@ Chirp wave modulation with a linear increase/decrease in frequency over some tim
 - `ω1`: Frequency at the end [rad/s].
 - `t_duration`: Total duration of chirp [s].
 """
-struct Chirp <: AbstractWaveModulation
+struct ChirpModulation <: AbstractWaveModulation  # TODO: Simplify how this is called?
     ω0         :: Float64
     ω1         :: Float64
     t_duration :: Float64
 end
 
 # Chirp wave as described by Demekhov 2016 (TBW)
-struct Demekhov <: AbstractWaveModulation end
+struct DemekhovModulation <: AbstractWaveModulation end
 
 
 """
@@ -65,17 +62,17 @@ Constant amplitude model, which stays constant for all times `t` and positions `
 
 - `Bw`: Amplitude of the wave [T].
 """
-struct ConstantAmplitude <: AbstractAmplitude
+struct ConstantAmplitude <: AbstractWaveAmplitude
     Bw::Float64
 end
 
 wave_amplitude(a::ConstantAmplitude, t, s) = a.Bw
 
-# TODO: Add also Gaussian-like amplitude from Chen 2020
+# TODO: Add also Gaussian-like amplitude from Chen 2020. Then, make sure to look into `s_current` in boris-mover
 
 
 """
-    WaveState{M<:AbstractWaveModulation, A<:AbstractAmplitude}
+    WaveState{M<:AbstractWaveModulation, A<:AbstractWaveAmplitude}
 
 Collecting modulation and amplitude to define a complete wave state.
 
@@ -90,13 +87,13 @@ Collecting modulation and amplitude to define a complete wave state.
 Can be constructed like this, for example:
     WaveState(
     modulation::AbstractWaveModulation,
-    amplitude:AbstractAmplitude,
+    amplitude:AbstractWaveAmplitude,
     plasma::PlasmaState;
     Ψ0=2π*rand(),
     wave_direction=-1
     )
 """
-struct WaveState{M<:AbstractWaveModulation, A<:AbstractAmplitude}
+struct WaveState{M<:AbstractWaveModulation, A<:AbstractWaveAmplitude}
     modulation     :: M
     amplitude      :: A
     plasma         :: PlasmaState
@@ -141,17 +138,17 @@ Calculates the frequency `ω` at some time `t` given some `WaveState`.
 
 - The frequency `ω` at the given time `t` [rad/s].
 """
-function wave_frequency(modulation::Chirp, wave::WaveState, t)
+function wave_frequency(modulation::ChirpModulation, wave::WaveState, t)
     frequency_drift_rate = (modulation.ω1 - modulation.ω0) / modulation.t_duration
     return clamp(modulation.ω0 + frequency_drift_rate * t, modulation.ω0, modulation.ω1)
 end
 
-function wave_frequency(modulation::Monochromatic, wave::WaveState, t)
+function wave_frequency(modulation::MonochromaticModulation, wave::WaveState, t)
     return modulation.ω
 end
 
-# NOTE: Does not work yet
-function wave_frequency(modulation::Demekhov, wave::WaveState, t)
+# TODO: Finish this
+function wave_frequency(modulation::DemekhovModulation, wave::WaveState, t)
     ω0 = wave.plasma.ω_lb[1]
 
     # Find the wave-vector for the lowest density
@@ -163,7 +160,7 @@ function wave_frequency(modulation::Demekhov, wave::WaveState, t)
         wave.plasma.Ω_e[i]
     )
 
-    v_perp = 1.0  #TODO: figure out how to get this
+    v_perp = 1.0  #TODO: Figure out how to get this
 
     Bw = amplitude(wave.amplitude_model, 0.0, 0.0)
     frequency_drift_rate = (abs(qₑ) * k * v_perp * Bw) / (2π * mₑ)
@@ -191,18 +188,18 @@ Calculates the launching time for some frequency `ω`, given some modulation.
 
 - The time it takes for each frequency to be launched [s].
 """
-function wave_launch_time(modulation::Monochromatic, ω_grid)
+function wave_launch_time(modulation::MonochromaticModulation, ω_grid)
     # All frequencies launch at t = 0.0
     return zeros(length(ω_grid))
 end
 
-function wave_launch_time(modulation::Chirp, ω_grid)
+function wave_launch_time(modulation::ChirpModulation, ω_grid)
     chirp_rate = (modulation.ω1 - modulation.ω0) / modulation.t_duration
     iszero(chirp_rate) && return zeros(length(ω_grid))
     return [(ω - modulation.ω0) / chirp_rate for ω in ω_grid]
 end
 
-function wave_launch_time(modulation::Demekhov, ω_grid)
+function wave_launch_time(modulation::DemekhovModulation, ω_grid)
     throw("Demekhov wave is not fully implemented yet...")
 end
 
@@ -246,7 +243,7 @@ magnetic field to the electric field.
 function wave_fields(
     wave::WaveState,
     t::Float64,
-    s::Float64,     # TODO: Check if this can be made a kwarg
+    s::Float64,
     Ψ::Float64,
     B0::SVector{3, Float64},
     λ::Float64
@@ -256,7 +253,7 @@ function wave_fields(
     ω = wave_frequency(wave, t)
     Bw = wave_amplitude(wave.amplitude, t, s)
 
-    b̂, e1, e2, B_mag = magnetic_basis(B0)
+    _, e1, e2, _ = magnetic_basis(B0)
 
     # Find the latitude (and thus plasma parameters) in the λ_grid of the plasma closest to the one we're looking for
     i = searchsortedfirst(wave.plasma.λ_grid, λ)

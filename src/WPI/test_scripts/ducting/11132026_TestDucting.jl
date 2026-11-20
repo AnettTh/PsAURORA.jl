@@ -46,7 +46,7 @@ plasma_ducted = PlasmaState(fieldline, ne_ducted)
 
 ## Make the wave
 amplitude = ConstantAmplitude(100e-12)
-modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # Do not depend on density
+modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # Do not depend on density
 
 wave = WaveState(modulation, amplitude, plasma, fieldline)
 wave_ducted = WaveState(modulation, amplitude, plasma_ducted, fieldline)

@@ -154,11 +154,10 @@ function boris_mover(
 
         # Add wave perturbation at current time-step, if a wave exists
         if !isnothing(wave)
-            # TODO: This is a dipole approximation, is there a better way?
             r_mag = sqrt(x^2 + y^2 + z^2)
             λ_current = asin(z / r_mag)
 
-            # TODO: Placeholder, this only matters if the amplitude of the wave depends on the position
+            # NOTE: Placeholder, this only matters if the amplitude of the wave depends on the position
             s_current = 0.0
 
             # Find perturbation and update the current field

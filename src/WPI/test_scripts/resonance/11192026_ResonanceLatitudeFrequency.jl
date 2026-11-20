@@ -30,7 +30,7 @@ density = DentonDensity(fieldline)
 plasma = PlasmaState(fieldline, density)
 
 ## Define the wave
-modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
 wave = WaveState(modulation, amplitude, plasma, fieldline)
 
@@ -52,7 +52,7 @@ ax = Axis(
 
 colors = ["#0072B2", "#D55E00", "#009E73", "#CC79A7"]
 linestyles = [:solid, :dash]
-Ω_eq = minimum(plasma.Ω_e)      # TODO: add this to plasmastate!
+Ω_eq = minimum(plasma.Ω_e)
 
 ## Plot resonances
 for n in ns, iE in eachindex(E_grid)

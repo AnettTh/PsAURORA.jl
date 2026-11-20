@@ -44,9 +44,8 @@ nes = [DentonDensity(fieldline; duct_enhancement=d) for d in duct_fractions]
 plasmas = [PlasmaState(fieldline, ne) for ne in nes]
 
 ## Make the wave
-# NOTE: Is the waves identical? Looks like it...
 amplitude = ConstantAmplitude(100e-12)
-modulation = Chirp(plasmas[1].ω_lb[1], plasmas[1].ω_lb[end], 0.2)
+modulation = ChirpModulation(plasmas[1].ω_lb[1], plasmas[1].ω_lb[end], 0.2)
 
 waves = [WaveState(modulation, amplitude, plasma, fieldline) for plasma in plasmas]
 

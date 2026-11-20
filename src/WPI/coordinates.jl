@@ -10,7 +10,6 @@ struct Cartesian
     z::Float64
 end
 
-# NOTE: This might be an issue, as it is spherical dipole coordinates, not pure spherical coordinates!
 struct Dipolar
     L::Float64
     λ::Float64
@@ -133,7 +132,6 @@ function sun_unit_vector_GEO(t::DateTime)
 end
 
 
-# TODO: Plot for verification
 function axis_SM(t::DateTime)
     m̂ = dipole_axis_GEO()               # m̂, unit vector to the north geomagnetic pole
     ŝ = sun_unit_vector_GEO(t)          # ŝ, connects the sun and the Earth center

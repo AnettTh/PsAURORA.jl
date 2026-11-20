@@ -35,7 +35,7 @@ struct DentonDensity{F<:AbstractMagneticField} <: AbstractDensityModel
     magnetic_field::F           # Magnetic field model.
 end
 
-# TODO: Update docstring
+
 """
     DentonDensity(magnetic_field, L, ϕ_eq)
     DentonDensity(::typeof(dipole_field), L, ϕ_eq)

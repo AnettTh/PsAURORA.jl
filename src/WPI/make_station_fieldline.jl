@@ -123,7 +123,6 @@ function StationFieldLine(
     i_eq = argmin(Bs)
 
     # Direction of particles movement compared to the indexation of the fieldline
-    # NOTE: This might not be necessary, check it!
     j = clamp(i_eq, 2, length(xs) - 1)
     tangent = SVector(xs[j+1] - xs[j-1], ys[j+1] - ys[j-1], zs[j+1] - zs[j-1])
     B_along_index = dot(magnetic_field(Cartesian(xs[j], ys[j], zs[j])), tangent) > 0

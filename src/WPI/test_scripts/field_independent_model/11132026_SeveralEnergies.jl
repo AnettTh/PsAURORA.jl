@@ -1,5 +1,7 @@
 using AURORA
 using CairoMakie
+using Dates
+using ProgressMeter
 
 ## Define method
 duct_enhancement = 0.0
@@ -13,16 +15,15 @@ dst = -28.0
 byimf = 0.0
 bzimf = 2.0
 
-# TODO: Figure out why this one doesnt run with Tsyganekofield
-magnetic_field = DipoleMagneticField()
-#magnetic_field = TsyganenkoMagneticField(t; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
+#magnetic_field = DipoleMagneticField()
+magnetic_field = TsyganenkoMagneticField(t; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
 
 ## Define the stations fieldline
 ref = LTPReference(station)
 fieldline = StationFieldLine(magnetic_field, ref, t)
 
 ## Make particle
-α0 = 2
+α0 = 0.5                # NOTE: If this is above the loss-cone, returns TOF=0.0
 μ0 = -cos(deg2rad(α0))
 
 E_grid = range(7e3, 40e3, length=500)
@@ -37,7 +38,7 @@ desnity = DentonDensity(fieldline)
 plasma = PlasmaState(fieldline, density)
 
 ## Define the wave
-modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
+modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)   # 0.2 s chirp
 amplitude = ConstantAmplitude(100e-12)                      # 100 pT
 wave = WaveState(modulation, amplitude, plasma, fieldline)
 
@@ -55,13 +56,13 @@ TOF_independent = zeros(length(E_grid), length(ωs))
 end
 
 ## Make Figure
-fig = Figure(size=(700,400))
+fig = Figure(size=(800,400))
 if typeof(magnetic_field) == DipoleMagneticField
     ax = Axis(
         fig[1,1],
         xlabel="TOF [s]",
         ylabel="E [keV]",
-        title="Dipole approximation with pitch-angle α = $(α0)°",
+        title="Dipole approximation with pitch-angle α = $(α0)° at $station $t",
     )
 else
     ax = Axis(
@@ -85,8 +86,8 @@ for (i, ω) in enumerate(ωs)
         linestyle=:dash
     )
 end
-lines!(ax, [NaN], [NaN]; color=:black, linestyle=:solid,  label="Field-dependent")
-lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,   label="Field-independent")
+lines!(ax, [NaN], [NaN]; color=:black, linestyle=:solid,  label="field-dependent")
+lines!(ax, [NaN], [NaN]; color=:black, linestyle=:dash,   label="field-independent")
 
 Legend(fig[1,2], ax)
 

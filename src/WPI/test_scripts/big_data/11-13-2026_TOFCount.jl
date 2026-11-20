@@ -69,7 +69,7 @@ plasma = PlasmaState(fieldline, density)
 ## Define the wave
 a_Bw = 100e-12
 amplitude = ConstantAmplitude(a_Bw)
-modulation = Chirp(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
+modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 
 wave = WPI ? WaveState(modulation, amplitude, plasma, fieldline) : nothing
 

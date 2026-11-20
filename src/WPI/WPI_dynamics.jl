@@ -170,7 +170,6 @@ function particle_transit(
         t_e
 end
 
-# TODO: Update
 """
     point_of_resonance(
     ω::Float64,
@@ -289,7 +288,7 @@ function point_of_resonance(
     return (λ=λ_resonance, r=r_resonance, v=v_resonance, i=i)
 end
 
-# TODO: This can be done faster, as Ω_e, ω_pe and α don't change with ω
+# IDEA: This can be done faster, as Ω_e, ω_pe and α don't change with ω
 function point_of_resonance(
     ω_grid::AbstractVector,
     particle::ParticleState,
@@ -301,7 +300,7 @@ function point_of_resonance(
     return [point_of_resonance(ω, particle, fieldline, plasma, wave; kwargs...) for ω in ω_grid]
 end
 
-# TODO: Update docstring
+
 """
     WPI_TOF(
     ω_grid::AbstractVector,

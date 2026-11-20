@@ -23,9 +23,10 @@ struct PlasmaState{M}
     ω_pe     :: Vector{Float64}
     ω_lb     :: Vector{Float64}
     ne_model :: M
+    # TODO: Add also Ω_eq to the struct?
 end
 
-# TODO: Update docstring, major revisions!
+
 """
     PlasmaState(
     λ_grid::AbstractVector,
