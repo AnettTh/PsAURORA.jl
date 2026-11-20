@@ -5,7 +5,8 @@ using CairoMakie
 duct_enhancement = 0.5
 station = :sodankyla
 
-## Define magnetic fieldt = DateTime("2020-12-21T02:00:00")
+## Define magnetic field
+t = DateTime("2020-12-21T10:00:00")
 pdyn = 2.0
 dst = -28.0
 byimf = 0.0
@@ -26,7 +27,7 @@ tsyg_fieldline = StationFieldLine(tsyg_field, ref, t)
 dipole_fieldline = StationFieldLine(dipole_field, ref, t)
 
 ## Define the particles
-α0 = 0.5
+α0 = 2.0
 μ0 = -cos(deg2rad(α0))
 E = 10e3
 
@@ -56,7 +57,7 @@ ax = Axis(
     fig[1, 1],
     xlabel="ω [rad/s]",
     ylabel="Eₘᵢₙ [keV]",
-    title="Threshold for cyclotron resonance",
+    title="Threshold for cyclotron resonance at $station $t",
     #yscale=log10,
 )
 
@@ -67,4 +68,4 @@ axislegend(ax; position=:rt)
 xlims!(ax, 0.1, 0.5)
 ylims!(ax, 7, 40)       # Realistic values
 
-#save("src/WPI/test_scripts/energies/Emin_phi_$(round(rad2deg(ϕ), digits=1)).png", fig)
+save("src/WPI/test_scripts/minimal_resonance/figures/11192026_MinimalResonanceEnergy_$t.png", fig)

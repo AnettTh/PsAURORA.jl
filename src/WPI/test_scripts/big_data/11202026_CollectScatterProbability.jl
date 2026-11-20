@@ -48,7 +48,7 @@ function save_results(file, TOF, FP, params)
         TOF,
         FP,
         E_grid,
-        α_grid,
+        α0_grid,
         ω_frac,
         Ψ0_grid,
         params,

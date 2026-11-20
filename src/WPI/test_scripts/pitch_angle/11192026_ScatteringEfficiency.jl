@@ -43,5 +43,7 @@ waves = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ0) for Ψ0 in
 ## Get the results
 α_FP = Matrix{Any}(nothing, length(μ0_grid), length(Ψ0_grid))
 @showprogress for (i, p) in enumerate(particles), (j, w) in enumerate(waves)
+    # TODO: Run with resonance
+    #α_FP[i, j] = boris_mover(p, fieldline, w; ω=ω).α_footpoint
     α_FP[i, j] = boris_mover(p; wave=w).α_footpoint
 end

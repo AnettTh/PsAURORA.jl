@@ -45,11 +45,14 @@ waves = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ0) for Ψ0 in
 results = Vector{Any}(nothing, length(Ψ0_grid))
 
 @showprogress for i in eachindex(waves)
+    # TODO: run with resonance
+    #results[i] = boris_mover(particle, fieldline, waves[i]; ω=ω, store_trajectory=true, stop_when_bouncing=false, n_T=10_000)
     results[i] = boris_mover(
         particle;
         wave = waves[i],
         store_trajectory = true,
-        stop_when_bouncing = true,
+        stop_when_bouncing = false,
+        n_T = 10_000
     )
 end
 
@@ -93,8 +96,8 @@ vlines!(ax, [λ_start[1]]; linestyle=:dot, color=:black, label="λᵣₑₛ")
 
 axislegend(ax; position=:lt)
 
-ylims!(ax, 0, 70)
-xlims!(ax, 0, maximum(rad2deg.(fieldline.λs)))
+ylims!(ax, 0, 90)
+xlims!(ax, -70, maximum(rad2deg.(fieldline.λs)))
 #save("src/WPI/test_scripts/pitch_angle/figures/11192026_AlphaLatitudeEvolution_HighAlpha.png", fig)
 ##
 #xlims!(ax, 18.5, 19)

@@ -48,6 +48,8 @@ results_dipole = Vector{Any}(nothing, length(E_grid))
 
 @showprogress for i in eachindex(particles_tsyg)
 
+    # TODO: Run with correct resonance
+    #results_tsyg[i] = boris_mover(particles_tsyg[i], fieldline_tsyg, wave_tsyg; store_trajectory=true)
     results_tsyg[i] = boris_mover(particles_tsyg[i];
         wave               = wave_tsyg,
         n_T                = 100_000,
@@ -55,6 +57,7 @@ results_dipole = Vector{Any}(nothing, length(E_grid))
         store_trajectory   = true,
         stop_when_bouncing = true,
     )
+    #results_dipole[i] = boris_mover(particles_dipole[i], fieldline_dipole, wave_dipole; store_trajectory=true)
     results_dipole[i] = boris_mover(particles_dipole[i];
         wave               = wave_dipole,
         n_T                = 100_000,

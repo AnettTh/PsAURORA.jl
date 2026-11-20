@@ -21,7 +21,7 @@ ref = LTPReference(:sodankyla)
 fieldline = StationFieldLine(magnetic_field, ref, t)
 
 ## Define particle
-E = range(7e3, 30e3, length=1000)
+E = range(7e3, 40e3, length=1000)
 α0 = 1.0
 μ0 = -cos(deg2rad(α0))
 
@@ -42,14 +42,27 @@ wave = WaveState(modulation, amplitude, plasma, fieldline)
 ω =  ω_frac * minimum(plasma.Ω_e)
 
 α_footpoint = fill(NaN, length(E))
-@showprogress for (i, p) in enumerate(particle)
-    result = boris_mover(p; wave=wave)
-    isnothing(result.footpoint) && continue
-    α_footpoint[i] = result.α_footpoint
+FP = fill(NaN, 3, length(E))
+progress = Progress(length(particle))
+Threads.@threads :greedy for i in eachindex(particle)
+    result = boris_mover(particle[i], fieldline, wave; ω=ω)
+    if !isnothing(result.footpoint)
+        α_footpoint[i] = result.α_footpoint
+        FP[:, i] .= result.footpoint
+    end
+    next!(progress)
 end
 
-E = collect(E) ./ 1e3
+fp_enu = fill(NaN, size(FP))
+for iE in axes(FP, 2)
+    any(isnan, @view FP[:, iE]) && continue
+    fp_enu[:, iE] .= FP_to_ENU(FP[:, iE], LTPReference(station), t)
+end
 
+east_km = fp_enu[1, :] ./ 1e3
+
+E_keV = collect(E) ./ 1e3
+##
 fig = Figure(size=(700, 400))
 ax = Axis(
     fig[1, 1],
@@ -58,8 +71,10 @@ ax = Axis(
     title="Pitch angle at footpoint for precipitating particles at $station $t \n" * "α₀ = $α0"
 )
 
+lim = maximum(abs, filter(isfinite, east_km); init=1.0)
 α_fp_plot = [isnothing(a) ? NaN : rad2deg(a) for a in α_footpoint]
-sc = scatter!(ax, E, α_fp_plot, color="#E69F00")
+sc = scatter!(ax, E_keV, α_fp_plot, color=east_km, colormap=:turbo, colorrange=(0, lim))
+Colorbar(fig[1, 2], sc; label="East drift [km]")
 ylims!(ax, 0, 90)
 xlims!(ax, 7, 30)
 
