@@ -252,6 +252,7 @@ function boris_mover(
                             α=α_array[1:i-1],
                             footpoint=nothing,
                             α_footpoint=nothing,
+                            E_footpoint=nothing,
                             n_bounces=count_bounces ? n_bounces : nothing,
                         )
                     else
@@ -259,6 +260,7 @@ function boris_mover(
                             time=t_current,
                             footpoint=nothing,
                             α_footpoint=nothing,
+                            E_footpoint=nothing,
                             n_bounces=count_bounces ? n_bounces : nothing,
                         )
                     end
@@ -311,6 +313,7 @@ function boris_mover(
             v_mag_fp = sqrt(vx^2 + vy^2 + vz^2)
             v_par_fp = vx*b̂_fp[1] + vy*b̂_fp[2] + vz*b̂_fp[3]
             α_footpoint = acos(clamp(abs(v_par_fp) / v_mag_fp, 0, 1.0))
+            E_footpoint = ((particle.γ - 1) * mₑ * c₀^2) / abs(qₑ)
 
             if store_trajectory
                 return (
@@ -320,6 +323,7 @@ function boris_mover(
                     α=α_array[1:i],
                     footpoint=(x, y, z),
                     α_footpoint=α_footpoint,
+                    E_footpoint=E_footpoint,
                     n_bounces=count_bounces ? n_bounces : nothing,
                 )
             else
@@ -327,6 +331,7 @@ function boris_mover(
                     time=t_current,
                     footpoint=(x, y, z),
                     α_footpoint=α_footpoint,
+                    E_footpoint=E_footpoint,
                     n_bounces=count_bounces ? n_bounces : nothing,
                 )
             end
@@ -348,6 +353,7 @@ function boris_mover(
             α=α_array,
             footpoint=nothing,
             α_footpoint=nothing,
+            E_footpoint=nothing,
             n_bounces=count_bounces ? n_bounces : nothing,
         )
     else
@@ -355,7 +361,21 @@ function boris_mover(
             time=t_current,
             footpoint=nothing,
             α_footpoint=nothing,
+            E_footpoint=nothing,
             n_bounces=count_bounces ? n_bounces : nothing,
         )
     end
+end
+
+
+function boris_mover(
+    particle::ParticleState,
+    fieldline::AbstractFieldLine,
+    wave::WaveState;
+    ω::Real=wave_frequency(wave, 0.0),        # default: the frequency the wave has at t = 0
+    kwargs...,
+)
+    res = point_of_resonance(ω, particle, fieldline, wave.plasma, wave)
+    isnothing(res) && return nothing           # no resonance, nothing to simulate
+    return boris_mover(particle; wave=wave, r_resonance=res.r, kwargs...)
 end
