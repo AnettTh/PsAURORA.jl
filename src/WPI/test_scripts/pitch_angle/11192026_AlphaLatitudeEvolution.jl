@@ -3,6 +3,7 @@ using CairoMakie
 using ProgressMeter
 using Dates
 
+# NOTE: Works, play around with this as it has gotten new resonance
 ## Configuration
 duct_enhancement = 0.0
 station          = :sodankyla
@@ -45,15 +46,7 @@ waves = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ0) for Ψ0 in
 results = Vector{Any}(nothing, length(Ψ0_grid))
 
 @showprogress for i in eachindex(waves)
-    # TODO: run with resonance
-    #results[i] = boris_mover(particle, fieldline, waves[i]; ω=ω, store_trajectory=true, stop_when_bouncing=false, n_T=10_000)
-    results[i] = boris_mover(
-        particle;
-        wave = waves[i],
-        store_trajectory = true,
-        stop_when_bouncing = false,
-        n_T = 10_000
-    )
+    results[i] = boris_mover(particle, fieldline, waves[i]; ω=ω, store_trajectory=true, stop_when_bouncing=false, n_T=10_000)
 end
 
 ## Latitude and pitch angle of each trajectory

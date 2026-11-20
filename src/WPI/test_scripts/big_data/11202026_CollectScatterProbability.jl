@@ -15,17 +15,17 @@ chirp_duration = 2.0
 a_Bw = 100e-12
 
 
-## Grids with TOF(E, μ0, ω, Ψ0) = (6, 250, 3, 23)
+## Grids with TOF(E, μ0, ω, Ψ0) = (6, 250, 3, 48)
 E_grid = [7e3, 10e3, 15e3, 20e3, 30e3, 40e3]
 α0_grid = range(0.1, 10, length=250)
 μ0_grid = -cosd.(α0_grid)
 ω_frac = [0.1, 0.38, 0.5]
-Ψ0_grid = range(0, 2π, length=24)[1:end-1]
+Ψ0_grid = range(0, 2π, length=48)[1:end-1]
 
 ## Output
 TOF = fill(NaN, length(E_grid), length(μ0_grid), length(ω_frac), length(Ψ0_grid))
 FP = fill(NaN, 3, length(E_grid), length(μ0_grid), length(ω_frac), length(Ψ0_grid))
-outfile = "src/WPI/data/11-20-2026/CollectScatterProbability.jld2"
+outfile = "src/WPI/data/11-20-2026/CollectScatterProbability2.jld2"
 
 mkpath(dirname(outfile))
 

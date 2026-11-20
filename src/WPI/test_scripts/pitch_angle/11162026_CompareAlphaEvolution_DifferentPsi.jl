@@ -58,19 +58,17 @@ results_tsyg = Vector{Any}(nothing, length(Ψ0_grid))
 results_dipole = Vector{Any}(nothing, length(Ψ0_grid))
 
 @showprogress for i in eachindex(waves_tsyg)
-    # TODO: Run with resonance
-    #results_tsyg[i] = boris_mover(particles_tsyg[i], fieldline_tsyg, wave_tsyg; store_trajectory=true)
     results_tsyg[i] = boris_mover(
-        particle_tsyg;
-        wave = waves_tsyg[i],
-        store_trajectory = true,
+        particle_tsyg,
+        fieldline_tsyg,
+        waves_tsyg[i];
+        store_trajectory=true
     )
-    #results_dipole[i] = boris_mover(particles_dipole[i], fieldline_dipole, wave_dipole; store_trajectory=true)
     results_dipole[i] = boris_mover(
-        particle_dipole;
-        wave = waves_dipole[i],
-        store_trajectory = true,
-    )
+        particle_dipole,
+        fieldline_dipole,
+        waves_dipole[i];
+        store_trajectory=true)
 end
 
 
@@ -87,8 +85,7 @@ function plot_pitchangle!(ax, results, Ψ0_grid, colors)
         α = replace(rad2deg.(r.α), 0.0 => NaN)
         lines!(ax, r.time, α;
             color = colors[i],
-            label = "$(round(Ψ0_grid[i]/π, digits=1))π",
-        )
+            label = "$(round(Ψ0_grid[i]/π, digits=1))π")
     end
 end
 
@@ -126,8 +123,8 @@ hidexdecorations!(ax_dipole; grid=false)
 Legend(fig[1:2, 2], ax_tsyg)
 
 
-#save("src/WPI/test_scripts/pitch_angle/figures/11192026_CompareAlphaEvolution_DifferentPsi.png", fig)
-#
-#ylims!(ax_tsyg, -0.1, 15.0)
-#xlims!(ax_tsyg, 0.2, 0.3)
-#save("src/WPI/test_scripts/pitch_angle/figures/11192026_CompareAlphaEvolution_DifferentPsi_zoomed.png", fig)
+save("src/WPI/test_scripts/pitch_angle/figures/11192026_CompareAlphaEvolution_DifferentPsi.png", fig)
+
+ylims!(ax_tsyg, -0.1, 15.0)
+xlims!(ax_tsyg, 0.1, 0.5)
+save("src/WPI/test_scripts/pitch_angle/figures/11192026_CompareAlphaEvolution_DifferentPsi_zoomed.png", fig)

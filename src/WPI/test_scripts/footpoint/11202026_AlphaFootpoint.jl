@@ -51,7 +51,7 @@ pairs_EΨ = CartesianIndices((nE, nΨ))
 progress = Progress(length(pairs_EΨ))
 Threads.@threads :greedy for k in eachindex(pairs_EΨ)
     iE, iΨ = Tuple(pairs_EΨ[k])
-    # TODO: Add r_resonance to run boris_mover
+    # TODO: run with resonance
     result = boris_mover(particle[iE], fieldline, waves[iΨ]; ω=ω)
     if !isnothing(result.footpoint)
         α_FP[iE, iΨ] = result.α_footpoint
