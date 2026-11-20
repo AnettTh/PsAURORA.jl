@@ -79,7 +79,7 @@ include("WPI/make_particle.jl")
 export ParticleState
 
 include("WPI/make_wave.jl")
-export AbstractWaveModulation, Chirp, Monochromatic, Demekhov
+export AbstractWaveModulation, ChirpModulation, MonochromaticModulation, DemekhovModulation
 export wave_frequency
 export AbstractAmplitude, ConstantAmplitude
 export wave_amplitude
