@@ -4,6 +4,8 @@ using ProgressMeter
 using JLD2
 using Dates
 
+# TODO: Make this with zero also, to allow for two-panel figure with duct/non-duct
+
 ## Define method
 name = "src/WPI/data/11-19-2026/TOFLine_Ducted0.5.jld2"
 duct_enhancement = 0.5

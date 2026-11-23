@@ -2,7 +2,7 @@ using AURORA
 using CairoMakie
 using JLD2
 
-@load "src/WPI/data/11-20-2026/CollectScatterProbability.jld2"
+@load "src/WPI/data/11-20-2026/CollectScatterProbability2.jld2"
 
 ## Count how many of each energy and α₀ have precipitated
 precipitated = @. isfinite(TOF) & (TOF > 0)

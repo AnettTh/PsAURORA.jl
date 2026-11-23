@@ -48,14 +48,14 @@ results = Vector{Any}(nothing, length(Ψ0_grid))
 
 @showprogress for i in eachindex(waves)
     # TODO: Add r_resonance to run boris_mover
-    #results[i] = boris_mover(particle, fieldline, waves[i]; store_trajectory=true, stop_when_bouncing=false, n_T=n_T, ω=ω)
-    results[i] = boris_mover(
-        particle;
-        wave = waves[i],
-        store_trajectory = true,
-        stop_when_bouncing = false,
-        n_T = n_T
-    )
+    results[i] = boris_mover(particle, fieldline, waves[i]; store_trajectory=true, stop_when_bouncing=false, n_T=n_T, ω=ω)
+    #results[i] = boris_mover(
+    #    particle;
+    #    wave = waves[i],
+    #    store_trajectory = true,
+    #    stop_when_bouncing = false,
+    #    n_T = n_T
+    #)
 end
 
 ## Latitude and pitch angle of each trajectory
@@ -75,10 +75,11 @@ end
 
 ## Figure: one axis per Ψ₀
 n_rows, n_cols = 2, 2                                  # needs n_rows * n_cols == length(Ψ0_grid)
-fig = Figure(size=(800, 400))
+fig = Figure(size=(1100, 600))
 panel_axes = Matrix{Axis}(undef, n_rows, n_cols)
 
 λ_start, _ = λ_and_α(results[1])                       # same start point for every phase
+colors = ["#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7"]
 
 for (i, r) in enumerate(results)
     row, col = fldmod1(i, n_cols)
@@ -128,8 +129,8 @@ rowgap!(fig.layout, 20)
 
 ##
 #save("src/WPI/test_scripts/pitch_angle/figures/11202026_AlphaLatitudeEvolutionGrid.png", fig)
-#
+##
 #ylims!(panel_axes[1, 1], 0, 20)
 #xlims!(panel_axes[1, 1], -5, 25)
-#
+##
 #save("src/WPI/test_scripts/pitch_angle/figures/11202026_AlphaLatitudeEvolutionGrid_zoomed.png", fig)

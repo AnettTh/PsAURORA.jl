@@ -39,7 +39,7 @@ wave = WaveState(modulation, amplitude, plasma, fieldline)
 
 ## Frequencies to evaluate
 ω_frac = 0.3
-ω =  ω_frac * minimum(plasma.Ω_e)
+ω = ω_frac * minimum(plasma.Ω_e)
 
 α_footpoint = fill(NaN, length(E))
 FP = fill(NaN, 3, length(E))

@@ -27,13 +27,13 @@ percipitated = findall(isfinite, vec(east))
 Δeast = vec(east)[percipitated]
 Δnorth = vec(north)[percipitated]
 E = vec(E_all)[percipitated]
+TOF_all = vec(TOF)[percipitated]
 
 @show length(percipitated), length(east)      # number of footpoints out of the total
 
 ## Plot footpoints only
-fig_FP = Figure(size = (700, 400))
-ax_FP = Axis(fig_FP[1, 1];
-    xlabel = "East [km]",
+fig = Figure(size = (700, 300))
+ax_FP = Axis(fig[1, 1];
     ylabel = "North [km]",
     title  = "Footpoints relative to $(station) at $t",
     aspect = DataAspect(),
@@ -48,7 +48,10 @@ sc_FP = scatter!(
     colorrange = extrema(E_keV),
     markersize = 6,
 )
-Colorbar(fig_FP[1, 2], sc_FP; label = "E [keV]")
-ylims!(4.4, 4.9)
-display(fig_FP)
-save("src/WPI/test_scripts/big_data/figures/11132026-FP/FP_only.png", fig_FP)
+Colorbar(fig[1, 2], sc_FP; label = "E [keV]")
+
+ylims!(ax_FP, 4.5, 4.82)
+xlims!(ax_FP, 1.1, 2.0)
+
+#display(fig_FP)
+#save("src/WPI/test_scripts/big_data/figures/11132026-FP/FP_only.png", fig_FP)

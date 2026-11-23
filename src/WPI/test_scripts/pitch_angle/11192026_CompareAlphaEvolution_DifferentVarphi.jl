@@ -60,7 +60,6 @@ results_tsyg = Vector{Any}(nothing, length(φ0_grid))
 results_dipole = Vector{Any}(nothing, length(φ0_grid))
 
 @showprogress for i in eachindex(φ0_grid)
-    # TODO: Check this again, suspiciously similar to the one for several Ψ0
     results_tsyg[i] = boris_mover(particle_tsyg, fieldline_tsyg, wave_tsyg; store_trajectory=true, φ0=φ0_grid[i])
     #results_tsyg[i] = boris_mover(
     #    particle_tsyg;
