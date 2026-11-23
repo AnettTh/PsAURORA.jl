@@ -22,6 +22,10 @@ takes for the particle to travel along a dipolar magnetic field and to the mirro
 
 - `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
   passing `true` will allow for input in degrees.
+
+# Returns
+
+- Analytically derived quarted bounce period [s].
 """
 function quarter_bounceperiod(L, E_eV, m, θ; degrees::Bool=false)
 
@@ -58,6 +62,10 @@ particle.
 
 - `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
   passing `true` will allow for input in degrees.
+
+# Returns
+
+- Analytically derived approximation of the average drift velocity [m/s].
 """
 function average_driftvelocity(L, E_eV, q, θ; degrees::Bool=false)
 
@@ -96,6 +104,10 @@ pitch angle, and returns an approximation for the total drift of the particle.
 - `degrees::Bool`: Choose units for the pitch angle, default is `false` (i.e. radians) and
   passing `true` will allow for input in degrees.
 
+# Returns
+
+- Analytically derived approximation to total drift of the particle [m].
+
 """
 function total_drift(L, E_eV, q, m, θ; degrees::Bool=false)
 
@@ -104,6 +116,7 @@ function total_drift(L, E_eV, q, m, θ; degrees::Bool=false)
 
     return τ * v_d
 end
+
 
 """
     minimal_resonance_energy(ω, plasma, particle)
@@ -122,13 +135,13 @@ lower-limit, and vice versa. The equation is taken from Khazanov et al. (2015).
 - `particle`: Structure holding particle parameters.
 
 # Returns
-- The minimal energy the given frequency can resonate with.
+- The minimal energy the given frequency can resonate with [J].
 """
 function minimal_resonance_energy(ω, plasma, particle)
 
     # TODO: Read documentation, should this be minimal(plasma.Ω_e)?? Does it apply at all?
+    # Calculate the magnetic energy
     E_m = norm(particle.B0)^2 / (2 * mu0 * plasma.n_e[1])
-    E_min = @. E_m * (plasma.Ω_e[1] / ω) * (1 - (ω)/(plasma.Ω_e[1]))^3
 
-    return E_min
+    return @. E_m * (plasma.Ω_e[1] / ω) * (1 - (ω)/(plasma.Ω_e[1]))^3
 end
