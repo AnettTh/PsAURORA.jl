@@ -3,71 +3,161 @@ using Geodesy
 using PythonCall
 using Dates
 
-## Coordinate types
+#-------------------------------------Coordinate types--------------------------------------
+"""
+    Cartesian
+
+Cartesian coordinates, given in metres. In the code, it is used in SM coordinates, unless
+stated otherwise. Is constructed either by giving it the fields, or by a `Dipolar` type.
+
+# Fields
+# TODO: Check that this is correct!
+- `x`: Positive towards the sun [m].
+- `y`: Positive towards dusk [m].
+- `z`: Positive north along the dipole axis [m].
+
+# Constructors
+
+    Cartesian(x::Float64, y::Float64, z::Float64)
+    Cartesian(r::Dipolar)
+"""
 struct Cartesian
     x::Float64
     y::Float64
     z::Float64
 end
 
+# TODO: Check if this is used at all, if not, remove it!
+"""
+    Dipolar
+
+Dipolar coordinates, given in metres and radians. The use of these coordinates assumes a
+dipolar geometry, and hence must not be used together with the Tsyganenko magnetic field
+model naively. Is constructed either by giving it the fields, or by a `Cartesian` type.
+
+# Fields
+
+- `L`: L-shell of the position, i.e. the point of the fieldline furthest away from the
+  center of the Earth, in the equatorial plane, given in units of Earth radii [RE].
+- `λ`: Latitude of the position in radians, measured from the equatorial plane and north
+  (south) being positive (negative). #TODO: Check if this should be latitude or colatitude!
+- `ϕ`: Longitude of the position in radians, to complete the system. Only relevant for
+  book-keeping purposes, as the dipolar approximation has axisymmetry.
+  # TODO: Check also if this is needed
+
+  # Constructors
+
+    Dipolar(L::Float64, λ::Float64, ϕ::Float64)
+    Dipolar(r::Cartesian)
+
+  """
 struct Dipolar
     L::Float64
     λ::Float64
     ϕ::Float64
 end
 
+function Cartesian(r::Dipolar)
+    cλ = cos(r.λ)
+
+    r_mag = r.L * RE * cλ^2
+
+    x = r_mag * cλ * cos(r.ϕ)
+    y = r_mag * cλ * sin(r.ϕ)
+    z = r_mag * sin(r.λ)
+    return Cartesian(x, y, z)
+end
+
+function Dipolar(r::Cartesian)
+    r_mag = sqrt(r.x^2 + r.y^2 + r.z^2)
+    λ = asin(r.z / r_mag)
+    ϕ = mod2pi(atan(r.y, r.x))
+    L = r_mag / (RE * cos(λ)^2)
+    return Dipolar(L, λ, ϕ)
+end
+"""
+    EastNorthUp
+
+Cartesian coordinates centered at some reference point with a local tangent plane, pointing
+east, north and up, given in metres.
+
+# Fields
+
+- `e`: Component pointing eastward from the reference [m].
+- `n`: Component pointing northward from the reference [m].
+- `u`: Component pointing upward from the reference [m].
+"""
 struct EastNorthUp
     e::Float64
     n::Float64
     u::Float64
 end
 
+"""
+    LTPReference
+
+Stores latitude, longitude and altitude of a reference point, used to construct a local
+tangent plane, used as the reference for the east-north-up coordinate system. Here, the
+coordinates are given in degrees rather than radians, as it is more natural to link them to
+actual geographic locations.
+
+# Fields
+
+- `lat_deg`: latitude of the reference-position [°].
+- `lon_deg`: longitude of the reference-position [°].
+- `alt_m`: Altitude of the reference position [m].
+
+# Constructors
+
+    LTPReference(lat_deg, lon_deg, alt_m)
+    LTPReference(name::Symbol)
+
+The form using symbols looks up a station existing in the code, all at altitude 0:
+`:longyearbyen`, `:tromso` or `:sodankyla`, throwing a `KeyError` for any name not yet added
+to the list.
+"""
 struct LTPReference
     lat_deg::Float64
     lon_deg::Float64
     alt_m::Float64
 end
 
-struct LatitudeLongitudeAltitude
-    lat_deg::Float64
-    lon_deg::Float64
-    alt_m::Float64
-end
-
-
-# Adding some locations that can be called by name
 LTPReference(name::Symbol) = LTPReference(
     Dict(
-        :tromso       => (69.66,  18.94, 0.0),
-        :longyearbyen => (78.22,  15.63, 0.0),
-        :sodankyla    => (67.37,  26.63, 0.0),
+        :longyearbyen => (78.22, 15.63, 0.0),
+        :tromso       => (69.66, 18.94, 0.0),
+        :sodankyla    => (67.37, 26.63, 0.0),
     )[name]...
 )
 
-# Define conversion between the types
-function Dipolar(r::Cartesian)
-    r_mag = sqrt(r.x^2 + r.y^2 + r.z^2)
-    λ     = asin(r.z / r_mag)
-    ϕ     = mod2pi(atan(r.y, r.x))
-    L     = r_mag / (RE * cos(λ)^2)
-    return Dipolar(L, λ, ϕ)
-end
 
-function Cartesian(r::Dipolar)
-    r_mag = r.L * RE * cos(r.λ)^2
-    x     = r_mag * cos(r.λ) * cos(r.ϕ)
-    y     = r_mag * cos(r.λ) * sin(r.ϕ)
-    z     = r_mag * sin(r.λ)
-    return Cartesian(x, y, z)
-end
+#-------------------------------MAKING COORDINATE TRANSFORMS--------------------------------
 
-#===
+# Solar coefficients and subsolar point is found using code from Laundal and Richmond (2017)
+# , appendix C
+"""
+    solar_coefficients(year::Int)
 
-MAKING COORDINATE TRANSFORMS
+Calculates the solar coefficients used further to make the conversions from
+latitude-lingitude-altitude coordinates to solar-magnetic coordinates.
 
-===#
-# Solar coefficients and subsolar point is found using code from
-# Laundal and Richmond (2017), appendix C
+# Fields
+
+- `year`: Integer representation of the year to use for the calculation.
+
+# Returns
+
+A named tuple `(yr, leapdays, l0, g0)`:
+
+- `yr`: Years since 2000.
+- `leapdays`: Number of leap days counted from 1601, offset so that it is 5 for 2020.
+- `l0`: Mean longitude of the Sun at the reference epoch of that year [°].
+- `g0`: Mean anomaly of the Sun at the reference epoch of that year [°].
+
+# References
+
+- Laundal and Richmond (2017), appendix C.
+"""
 function solar_coefficients(year::Int)
     yr = year - 2000
     leapdays = floor(Int, (year - 1601) / 4) - 99
@@ -81,14 +171,25 @@ function solar_coefficients(year::Int)
     return (yr=yr, leapdays=leapdays, l0=l0, g0=g0)
 end
 
+"""
+    subsolar_point(year::Int, doy::Int, ut::Real)
+
+Calculates the subsolar colatitude and subsolar longitude, based on the given year, DOY and
+time.
+
+# Arguments
+
+- `year`: Current year as integer.
+- `doy`: Current day-of-the-year as an integer.
+- `ut`:
+"""
 function subsolar_point(year::Int, doy::Int, ut::Real)
     # Get the solar coefficients
     c = solar_coefficients(year)
 
-
     df = (ut/86400 - 1.5) + doy        # Days since the reference epoch
-    l_deg = c.l0 + 0.9856474 * df      # mean longitude of the sun
-    g_deg = c.g0 + 0.9856003 * df      # mean anomaly of the sun
+    l_deg = c.l0 + 0.9856474 * df      # Mean longitude of the sun
+    g_deg = c.g0 + 0.9856003 * df      # Mean anomaly of the sun
 
     # Ecliptic longitude of the sun
     g_rad = deg2rad(g_deg)
@@ -124,24 +225,22 @@ end
 
 function sun_unit_vector_GEO(t::DateTime)
     p = subsolar_point(t)
+    scl = sind(p.colat)
     return [
-        sind(p.colat) * cosd(p.lon),
-        sind(p.colat) * sind(p.lon),
+        scl * cosd(p.lon),
+        scl * sind(p.lon),
         cosd(p.colat),
     ]
 end
-
 
 function axis_SM(t::DateTime)
     m̂ = dipole_axis_GEO()               # m̂, unit vector to the north geomagnetic pole
     ŝ = sun_unit_vector_GEO(t)          # ŝ, connects the sun and the Earth center
 
-    ẑ = m̂
     ŷ = normalize(cross(m̂, ŝ))
-    x̂ = cross(ŷ, ẑ)
-    return x̂, ŷ, ẑ
+    x̂ = cross(ŷ, m̂)
+    return x̂, ŷ, m̂      # ẑ = m̂
 end
-
 
 function dipole_tilt(t::DateTime)
     _, _, ẑ = axis_SM(t)
@@ -157,7 +256,7 @@ function dipole_axis_GEO(;year::Int=2020)
     elseif year == 2025
         g10, g11, h11 = -29350.0, -1410.3, 4545.5
     else
-        throw(ArgumentError("You have to add IGRF-coefficients to use this year..."))
+        throw(ArgumentError("You have to look up more IGRF-coefficients to use this year"))
     end
 
     m = [g11, h11, g10]
@@ -184,15 +283,14 @@ function LLA_to_SM(lat_deg, lon_deg, alt_m, t::DateTime)
     return ref_sm
 end
 
-
 function SM_to_GEO(r::Cartesian, t::DateTime)
     x̂, ŷ, ẑ = axis_SM(t)
     geo = r.x .* x̂ .+ r.y .* ŷ .+ r.z .* ẑ
     return Cartesian(geo...)
 end
 
-
 function SM_to_ENU(r_sm::Cartesian, ref::LTPReference, t::DateTime)
+    # SM → GEO
     r_geo = SM_to_GEO(r_sm, t)
 
     # Make ECEF Geodesy-element of position
@@ -212,19 +310,20 @@ function SM_to_ENU(r_sm::Cartesian, ref::Symbol, t::DateTime)
     return SM_to_ENU(r_sm, LTPReference(ref), t)
 end
 
-function SM_to_ENU(r_sm::Dipolar, ref::LTPReference, t::DateTime)
-    return SM_to_ENU(Cartesian(r_sm), ref, t)
-end
-
-function SM_to_ENU(r_sm::Dipolar, ref::Symbol, t::DateTime)
-    return SM_to_ENU(Cartesian(r_sm), LTPReference(ref), t)
-end
+#function SM_to_ENU(r_sm::Dipolar, ref::LTPReference, t::DateTime)
+#    return SM_to_ENU(Cartesian(r_sm), ref, t)
+#end
+#
+#function SM_to_ENU(r_sm::Dipolar, ref::Symbol, t::DateTime)
+#    return SM_to_ENU(Cartesian(r_sm), LTPReference(ref), t)
+#end
 
 function FP_to_ENU(fp, ref::LTPReference, t::DateTime)
     any(isnan, fp) && return [NaN, NaN, NaN]
     enu = SM_to_ENU(Cartesian(fp...), ref, t)
     return [enu.e, enu.n, enu.u]
 end
+
 
 """
     longitude_to_MLT(ϕ; degrees::Bool=true)
