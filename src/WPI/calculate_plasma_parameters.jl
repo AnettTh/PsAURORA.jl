@@ -4,14 +4,11 @@ using StaticArrays
 
 
 """
-    losscone_angle(L; degree::Bool=false)
     losscone_angle(
-    magnetic_field::AbstractMagneticField,
-    L,
-    ϕ0;
-    degrees::Bool=false
-    )
-
+    fieldline::AbstractFieldLine;
+    degrees::Bool=false,
+    hemisphere::Symbol=:north
+)
 Calculate the equatorial pitch angle for the loss cone.
 
 Using either the dipole approximation, or an arbitrary magnetic field funciton, as well as
@@ -21,53 +18,58 @@ ionosphere.
 
 # Arguments
 
-- `L`: L-shell for where to find the loss cone.
-- `magnetic_field`: Structure holding the magnetic field, doing the calculations without
-  using the dipole approximation.
-- `ϕ0`: Longitude of the field-line [rad].
+- `fieldline`: Struct holding information about the fieldline evaluated, in particular used
+  to get the point of least fieldstrength, `B_eq` and the top of the ionosphere, i.e. the
+  end of the current fieldline, which holds the fieldstrength at which we want to use as the
+  boundary.
 
 # Keyword Arguments
 
-- `degrees::Bool`: Choose units for the losscone angle, default is `false` (i.e. radians)
+- `degrees`: Choose units for the losscone angle, default is `false` (i.e. radians)
   and passing `true` will return output in degrees.
+- `hemisphere` : Symbol to choose which hemisphere to use as the mirrorpoint. Default is
+  `:north`, can also be `:south` or `:both`, where the latter picks the one with the highest
+  fieldstrength.
 
 # Returns
 
-- Loss cone angle for the given magnetic field and equatorial distance.
+- Loss cone angle for the given magnetic field and equatorial distance, either in radians
+  (default) or degrees.
 
 # Throws
 
-- `ArgumentError`: If the equatorial distance is defined wrong.
+- `ArgumentError`: If the hemisphere-kwarg has an invalid symbol.
 - `ArgumentError`: If `B_ratio` is non-physical.
 """
 function losscone_angle(
     fieldline::AbstractFieldLine;
     degrees::Bool=false,
-    hemisphere::Symbol=:both
+    hemisphere::Symbol=:north
 )
-    # Equatorial fieldstrength already exist
-    B_eq = fieldline.B_eq
-
-    # Find the fieldstrength at the mirrorpoint
+    # Find the fieldstrength at the mirrorpoint of the correct hemisphere
+    # TODO: Check if :both here might be misleading
     B_mirror = hemisphere == :north ? fieldline.Bs[end] :
                hemisphere == :south ? fieldline.Bs[1] :
                hemisphere == :both  ? maximum(fieldline.Bs) :
                throw(ArgumentError("hemisphere must be :north, :south or :both"))
 
-    B_ratio = B_eq / B_mirror
+    # Calculate the ratio of the magnetic field at the lowest- (equator) and the mirrorpoint
+    B_ratio = fieldline.B_eq / B_mirror
 
+    # Checks if the mirrorpoint has higher fieldstrength, if not, something is off
     if !(0.0 < B_ratio ≤ 1.0)
         throw(ArgumentError("Non-valid B_eq/B_mirror ratio: $B_ratio"))
     end
 
-    # Calculate the losscone angle (TODO: Add reference for formula)
+    # Calculate the losscone angle using conservation of magnetic moment (??)
+    # TODO: Add reference for formula, check reasoning and add assumptions
     α_rad = asin(sqrt(B_ratio))
     return degrees ? rad2deg(α_rad) : α_rad
 end
 
 
 """
-    pitch_angle(α_known, B_known, B_λ)
+    pitch_angle(α_known, B_known, B)
 
 Calculate pitch angle for some magnetic field strength.
 
@@ -80,18 +82,22 @@ invariant is conserved. If the particle mirrors, i.e. `sin²(α)` becomes larger
 
 - `α_known`: Known pitch angle at some location [rad].
 - `B_known`: Known magnetic field strength at the same location as the pitch angle [T].
-- `B_λ`: Magnetic field strength at latitude `λ` [T].
+- `B`: Magnetic field strength at some position [T].
 
 # Returns
 
-- Pitch angle at latitude `λ` [rad].
+- Pitch angle at the same position as the arbitrary magnetic field strength [rad], `nothing`
+  if the particle mirrors.
+
+# Throws
+
+- `ArgumentError`: If `B_known` is zero, which is invalid.
 """
-function pitch_angle(α_known, B_known, B_λ)
+function pitch_angle(α_known, B_known, B)
 
     iszero(B_known) && throw(ArgumentError("B_known must be nonzero"))
-    abs(α_known) ≥ 2π && throw(ArgumentError("α_known must be between ±2π"))
 
-    sin2_α = sin(α_known)^2 * B_λ / B_known
+    sin2_α = sin(α_known)^2 * B / B_known
 
     # Check for mirroring
     sin2_α > 1 && return nothing
@@ -106,7 +112,7 @@ end
     velocity_from_kinetic_energy(
     E_eV,
     m;
-    relativistic::Bool=false,
+    relativistic::Bool=true,
     return_gamma::Bool=false
     )
 
@@ -123,12 +129,12 @@ with or without relativistic corrections.
 
 # Keyword Arguments
 
-- `relativistic`: Option to correct for relativistic effects, default is `false`.
+- `relativistic`: Option to correct for relativistic effects, default is `true`.
 - `return_gamma`: Option to also return the relativistic factor `γ`, default is `false`.
 
 # Returns
 
-- Magnitude of the velocity of the particle [m/s].
+- Magnitude of the velocity of the particle with the given energy and mass [m/s].
 
 # Throws
 
@@ -140,12 +146,14 @@ function velocity_from_kinetic_energy(
     relativistic::Bool=true,
     return_gamma::Bool=false,
     )
-
+    # Guard against stupid errors
     m > 0 || throw(ArgumentError("Mass must be positive"))
-    E_eV ≥ 0 || throw(ArgumentError("Kinetic energy must be nonnegative"))
+    E_eV ≥ 0 || throw(ArgumentError("Kinetic energy must be positive"))
 
+    # Convert to SI-units
     E_J = E_eV * eV_in_J
 
+    # Calculate with or without relativistic corrections
     if relativistic
         γ = E_J / (m * c₀^2) + 1
         v = c₀ * sqrt(1 - 1/γ^2)
@@ -154,6 +162,7 @@ function velocity_from_kinetic_energy(
         γ = 1.0
     end
 
+    # Return either just the velocity or both velocity and γ
     if return_gamma
         return v, γ
     else
