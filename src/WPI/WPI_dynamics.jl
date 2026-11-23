@@ -362,7 +362,7 @@ function WPI_TOF(
     n::Int=1,
     get_footpoint::Bool=true,
 )
-
+    # TODO: Make this also return
     # Calculate wave-launch time based on given model
     t_l = wave_launch_time(wave, ω_grid)
 
