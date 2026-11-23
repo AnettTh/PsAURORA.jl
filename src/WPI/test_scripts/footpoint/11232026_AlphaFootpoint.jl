@@ -86,7 +86,7 @@ params = (
     L_Denton_bin     = density.L_Denton_bin,
     R_max            = density.R_max,                      # [m]
     # Wave
-    ω_frac           = frac,
+    ω_frac           = ω_frac,
     a_Bw             = amplitude.Bw,                       # [T]
     chirp_duration   = modulation.t_duration,              # [s]
 )
@@ -96,7 +96,7 @@ jldsave(name;
     FP,                           # FP [xyz, E, μ, Ψ0]
     fp_enu,
     α_FP,
-    E_grid=collect(E_grid),
+    E_grid=collect(E),
     Ψ0_grid,
     params,
 )
