@@ -13,36 +13,37 @@ using ProgressMeter
     count_bounces::Bool=false,
     stop_when_bouncing::Bool=true,
 )
-    particle::ParticleState;
-    wave::Union{WaveState, Nothing}=nothing,
-    λ_start=nothing,
-    φ0::Float64=0.0,
-    n_T::Int=100_000,
-    resolution::Int=10,
-    store_trajectory::Bool=false
-    count_bounces::Bool=false,
-    stop_when_bouncing::Bool=true,
+    boris_mover(
+    particle::ParticleState,
+    fieldline::AbstractFieldLine,
+    wave::WaveState;
+    ω::Real=wave_frequency(wave, 0.0),
+    kwargs...,
 )
 
 Simulate the trajectory of a charged particle using the Boris mover.
 
 Uses the information about the particle given by `ParticleState` to numerically trace its
-gyromotion in a magnetic field. The function also allows for wave-particle interaction (WPI)
-by adding perturbations to the magnetic- and electric fields. Depending on the purpose of
-the simulation, it can be run while storing trajectory, counting bounces or stopping when a
-bounce is detected.
+gyromotion in a magnetic field. The function also allows for wave-particle interaction
+(WPI), where the trajectory starts at the point of resonance for the particle, by adding
+perturbations to the magnetic- and electric fields. The resonance position can either be
+given as `r_resonance` or calculated by providing a structure of the fieldline and the
+current frequency sampled for, `ω`. If nothing is given, it uses the initial position as
+start of the trajectory. Depending on the purpose of the simulation, it can be run while
+storing trajectory, counting bounces or stopping when a bounce is detected. The resolution
+of the tracing, the number of gyrations before timing out, `n_T`, and the initial gyrophase
+of the particle `φ0` can also be specified.
 
 # Arguments
 
 - `particle`: Struct holding the state of the particle.
+- `fieldline`: Struct holding information about the stations magnetic fieldline.
+- `wave`: Struct holding information about the wave.
 
 # Keyword Arguments
 
 - `wave`: Struct holding information about the wave, default is `nothing`, which does not
   consider WPI.
-- `λ_start`: Initial latitude to start the particle from, allows simulation to start at the
-  position of resonance between the particle and wave [rad], default is `nothing`, which
-  uses the particles initial position to calculate the initial latitude.
 - `φ0`: Initial phase of the velocity vector for the particle, default is `0.0` [rad].
 - `n_T`: Number of (initial) gyroperiods to simulate for, default is `100_000`.
 - `resolution`: Steps per gyroperiod, default is `10`.
@@ -51,18 +52,23 @@ bounce is detected.
   precipitating), default is `false`.
 - `stop_when_bouncing`: Option to stop the simulation if the particle bounces, default is
   `false`.
+- `ω`: The wave frequency currently sampled for [rad/s]. If none is given, it uses the first
+  frequency in the lower-band chorus wave as defined in the `PlasmaState`.
 
 # Returns
 
 - If the trajectroy is stored, a named tuple containing `position`, `velocity`, `time`, `α`,
   `footpoint`, if not, only the time-of-flight `time` and the position of impact with the
-  ionsophere, `footpoint` is returned. Also returns number of bounces conducted, if
-  counting, else this is just an empty variable.
+  ionsophere, `footpoint`, as well as the pitch-angle at the footpoint `α_footpoint` is
+  returned. Also returns number of bounces conducted, if counting, else this is just an
+  empty variable.
 
 # Throws
 
 - `ArgumentError`: If the maximum number of gyrophases or the number of samples per period
   is set to be a negative integer.
+- `ArgumentError`: If the particle mirrors before reaching the starting position in the
+  branch that calculates the resonance latitude.
 """
 function boris_mover(
     particle::ParticleState;
@@ -313,9 +319,8 @@ function boris_mover(
         Return if the particle precipitates
 
         ===#
-        # TODO: Change variable names in the named tupples?
+        # TODO: Change variable names in the named tuples?
         if x^2 + y^2 + z^2 ≤ r_ionosphere^2
-            #@info "\nPrecipitation!"
 
             # Find the current pitch angle
             b̂_fp, _, _, _ = magnetic_basis(particle.magnetic_field(Cartesian(x, y, z)))
@@ -352,8 +357,6 @@ function boris_mover(
     Return result if the simulation times out (n_T is exceeded).
 
     ===#
-
-    #@info "\nBouncing..."
     if store_trajectory
         return (
             position=r_array,
