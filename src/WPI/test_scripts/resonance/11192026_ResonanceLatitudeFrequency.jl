@@ -8,11 +8,11 @@ duct_enhancement = 0.0
 station = :sodankyla
 
 ## Define magnetic field
-t = DateTime("2020-12-21T03:00:00")
-ref = LTPReference(:sodankyla)
+t = DateTime("2020-12-21T02:00:00")
+ref = LTPReference(station)
 pdyn = 2.0
 dst = -28.0
-byimf = 0.0
+byimf = 3.8
 bzimf = 2.0
 
 magnetic_field = TsyganenkoMagneticField(t; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
@@ -117,4 +117,4 @@ Legend(
 rowgap!(side, 12)
 
 ##
-save("src/WPI/test_scripts/resonance/figures/11192026_ResonanceLatitudeFrequency.png", fig)
+#save("src/WPI/test_scripts/resonance/figures/11242026_ResonanceLatitudeFrequency.png", fig)

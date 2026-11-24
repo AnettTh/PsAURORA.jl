@@ -136,7 +136,6 @@ params = (
     date             = string(now()),
     notes            = "TOF [s]: NaN = no resonance, 0.0 = bounced. " *
                        "FP in metres, SM frame at `time` (needs SM to GEO before ENU). " *
-                       "Particles built at r0 = Dipolar(L, 0, ϕ_eq); " *
                        "r_start = position_eq for every case.",
 )
 

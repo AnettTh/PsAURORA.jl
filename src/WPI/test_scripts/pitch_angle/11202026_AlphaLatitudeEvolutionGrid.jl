@@ -47,15 +47,7 @@ waves = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ0) for Ψ0 in
 results = Vector{Any}(nothing, length(Ψ0_grid))
 
 @showprogress for i in eachindex(waves)
-    # TODO: Add r_resonance to run boris_mover
     results[i] = boris_mover(particle, fieldline, waves[i]; store_trajectory=true, stop_when_bouncing=false, n_T=n_T, ω=ω)
-    #results[i] = boris_mover(
-    #    particle;
-    #    wave = waves[i],
-    #    store_trajectory = true,
-    #    stop_when_bouncing = false,
-    #    n_T = n_T
-    #)
 end
 
 ## Latitude and pitch angle of each trajectory
@@ -128,9 +120,9 @@ colgap!(fig.layout, 30)
 rowgap!(fig.layout, 20)
 
 ##
-#save("src/WPI/test_scripts/pitch_angle/figures/11202026_AlphaLatitudeEvolutionGrid.png", fig)
+save("src/WPI/test_scripts/pitch_angle/figures/11202026_AlphaLatitudeEvolutionGrid.png", fig)
 ##
-#ylims!(panel_axes[1, 1], 0, 20)
-#xlims!(panel_axes[1, 1], -5, 25)
+ylims!(panel_axes[1, 1], 0, 20)
+xlims!(panel_axes[1, 1], -5, 25)
 ##
-#save("src/WPI/test_scripts/pitch_angle/figures/11202026_AlphaLatitudeEvolutionGrid_zoomed.png", fig)
+save("src/WPI/test_scripts/pitch_angle/figures/11202026_AlphaLatitudeEvolutionGrid_zoomed.png", fig)

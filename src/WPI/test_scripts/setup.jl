@@ -43,3 +43,32 @@ wave = WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ0)
 #boris = [boris_mover(particle, fieldline, wave; ω=ω) for wave in waves]
 boris = boris_mover(particle, fieldline, wave; ω=ω)
 wpi = WPI_TOF(ω, particle, fieldline, plasma; wave=wave)
+
+
+params = (
+    duct_enhancement = duct_enhancement,
+    station          = station,
+    α0               = α0,
+    time             = string(t),
+    pdyn             = pdyn,
+    dst              = dst,
+    byimf            = byimf,
+    bzimf            = bzimf,
+    ps               = magnetic_field.ps,
+    Ω_eq             = minimum(plasma.Ω_e),
+    L_Denton_bin     = density.L_Denton_bin,
+    R_max            = density.R_max,
+    ω_frac           = ω_frac,
+    a_Bw             = amplitude.Bw,
+    chirp_duration   = modulation.t_duration,
+)
+
+jldsave(name;
+    TOF,
+    FP,
+    FP_enu,
+    α_FP,
+    E_grid=collect(E_grid),
+    Ψ0_grid,
+    params,
+)

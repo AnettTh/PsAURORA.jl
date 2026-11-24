@@ -3,11 +3,11 @@ using CairoMakie
 using Dates
 
 ## Field, station line, particle and plasma
-t       = DateTime("2020-12-21T02:00:00")
+t = DateTime("2020-12-21T02:00:00")
 station = :sodankyla
 
-magnetic_field = TsyganenkoMagneticField(t; pdyn=2.0, dst=-28.0, byimf=0.0, bzimf=2.0)
-fieldline      = StationFieldLine(magnetic_field, LTPReference(station), t)
+magnetic_field = TsyganenkoMagneticField(t; pdyn=2.0, dst=-28.0, byimf=0.0, bzimf=5.0)
+fieldline = StationFieldLine(magnetic_field, LTPReference(station), t)
 
 E_eV = 30e3
 α0   = 0.5
