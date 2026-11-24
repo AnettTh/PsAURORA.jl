@@ -45,7 +45,9 @@ wave = WaveState(modulation, amplitude, plasma, fieldline)
 FP = fill(NaN, 3, length(E))
 progress = Progress(length(particle))
 Threads.@threads :greedy for i in eachindex(particle)
-    result = boris_mover(particle[i], fieldline, wave; ω=ω)
+    # TODO: Re-run with complete WPI
+    result = WPI_TOF(ω, particle[i], fieldline, plasma; wave=wave)
+    #result = boris_mover(particle[i], fieldline, wave; ω=ω)
     if !isnothing(result.footpoint)
         α_footpoint[i] = result.α_footpoint
         FP[:, i] .= result.footpoint
