@@ -45,8 +45,7 @@ using an analytical solution for a dipole field.
 
 # Arguments
 
-- `magnetic field`: Arbitrary magnetic field function that can take either
-  `Dipolar(L, λ, ϕ)` or `Cartesian(x, y, z)`.
+- `magnetic field`: Arbitrary magnetic field function that can take `Cartesian(x, y, z)`.
 - `L`: L-shell of initial position.
 - `ϕ_eq`: Longitude of position at equator [rad].
 

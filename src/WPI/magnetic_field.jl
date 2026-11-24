@@ -127,11 +127,6 @@ function dipole_field(pos::Cartesian)
     return dipole_field(pos.x, pos.y, pos.z)
 end
 
-function dipole_field(pos::Dipolar)
-    r = Cartesian(pos)
-    return dipole_field(r.x, r.y, r.z)
-end
-
 """
     tsyganenko_field(
     x::Real, y::Real, z::Real;
@@ -144,13 +139,12 @@ end
     component="both",
 )
     tsyganenko_field(r::AbstractVector; kwargs...)
-    tsyganenko_field(position::Dipolar; kwargs...)
     tsyganenko_field(position::Cartesian; kwargs...)
 
 # Arguments
 - `x, y, z`: Cartesian position components [m].
 - `r`: Cartesian position vector [m].
-- `position`: Position as `Cartesian(x, y, z)` [m] or `Dipolar(L, λ, ϕ)` [RE, rad, rad].
+- `position`: Position as `Cartesian(x, y, z)` [m].
 
 # Keyword Arguments
 

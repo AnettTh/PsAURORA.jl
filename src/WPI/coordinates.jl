@@ -8,7 +8,7 @@ using Dates
     Cartesian
 
 Cartesian coordinates, given in metres. In the code, it is used in SM coordinates, unless
-stated otherwise. Is constructed either by giving it the fields, or by a `Dipolar` type.
+stated otherwise.
 
 # Fields
 # TODO: Check that this is correct!
@@ -19,7 +19,6 @@ stated otherwise. Is constructed either by giving it the fields, or by a `Dipola
 # Constructors
 
     Cartesian(x::Float64, y::Float64, z::Float64)
-    Cartesian(r::Dipolar)
 """
 struct Cartesian
     x::Float64
@@ -27,54 +26,7 @@ struct Cartesian
     z::Float64
 end
 
-# TODO: Check if this is used at all, if not, remove it!
-"""
-    Dipolar
 
-Dipolar coordinates, given in metres and radians. The use of these coordinates assumes a
-dipolar geometry, and hence must not be used together with the Tsyganenko magnetic field
-model naively. Is constructed either by giving it the fields, or by a `Cartesian` type.
-
-# Fields
-
-- `L`: L-shell of the position, i.e. the point of the fieldline furthest away from the
-  center of the Earth, in the equatorial plane, given in units of Earth radii [RE].
-- `λ`: Latitude of the position in radians, measured from the equatorial plane and north
-  (south) being positive (negative). #TODO: Check if this should be latitude or colatitude!
-- `ϕ`: Longitude of the position in radians, to complete the system. Only relevant for
-  book-keeping purposes, as the dipolar approximation has axisymmetry.
-  # TODO: Check also if this is needed
-
-  # Constructors
-
-    Dipolar(L::Float64, λ::Float64, ϕ::Float64)
-    Dipolar(r::Cartesian)
-
-  """
-struct Dipolar
-    L::Float64
-    λ::Float64
-    ϕ::Float64
-end
-
-function Cartesian(r::Dipolar)
-    cλ = cos(r.λ)
-
-    r_mag = r.L * RE * cλ^2
-
-    x = r_mag * cλ * cos(r.ϕ)
-    y = r_mag * cλ * sin(r.ϕ)
-    z = r_mag * sin(r.λ)
-    return Cartesian(x, y, z)
-end
-
-function Dipolar(r::Cartesian)
-    r_mag = sqrt(r.x^2 + r.y^2 + r.z^2)
-    λ = asin(r.z / r_mag)
-    ϕ = mod2pi(atan(r.y, r.x))
-    L = r_mag / (RE * cos(λ)^2)
-    return Dipolar(L, λ, ϕ)
-end
 """
     EastNorthUp
 
@@ -310,13 +262,6 @@ function SM_to_ENU(r_sm::Cartesian, ref::Symbol, t::DateTime)
     return SM_to_ENU(r_sm, LTPReference(ref), t)
 end
 
-#function SM_to_ENU(r_sm::Dipolar, ref::LTPReference, t::DateTime)
-#    return SM_to_ENU(Cartesian(r_sm), ref, t)
-#end
-#
-#function SM_to_ENU(r_sm::Dipolar, ref::Symbol, t::DateTime)
-#    return SM_to_ENU(Cartesian(r_sm), LTPReference(ref), t)
-#end
 
 function FP_to_ENU(fp, ref::LTPReference, t::DateTime)
     any(isnan, fp) && return [NaN, NaN, NaN]

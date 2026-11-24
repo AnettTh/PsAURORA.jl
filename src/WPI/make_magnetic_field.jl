@@ -16,19 +16,18 @@ abstract type AbstractMagneticField end
 """
     DipoleMagneticField
 
-Dipole magnetic field model, callable with either `Cartesian` or `Dipolar` coordinates.
+Dipole magnetic field model, callable with `Cartesian` coordinates.
 """
 struct DipoleMagneticField <: AbstractMagneticField end
 
 (model::DipoleMagneticField)(r::Cartesian) = dipole_field(r)
-(model::DipoleMagneticField)(r::Dipolar) = dipole_field(r)
 
 
 """
     TsyganenkoMagneticField
 
-Tsyganenko magnetic field model, callable with either `Cartesian` or `Dipolar`
-coordinates, also containing free parameters describing the solar wind conditions.
+Tsyganenko magnetic field model, callable with `Cartesian` coordinates, also containing free
+parameters describing the solar wind conditions.
 
 # Fields
 

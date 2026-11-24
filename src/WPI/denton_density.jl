@@ -27,7 +27,6 @@ L_α_vals  = [  8.1,   5.9,   4.8,   5.2,  6.4,  5.5,  4.8, 6.1]     # Scale len
 
 """
     denton_density_model(position::Cartesian, R_max, L_Denton_bin; SI::Bool=true)
-    denton_density_model(position::Dipolar, R_max, L_Denton_bin; SI::Bool=true)
 
 Compute density along a fieldline, given some initial position.
 
@@ -38,7 +37,7 @@ is by default returned in SI units [m⁻³], but can also be given in #/cc [cm�
 
 # Agurments
 
-- `position`: Current position of type `Cartesian` or `Dipolar`.
+- `position`: Current position of type `Cartesian`.
 - `R_max`: Maximal distance from the Earth along the current field line [m].
 - `L_Denton_bin`: L-value deciding which bin to use, which depends on the chosen model
   (it will be the same as `R_max/RE` if the original model is used, but it will be decided
