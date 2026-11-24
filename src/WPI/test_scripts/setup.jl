@@ -3,7 +3,7 @@ using Dates
 
 ## Configuration
 duct_enhancement = 0.0
-station          = :sodankyla
+station = :sodankyla
 
 ## Define magnetic field
 t = DateTime("2020-12-21T02:00:00")
@@ -19,9 +19,8 @@ ref = LTPReference(:sodankyla)
 fieldline = StationFieldLine(magnetic_field, ref, t)
 
 ## Define particle
-E = 11e3
-
-α0 = 10
+E = 30e3
+α0 = 1.5
 μ0 = -cos(deg2rad(α0))
 particle = ParticleState(E, μ0, fieldline)
 
@@ -33,20 +32,9 @@ plasma = PlasmaState(fieldline, density)
 modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 amplitude = ConstantAmplitude(100e-12)
 
-Ψ0 = range(0, 2π, length=24)
+Ψ0 = 0.0
 wave = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ) for Ψ in Ψ0]
 
 ## Frequencies to evaluate
 ω_frac = 0.3
 ω =  ω_frac * minimum(plasma.Ω_e)
-
-E_fp = fill(NaN, length(wave))
-for (i, w) in enumerate(wave)
-    r = boris_mover(particle; wave=w)       # ADD r_resonance IF THIS IS TO BE USED!
-    isnothing(r.E_footpoint) && continue
-    E_fp[i] = r.E_footpoint
-end
-valid = .!isnan.(E_fp)
-
-E_fp_valid = E_fp[valid]
-ΔE_valid = E_fp_valid .- particle.E0_eV

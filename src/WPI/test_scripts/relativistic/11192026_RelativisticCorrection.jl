@@ -1,5 +1,4 @@
 using AURORA
-using AURORA; c₀
 using CairoMakie
 using Dates
 using ProgressMeter
@@ -101,17 +100,22 @@ params = (
     notes = "TOF [s]: NaN = no resonance, 0.0 = bounced.",
 )
 
-jldsave(name;
-    TOF,
+jldsave("src/WPI/data/11-23-2026/RelativisticCorrection.JLD2";
+    TOF_matrix_relativistic,
+    TOF_simple_relativistic,
+    TOF_matrix_classical,
+    TOF_simple_classical,
     E_grid = collect(E_grid),               # [eV]
     ω_frac = collect(ω_frac),
     params,
 )
+##
+@load "src/WPI/data/11-23-2026/RelativisticCorrection.JLD2"
 
 ##
 fig = Figure(size=(1100, 400))
 Label(fig[0, 1:2],
-    "Energy as a function of `time-of-flight` for $(station) at $t, α₀ = $(α0)°";
+    "Energy as a function of `time-of-flight` for $(params.station) at $(params.t), α₀ = $(params.α0)°";
     fontsize=16,
     font=:bold,
     tellwidth=false,
@@ -133,27 +137,27 @@ ax2 = Axis(fig[1, 2],
 
 colors = ["#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7"]
 
-for (i, ω) in enumerate(ωs)
+for (i, ω) in enumerate(ω_frac)
     # Panel 1: simple mode
     scatter!(ax1, TOF_simple_classical[:, i], E_grid ./ 1e3;
-        color=colors[i])
+        color=colors[i], markersize=6)
     scatter!(ax1, TOF_simple_relativistic[:, i], E_grid ./ 1e3;
-        color=colors[i], alpha=0.5)
+        color=colors[i], alpha=0.5, markersize=12)
 
     # Panel 2: field-dependent mode
     scatter!(ax2, TOF_matrix_classical[:, i],    E_grid ./ 1e3;
-        color=colors[i])
+        color=colors[i], markersize=6)
     scatter!(ax2, TOF_matrix_relativistic[:, i], E_grid ./ 1e3;
-        color=colors[i], alpha=0.5)
+        color=colors[i], alpha=0.5, markersize=12)
 end
 
 # Dummy lines for legend
-[scatter!(ax2, [NaN], [NaN]; color=colors[i], marker=:rect, label="ω = $(ω_frac[i]) Ωₑ") for i in eachindex(ωs)]
-scatter!(ax2, [NaN], [NaN]; color=:black, marker=:circle, label="Classical")
-scatter!(ax2, [NaN], [NaN]; color=:black, marker=:cross,  label="Relativistic")
+[scatter!(ax2, [NaN], [NaN]; color=colors[i], marker=:rect, label="ω = $(ω_frac[i]) Ωₑ") for i in eachindex(ω_frac)]
+scatter!(ax2, [NaN], [NaN]; color=:black, marker=:circle, markersize=6, label="Classical")
+scatter!(ax2, [NaN], [NaN]; color=:black, marker=:circle, alpha=0.5, markersize=12, label="Relativistic")
 
 Legend(fig[1, 3], ax2)
 xlims!(ax1, 3, 11)
-xlims!(ax2, 3, 11)
+xlims!(ax2, 3, 4.5)
 ##
 save("src/WPI/test_scripts/relativistic/figures/11232026_RelativisticVsClassical.png", fig)
