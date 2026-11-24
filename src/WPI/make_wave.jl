@@ -43,7 +43,7 @@ Chirp wave modulation with a linear increase/decrease in frequency over some tim
 - `ω1`: Frequency at the end [rad/s].
 - `t_duration`: Total duration of chirp [s].
 """
-struct ChirpModulation <: AbstractWaveModulation  # TODO: Simplify how this is called?
+struct ChirpModulation <: AbstractWaveModulation
     ω0         :: Float64
     ω1         :: Float64
     t_duration :: Float64
