@@ -58,7 +58,14 @@ struct ParticleState{F}
 end
 
 """
-    ParticleState(E_eV, μ0, r0, magnetic_field, ϕ0; relativistic::Bool=false)
+    ParticleState(
+    E0_eV,
+    μ0,
+    fieldline::AbstractFieldLine;
+    r0::Cartesian=fieldline.position_eq,
+    relativistic::Bool=true,
+    φ0=deg2rad(0.0),
+)
 
 Construct a `ParticleState` from initial conditions.
 
