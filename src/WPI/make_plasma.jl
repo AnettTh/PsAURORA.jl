@@ -17,13 +17,13 @@ Cold plasma parameters along a magnetic field line, as a function of magnetic la
 - `ne_model`: Model used to make density distribution.
 """
 struct PlasmaState{M}
-    λ_grid   :: Vector{Float64} # TODO: Remove from here and use the one in fieldline?
+    λ_grid   :: Vector{Float64}
     n_e      :: Vector{Float64}
     Ω_e      :: Vector{Float64}
     ω_pe     :: Vector{Float64}
     ω_lb     :: Vector{Float64}
     ne_model :: M
-    # TODO: Add also Ω_eq to the struct?
+    Ω_e_eq     :: Float64
 end
 
 
@@ -86,10 +86,10 @@ function PlasmaState(
     ω_pe = @. sqrt(n_e * qₑ^2 / (mₑ * ε₀))
 
     # Find the gyrofrequency at the equator, used to define the whistler frequency range
-    Ω_eq = abs(qₑ) * fieldline.B_eq / mₑ
-    ω_lb = collect(range(Ω_eq*lb_low, Ω_eq*lb_high, length=n_ω))
+    Ω_e_eq = abs(qₑ) * fieldline.B_eq / mₑ
+    ω_lb = collect(range(Ω_e_eq*lb_low, Ω_e_eq*lb_high, length=n_ω))
 
-    return PlasmaState(fieldline.λs, n_e, Ω_e, ω_pe, ω_lb, ne_model)
+    return PlasmaState(fieldline.λs, n_e, Ω_e, ω_pe, ω_lb, ne_model, Ω_e_eq)
 end
 
 
