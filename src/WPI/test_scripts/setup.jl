@@ -19,8 +19,8 @@ ref = LTPReference(:sodankyla)
 fieldline = StationFieldLine(magnetic_field, ref, t)
 
 ## Define particle
-E = 30e3
-α0 = 1.5
+E = 39e3
+α0 = 0.5
 μ0 = -cos(deg2rad(α0))
 particle = ParticleState(E, μ0, fieldline)
 
@@ -32,9 +32,14 @@ plasma = PlasmaState(fieldline, density)
 modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 amplitude = ConstantAmplitude(100e-12)
 
-Ψ0 = 0.0
-wave = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ) for Ψ in Ψ0]
+Ψ0 = range(0, 2π, length=20)[2]
+#waves = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ) for Ψ in Ψ0]
+wave = WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ0)
 
 ## Frequencies to evaluate
-ω_frac = 0.3
-ω =  ω_frac * minimum(plasma.Ω_e)
+ω_frac = 0.1
+ω = ω_frac * minimum(plasma.Ω_e)
+
+#boris = [boris_mover(particle, fieldline, wave; ω=ω) for wave in waves]
+boris = boris_mover(particle, fieldline, wave; ω=ω)
+wpi = WPI_TOF(ω, particle, fieldline, plasma; wave=wave)

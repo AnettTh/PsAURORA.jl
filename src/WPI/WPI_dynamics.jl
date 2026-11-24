@@ -114,19 +114,26 @@ function particle_transit(
     field_dependent::Bool=true,
     use_boris::Bool=true,
     get_footpoint::Bool=true,
+    store_trajectory::Bool=false,
 )
 
     # Index on the line where the particle and wave meets
-    i_res = clamp(searchsortedfirst(fieldline.λs, λ_resonance), 1, length(fieldline.λs))
+    i_res = clamp(searchsortedfirst(fieldline.λs, λ_resonance), 2, length(fieldline.λs))
 
     # If Boris-mover is to be used, shortcuts the function
     if use_boris
-        r_resonance = Cartesian(fieldline.xs[i_res], fieldline.ys[i_res], fieldline.zs[i_res])
+        # Interpolate between the two points that bracket λ_resonance
+        λ1, λ2 = fieldline.λs[i_res-1], fieldline.λs[i_res]
+        w = clamp((λ_resonance - λ1) / (λ2 - λ1), 0.0, 1.0)
+        lerp(a) = a[i_res - 1] + w * (a[i_res] - a[i_res - 1])
+
+        r_resonance = Cartesian(lerp(fieldline.xs), lerp(fieldline.ys), lerp(fieldline.zs))
+
         # Find the initial position for the boris-mover, i.e. where the particle resonates
         result = boris_mover(
             particle;
             wave=wave,
-            store_trajectory=false,
+            store_trajectory=store_trajectory,
             stop_when_bouncing=true,
             r_resonance=r_resonance,
         )
@@ -136,9 +143,33 @@ function particle_transit(
         if !get_footpoint
             return isnothing(result.footpoint) ? nothing : result.time
         else
-            return isnothing(result.footpoint) ?
-            (time=nothing, footpoint=nothing) :
-            (time=result.time, footpoint=result.footpoint)
+            # NOTE: Can also add energy and number of bounces
+            if store_trajectory
+                return isnothing(result.footpoint) ?
+                (time=nothing,
+                footpoint=nothing,
+                α_footpoint=nothing,
+                position=result.position,
+                velocity=result.velocity,
+                α_array=result.α) :
+
+                (time=result.time,
+                footpoint=result.footpoint,
+                α_footpoint=result.α_footpoint,
+                position=result.position,
+                velocity=result.velocity,
+                α_array=result.α)
+
+            else
+                return isnothing(result.footpoint) ?
+                (time=nothing,
+                footpoint=nothing,
+                α_footpoint=nothing) :
+
+                (time=result.time,
+                footpoint=result.footpoint,
+                α_footpoint=result.α_footpoint)
+            end
         end
     end
 
@@ -156,7 +187,9 @@ function particle_transit(
         # TODO: Check what this returns for a mirrored particle and match it up with the behavior
         α = [pitch_angle(particle.α_eq, particle.B_eq, B) for B in fieldline.Bs[i_particle]]
         # Check if the particle have mirrored, then return nothing
-        any(isnothing, α) && return get_footpoint ? (time=nothing, footpoint=nothing) : nothing
+        any(isnothing, α) && return get_footpoint ?
+            (time=nothing, footpoint=nothing) : nothing
+
         v_par = [particle.v0_mag * cos(a) for a in α]
     else
         v_par = fill(abs(particle.v0_mag * cos(particle.α_eq_lc)), length(i_particle))
@@ -174,16 +207,20 @@ end
     point_of_resonance(
     ω::Float64,
     particle::ParticleState,
-    plasma::PlasmaState;
+    fieldline::AbstractFieldLine,
+    plasma::PlasmaState,
+    wave::WaveState;
     θ::Float64=0.0,
     n::Int=1,
-    wave_direction=-1
+    wave_direction::Int=-1,
 )
 
     point_of_resonance(
     ω_grid::AbstractVector,
     particle::ParticleState,
-    plasma::PlasmaState;
+    fieldline::AbstractFieldLine,
+    plasma::PlasmaState,
+    wave::WaveState;
     kwargs...
 )
 
@@ -305,15 +342,26 @@ end
     WPI_TOF(
     ω_grid::AbstractVector,
     particle::ParticleState,
+    fieldline::AbstractFieldLine,
     plasma::PlasmaState;
-    wave::Union{WaveState, Nothing}=nothing,
+    wave::Union{WaveState, Nothing}=nothing, # TODO: Make wave non-kwarg!!
     use_boris::Bool=true,
     field_dependent::Bool=true,
     θ::Float64=0.0,
     n::Int=1,
+    get_footpoint::Bool=true,
+    store_trajectory::Bool=false,
 )
 
-    WPI_TOF(ω::Real, particle::ParticleState, plasma::PlasmaState; kwargs...)
+    WPI_TOF(
+    ω::Real,
+    particle::ParticleState,
+    fieldline::AbstractFieldLine,
+    plasma::PlasmaState;
+    wave::WaveState,
+    get_footpoint::Bool=true,
+    kwargs...
+)
 
 Calculates the time-of-flight (TOF) of a particle resonating with a whistler mode chorus
 wave, then precipitating into the ionosphere.
@@ -362,12 +410,12 @@ function WPI_TOF(
     n::Int=1,
     get_footpoint::Bool=true,
 )
-    # TODO: Make this also return
     # Calculate wave-launch time based on given model
     t_l = wave_launch_time(wave, ω_grid)
 
     tof = zeros(length(ω_grid))
     footpoint = fill(NaN, 3, length(ω_grid))
+    α_footpoint = fill(NaN, length(ω_grid))
 
     # Loop over all frequencies as they have different resonance regions
     for (i, ω) in enumerate(ω_grid)
@@ -400,8 +448,10 @@ function WPI_TOF(
 
         if get_footpoint
             t_e = isnothing(p_t_result) ? nothing : p_t_result.time
-            fp  = isnothing(p_t_result) ? nothing : p_t_result.footpoint
+            fp = isnothing(p_t_result) ? nothing : p_t_result.footpoint
+            α_fp = isnothing(p_t_result) ? nothing : p_t_result.α_footpoint
             isnothing(fp) || (footpoint[:, i] .= fp)
+            isnothing(α_fp) || (α_footpoint[i] = α_fp)
         else
             t_e = p_t_result
         end
@@ -409,7 +459,7 @@ function WPI_TOF(
         # Total time = wave-to-λ + particle-to-ionosphere + delay of current ω based on wave
         tof[i] = isnothing(t_e) ? 0.0 : t_w + t_e + t_l[i]
     end
-    return get_footpoint ? (tof=tof, footpoint=footpoint) : tof
+    return get_footpoint ? (tof=tof, footpoint=footpoint, α_footpoint=α_footpoint) : tof
 end
 
 # Also allows for single frequencies
@@ -433,7 +483,11 @@ function WPI_TOF(
     )
 
     if get_footpoint
-        return (tof=result.tof[1], footpoint=result.footpoint[:, 1])
+        return (
+            tof=result.tof[1],
+            footpoint=result.footpoint[:, 1],
+            α_footpoint=result.α_footpoint[1],
+        )
     else
         return result[1]
     end

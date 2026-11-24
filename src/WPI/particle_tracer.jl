@@ -5,6 +5,16 @@ using ProgressMeter
     boris_mover(
     particle::ParticleState;
     wave::Union{WaveState, Nothing}=nothing,
+    r_resonance::Union{Cartesian, Nothing}=nothing,
+    φ0::Float64=particle.φ0,
+    n_T::Int=100_000,
+    resolution::Int=10,
+    store_trajectory::Bool=false,
+    count_bounces::Bool=false,
+    stop_when_bouncing::Bool=true,
+)
+    particle::ParticleState;
+    wave::Union{WaveState, Nothing}=nothing,
     λ_start=nothing,
     φ0::Float64=0.0,
     n_T::Int=100_000,
@@ -87,7 +97,6 @@ function boris_mover(
     steps = Int(n_T * resolution)
 
     if store_trajectory
-        #@info "\nStoring trajectory"
         r_array = zeros(steps + 1, 3)
         v_array = zeros(steps + 1, 3)
         t_array = zeros(steps + 1)
