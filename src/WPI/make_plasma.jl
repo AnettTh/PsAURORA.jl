@@ -1,5 +1,4 @@
 using AURORA
-using AURORA; mₑ, qₑ, ε₀
 using LinearAlgebra
 
 """
@@ -21,29 +20,27 @@ struct PlasmaState{M}
     n_e      :: Vector{Float64}
     Ω_e      :: Vector{Float64}
     ω_pe     :: Vector{Float64}
-    ω_lb     :: Vector{Float64}
+    ω_lb     :: Vector{Float64}     # TODO: Look into removing this, as Ω_eq is used anyways
     ne_model :: M
-    Ω_e_eq     :: Float64
+    Ω_e_eq   :: Float64
 end
 
 
 """
     PlasmaState(
-    λ_grid::AbstractVector,
-    ne_model::AbstractDensityModel,
-    magnetic_field::Function,
-    L;
+    fieldline::AbstractFieldLine,
+    ne_model::DentonDensity;
     lb_low=0.1,
-    lb_high=0.5
+    lb_high=0.5,
+    n_ω=5,
 )
-    PlasmaState(λ_grid, ϕ_eq, magnetic_field::AbstractMagneticField, L; kwargs...)
 
-Construct a `PlasmaState` along at a magnetic field line on a given L-shell.
+Construct a `PlasmaState` along at a magnetic field line from a selected station location.
 
 Computes the electron gyrofrequency `Ω_e` from the magnetic field model, the plasma
 frequency `ω_pe` from the electron density `n_e0` and the lower-band chorus frequency range
-`ω_lb` as `lb_low*Ω_e` to `lb_high*Ω_e` at the equator. The default range is from 0.25-0.5
-of Ω_e.
+`ω_lb` as fractions `lb_low` to `lb_high` of the electron cyclotron frequency Ωₑ at the
+equator. The default range is from 0.1Ωₑ to 0.5Ωₑ.
 
 # Arguments
 
