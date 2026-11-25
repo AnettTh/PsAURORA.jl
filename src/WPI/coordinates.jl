@@ -269,6 +269,9 @@ function FP_to_ENU(fp, ref::LTPReference, t::DateTime)
     return [enu.e, enu.n, enu.u]
 end
 
+function FP_to_ENU(fp, ref::LTPReference, t::String)
+    return FP_to_ENU(fp, ref, DateTime(t))
+end
 
 """
     longitude_to_MLT(ϕ; degrees::Bool=true)
