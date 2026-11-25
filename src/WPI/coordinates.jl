@@ -235,6 +235,10 @@ function LLA_to_SM(lat_deg, lon_deg, alt_m, t::DateTime)
     return ref_sm
 end
 
+function LLA_to_SM(lat_deg, lon_deg, alt_m, t::String)
+    return LLA_to_SM(lat_deg, lon_deg, alt_m, DateTime(t))
+end
+
 function SM_to_GEO(r::Cartesian, t::DateTime)
     x̂, ŷ, ẑ = axis_SM(t)
     geo = r.x .* x̂ .+ r.y .* ŷ .+ r.z .* ẑ
