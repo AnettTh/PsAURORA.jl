@@ -1,6 +1,5 @@
 using AURORA
 using Dates
-# TODO: Look into these variables
 
 ## Define fieldline, plasma and wave to find resonance
 t = DateTime("2020-12-21T02:00:00")
@@ -14,26 +13,28 @@ wave = WaveState(
     fieldline;
     Ψ0=0.0
 )
+density_model = DentonDensity(fieldline)
 
 ## Define variables and make the distribution
-T_parallel = 10e3   # Most likely not correct
-N = 1e6             # Get this from fieldline
-A = 1.0
-Δ = 0.2
+N = electron_density(density_model, fieldline.position_eq)
+
+T_parallel = 20e3
+A = 0.0
+Δ = 0.0
 r = 2.0
 M = 20
-α_lc = deg2rad(1.1) # Get this from fieldline?
+α_lc = losscone_angle(fieldline)
 
 a_par = sqrt(2 * T_parallel * eV_in_J / mₑ)
-v_par_grid  = range(-5.0 * a_par, 5.0 * a_par, length=300)
-v_perp_grid = range(-5.0 * a_par, 5.0 * a_par, length=300)
+v_par_grid  = range(-4.0 * a_par, 4.0 * a_par, length=300)
+v_perp_grid = range(-4.0 * a_par, 4.0 * a_par, length=300)
 
 F = [subtracted_bimaxwellian(vpa, vpe, N, T_parallel, A, α_lc, Δ, r, M)
     for vpa in v_par_grid, vpe in v_perp_grid]
 
 ## Frequencies to test
 Ω_eq = minimum(plasma.Ω_e)
-ω_frac = [0.5]
+ω_frac = [0.38]
 ωs = ω_frac .* Ω_eq
 
 ## Resonance mask with the same shape as F
@@ -55,7 +56,7 @@ function resonance_mask(v_par_grid, v_perp_grid, fieldline, plasma, wave, ωs; E
         E_eV = (γ - 1) * mₑ * c₀^2 / abs(qₑ)
 
         # Skip energies above and below some threshold
-        #(E_eV < E_min || E_eV > E_max) && continue
+        (E_eV < E_min || E_eV > E_max) && continue
 
         # Equatorial pitch angle, with μ0 = -v∥/v (ParticleState uses v∥ = -v·μ0)
         μ0 = -v_par / v
@@ -86,29 +87,31 @@ mask, valid = resonance_mask(v_par_grid, v_perp_grid, fieldline, plasma, wave, �
 ## Make plot
 fig = Figure(size=(700, 400))
 ax  = Axis(fig[1, 1];
-    xlabel = "v∥ / c",
-    ylabel = "v⊥ / c",
+    xlabel = "v∥/c₀",
+    ylabel = "v⊥/c₀",
     title  = "Resonant particles in subtracted bi-Maxwellian for ω=$(ω_frac[1])Ωₑ\n"*
     "T∥=$(round(T_parallel*1e-3, digits=1)) keV, A=$(round(A, digits=1)) keV, Δ=$Δ, r=$r",
     aspect=DataAspect()
 )
 
-## Meaningful range
-F_log = log10.(max.(F, maximum(F) * 1e-6))
-F_plot = ifelse.(valid, F_log, NaN)
-clims = extrema(filter(isfinite, F_plot))
+## Meaningful range, taken only from the resonant cells
+F_log  = log10.(max.(F, maximum(F) * 1e-6))
+shown  = valid .& mask                              # tested and resonant
+F_plot = ifelse.(shown, F_log, NaN)
 
-hm = heatmap!(ax,
-    collect(v_par_grid) ./ c₀,
-    collect(v_perp_grid) ./ c₀,
-    F_plot';
-    colormap = :turbo,
+any(shown) || error("No resonant cells, so there is no range to show")
+clims = -19, maximum(F_plot[shown]) #extrema(F_plot[shown])
+
+x = collect(v_par_grid) ./ c₀
+y = collect(v_perp_grid) ./ c₀
+
+hm = heatmap!(ax, x, y, F_plot';
+    colormap   = :turbo,
     colorrange = clims,
-    nan_color = :white
+    nan_color  = :white,
 )
-
 Colorbar(fig[1, 2], hm; label="log(Phase space density [m⁻⁶s³])", tellheight=false)
-contour!(ax, v_par_grid / c₀, v_perp_grid / c₀, Float64.(mask)'; levels=[0.5], color=:white, linewidth=2)
-ylims!(ax, 0.0, 0.99)
-save("src/WPI/test_scripts/distributions/figures/11232026ResonantDistribution$(ω_frac[1])Ωₑ.png", fig)
+ylims!(ax, 0.0, 0.4)
+xlims!(ax, -0.4, 0.4)
+#save("src/WPI/test_scripts/distributions/figures/11232026ResonantDistribution$(ω_frac[1])Ωₑ.png", fig)
 #save("src/WPI/test_scripts/distributions/figures/11232026ResonantDistribution$(ω_frac[1])Ωₑ_WithTreshold.png", fig)

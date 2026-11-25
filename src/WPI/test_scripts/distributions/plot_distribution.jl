@@ -1,19 +1,36 @@
 using AURORA
 using CairoMakie
+using Dates
 
+
+## Make the magnetic field and field line
+station = :sodankyla
+ref = LTPReference(station)
+t = DateTime("2020-12-21T02:00:00")
+pdyn = 2.0
+dst = -28.0
+byimf = 0.0
+bzimf = 2.0
+
+magnetic_field = TsyganenkoMagneticField(t; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
+fieldline = StationFieldLine(magnetic_field, ref, t)
+
+density_model = DentonDensity(fieldline)
 ## Define variables for test-run
-T_parallel = 10e3
-N = 1e6
-A = 1.0
-Δ = 0.2
-r = 2.0
-M = 20
-α_lc = deg2rad(3)
+N = electron_density(density_model, fieldline.position_eq)
+
+T_parallel = 20e3
+A = 0.0         # Anisotropy
+Δ = 0.0         # 0.0 means fully emptied losscone
+r = 2.0         #
+M = 20          # Number of subtractions
+
+α_lc = losscone_angle(fieldline)
 
 ##
 a_par = sqrt(2 * T_parallel * eV_in_J / mₑ)
-v_par_grid  = range(-5 * a_par, 5 * a_par,  length=300)
-v_perp_grid = range(-5 * a_par, 5 * a_par, length=300)
+v_par_grid  = range(-4 * a_par, 4 * a_par,  length=300)
+v_perp_grid = range(-4 * a_par, 4 * a_par, length=300)
 
 
 ##
@@ -32,9 +49,10 @@ ax  = Axis(fig[1, 1];
 )
 
 ## Meaningful range
-F_log = log10.(max.(F, maximum(F) * 1e-6))
-clims = (minimum(F_log), maximum(F_log))
-
+F_log = log10.(max.(F, maximum(F) * 1e-20))
+clims = (-30, maximum(F_log))
+xlims!(ax, -1, 1)
+ylims!(ax, -1, 1)
 hm = heatmap!(ax,
     collect(v_par_grid) / c₀,
     collect(v_perp_grid) / c₀,

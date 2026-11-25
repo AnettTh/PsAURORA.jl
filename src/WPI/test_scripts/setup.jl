@@ -15,7 +15,7 @@ bzimf = 2.0
 magnetic_field = TsyganenkoMagneticField(t; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
 
 ## Define the stations fieldline
-ref = LTPReference(:sodankyla)
+ref = LTPReference(station)
 fieldline = StationFieldLine(magnetic_field, ref, t)
 
 ## Define particle
