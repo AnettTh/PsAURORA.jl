@@ -4,7 +4,7 @@ using ProgressMeter
 using CairoMakie
 using JLD2
 ##
-data   = load("src/WPI/data/11-24-2026/FootpointForFrequencies2.jld2")
+data = load("src/WPI/data/11-26-2026/FootpointForFrequencies2.jld2")
 FP_enu = data["FP_enu"]                      # [xyz, E, ω, Ψ₀]
 E_grid = data["E_grid"]                      # [eV]
 ω_frac = data["ω_frac"]
@@ -42,5 +42,5 @@ sc = scatter!(ax, east_km[valid], north_km[valid];
 )
 Colorbar(fig_E[1, 2], sc; label="ω / Ωₑ")
 #xlims!(ax, 1.07, 1.4)
-ylims!(ax, 4.75, 5.0)
-save("src/WPI/test_scripts/footpoint/figures/FP_and_frequency/11242026_FrequencyAndFP_E$(E_show/1e3)keV.png", fig_E)
+#ylims!(ax, 4.75, 5.0)
+#save("src/WPI/test_scripts/footpoint/figures/FP_and_frequency/11242026_FrequencyAndFP_E$(E_show/1e3)keV.png", fig_E)

@@ -7,7 +7,7 @@ using JLD2
 ## Configuration
 duct_enhancement = 0.0
 station = :sodankyla
-name = "src/WPI/data/11-24-2026/FootpointForFrequencies2.jld2"
+name = "src/WPI/data/11-26-2026/FootpointForFrequencies.jld2"
 
 ## Define magnetic field
 t = DateTime("2020-12-21T02:00:00")

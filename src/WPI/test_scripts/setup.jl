@@ -32,19 +32,20 @@ plasma = PlasmaState(fieldline, density)
 modulation = ChirpModulation(plasma.ω_lb[1], plasma.ω_lb[end], 0.2)
 amplitude = ConstantAmplitude(100e-12)
 
-Ψ0 = range(0, 2π, length=20)[2]
-#waves = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ) for Ψ in Ψ0]
-wave = WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ0)
+Ψ0 = range(0, 2π, length=20)
+waves = [WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ) for Ψ in Ψ0]
+#wave = WaveState(modulation, amplitude, plasma, fieldline; Ψ0=Ψ0)
 
 ## Frequencies to evaluate
 ω_frac = 0.1
 ω = ω_frac * minimum(plasma.Ω_e)
 
-#boris = [boris_mover(particle, fieldline, wave; ω=ω) for wave in waves]
-boris = boris_mover(particle, fieldline, wave; ω=ω)
-wpi = WPI_TOF(ω, particle, fieldline, plasma; wave=wave)
+boris = [boris_mover(particle, fieldline, wave; ω=ω) for wave in waves]
+#boris = boris_mover(particle, fieldline, wave; ω=ω)
+wpi = [WPI_TOF(ω, particle, fieldline, plasma; wave=wave) for wave in waves]
 
 
+##
 params = (
     duct_enhancement = duct_enhancement,
     station          = station,

@@ -70,9 +70,9 @@ E_groups = [(7, 12), (12, 20), (20, 30), (30, 40)]    # keV
 group_colors = ["#E69F00", "#56B4E9", "#009E73", "#D55E00"]
 
 fig = Figure(size=(900, 550))
-#Label(fig[0, 1], text="Arrival time compared to onset curve", font=:bold, fontsize=12)
+Label(fig[0, 1], text="Arrival time compared to onset curve", font=:bold, fontsize=16, tellwidth = false)
 
-ax1 = Axis(fig[1, 1]; ylabel="# Events", title="Arrival time compared to onset curve, tₘᵢₙ")
+ax1 = Axis(fig[1, 1]; ylabel="# Events", title="tₘᵢₙ")
 for ((lo, hi), c) in zip(E_groups, group_colors)
     m = (E .≥ lo) .& (E .< hi)
     count(m) < 5 && continue
