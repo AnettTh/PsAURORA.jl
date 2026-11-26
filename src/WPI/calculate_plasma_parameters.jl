@@ -169,3 +169,13 @@ function velocity_from_kinetic_energy(
         return v
     end
 end
+
+
+function kinetic_energy_from_velocity(v, γ0)
+    if γ0 == 1.0
+        return 0.5 * mₑ * v^2 / abs(qₑ)
+    else
+        γ = 1 / sqrt(1 - (v / c₀)^2)
+        return (γ - 1) * mₑ * c₀^2 / abs(qₑ)
+    end
+end
