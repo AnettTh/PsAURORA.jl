@@ -115,6 +115,7 @@ function particle_transit(
     use_boris::Bool=true,
     get_footpoint::Bool=true,
     store_trajectory::Bool=false,
+    t_start::Real=0.0,
 )
 
     # Index on the line where the particle and wave meets
@@ -136,6 +137,7 @@ function particle_transit(
             store_trajectory=store_trajectory,
             stop_when_bouncing=true,
             r_resonance=r_resonance,
+            t_start=t_start,
         )
 
         # If the particle precipitates, return the TOF
@@ -444,6 +446,7 @@ function WPI_TOF(
             use_boris=use_boris,
             field_dependent=field_dependent,
             get_footpoint=get_footpoint,
+            t_start=t_l[i]
         )
 
         if get_footpoint
