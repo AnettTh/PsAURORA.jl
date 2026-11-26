@@ -80,6 +80,7 @@ function boris_mover(
     store_trajectory::Bool=false,
     count_bounces::Bool=false,
     stop_when_bouncing::Bool=true,
+    t_start::Real=0.0,
 )
 
     #===
@@ -107,6 +108,7 @@ function boris_mover(
         v_array = zeros(steps + 1, 3)
         t_array = zeros(steps + 1)
         α_array = zeros(steps + 1)
+        E_array = zeros(steps + 1)
     end
 
     # Find position, velocity and field direction at the start-point
@@ -133,7 +135,8 @@ function boris_mover(
     end
 
     # Variable for tracking the time
-    t_current = 0.0
+    #t_current = 0.0
+    t_current = Float64(t_start)
 
     # Variable to detect and count bounces
     if count_bounces || stop_when_bouncing
@@ -147,6 +150,7 @@ function boris_mover(
         v_array[1, :] .= (vx, vy, vz)
         t_array[1] = t_current
         α_array[1] = α_start
+        E_array[1] = kinetic_energy_from_velocity(sqrt(vx^2 + vy^2 + vz^2), particle.γ)
     end
 
     # Keep track of phase if wave is to be considered
@@ -199,7 +203,7 @@ function boris_mover(
         b̂x, b̂y, b̂z = Bx/B_mag, By/B_mag, Bz/B_mag
 
         # Define cyclotron frequency and period for current timestep
-        Ω_e = (B_mag * abs(qₑ)) / mₑ
+        Ω_e = (B_mag * abs(qₑ)) / mₑ    # TODO: Relativistic correction?
         T = 2π / Ω_e
 
         # Define adaptive timestep, halving the resolution when the field strength has decreased by more than 30%
@@ -263,8 +267,9 @@ function boris_mover(
                         return (
                             position=r_array[1:i-1, :],
                             velocity=v_array[1:i-1, :],
-                            time=t_array[1:i-1],
+                            time=t_array[1:i-1] .- t_start,
                             α=α_array[1:i-1],
+                            E=E_array[1:i-1],
                             footpoint=nothing,
                             α_footpoint=nothing,
                             E_footpoint=nothing,
@@ -272,7 +277,7 @@ function boris_mover(
                         )
                     else
                         return (
-                            time=t_current,
+                            time=t_current - t_start,
                             footpoint=nothing,
                             α_footpoint=nothing,
                             E_footpoint=nothing,
@@ -311,6 +316,7 @@ function boris_mover(
             v_mag = sqrt(vx^2 + vy^2 + vz^2)
             v_par = vx*b̂x + vy*b̂y + vz*b̂z
             α_array[i] = acos(clamp(abs(v_par) / v_mag, 0.0, 1.0))
+            E_array[i] = kinetic_energy_from_velocity(v_mag, particle.γ)
         end
 
 
@@ -327,14 +333,22 @@ function boris_mover(
             v_mag_fp = sqrt(vx^2 + vy^2 + vz^2)
             v_par_fp = vx*b̂_fp[1] + vy*b̂_fp[2] + vz*b̂_fp[3]
             α_footpoint = acos(clamp(abs(v_par_fp) / v_mag_fp, 0, 1.0))
-            E_footpoint = ((particle.γ - 1) * mₑ * c₀^2) / abs(qₑ)
+
+            # Find the current energy
+            if particle.γ == 1.0
+                E_footpoint = (0.5 * mₑ * v_mag_fp^2) / abs(qₑ)
+            else
+                γ_footpoint = 1 / sqrt(1 - (v_mag_fp / c₀)^2)
+                E_footpoint = ((γ_footpoint - 1) * mₑ * c₀^2) / abs(qₑ)
+            end
 
             if store_trajectory
                 return (
                     position=r_array[1:i, :],
                     velocity=v_array[1:i, :],
-                    time=t_array[1:i],
+                    time=t_array[1:i] .- t_start,
                     α=α_array[1:i],
+                    E=E_array[1:i],
                     footpoint=(x, y, z),
                     α_footpoint=α_footpoint,
                     E_footpoint=E_footpoint,
@@ -342,7 +356,7 @@ function boris_mover(
                 )
             else
                 return (
-                    time=t_current,
+                    time=t_current - t_start,
                     footpoint=(x, y, z),
                     α_footpoint=α_footpoint,
                     E_footpoint=E_footpoint,
@@ -361,8 +375,9 @@ function boris_mover(
         return (
             position=r_array,
             velocity=v_array,
-            time=t_array,
+            time=t_array .- t_start,
             α=α_array,
+            E=E_array,
             footpoint=nothing,
             α_footpoint=nothing,
             E_footpoint=nothing,
@@ -370,7 +385,7 @@ function boris_mover(
         )
     else
         return (
-            time=t_current,
+            time=t_current - t_start,
             footpoint=nothing,
             α_footpoint=nothing,
             E_footpoint=nothing,
@@ -389,5 +404,6 @@ function boris_mover(
 )
     res = point_of_resonance(ω, particle, fieldline, wave.plasma, wave)
     isnothing(res) && return nothing           # no resonance, nothing to simulate
-    return boris_mover(particle; wave=wave, r_resonance=res.r, kwargs...)
+    t_start = wave_launch_time(wave, [ω])[1]
+    return boris_mover(particle; wave=wave, r_resonance=res.r, t_start=t_start, kwargs...)
 end
