@@ -3,22 +3,18 @@ using JLD2
 using ProgressMeter
 using Dates
 using CairoMakie
+using Printf
 
-@load "src/WPI/data/11-16-2026/energy-time-position.jld2"
-
+#@load "src/WPI/data/11-16-2026/energy-time-position.jld2"
+@load "src/WPI/data/11-25-2026/energy-time-position.jld2"
 
 ##
 ref = LTPReference(params.station)
-FP_enu = fill(NaN, size(FP))
-
-for iΨ in Base.axes(FP, 5), iω in Base.axes(FP, 4), iμ in Base.axes(FP, 3), iE in Base.axes(FP, 2)
-    FP_enu[:, iE, iμ, iω, iΨ] .= FP_to_ENU(FP[:, iE, iμ, iω, iΨ], ref, DateTime(params.time))
-end
 
 E_keV = collect(E_grid) ./ 1e3
 
-east = FP_enu[1, :, :, :, :] ./ 1e3      # n_E × n_μ × n_ω × n_Ψ, in km
-north = FP_enu[2, :, :, :, :] ./ 1e3
+east = fp_enu[1, :, :, :, :] ./ 1e3      # n_E × n_μ × n_ω × n_Ψ, in km
+north = fp_enu[2, :, :, :, :] ./ 1e3
 
 # Energy of every entry, same shape as east and north
 E_all = repeat(E_keV, 1, size(east, 2), size(east, 3), size(east, 4))
@@ -75,7 +71,7 @@ xlims!(ax, 0.0, 2.5)
 
 ## Record
 mkpath("src/WPI/test_scripts/big_data/figures")
-record(fig, "src/WPI/test_scripts/big_data/figures/footpoints_in_time.gif", 1:n_frames; framerate = 4) do k
+record(fig, "src/WPI/test_scripts/big_data/figures/11262026FootpointsInTime.gif", 1:n_frames; framerate = 4) do k
     # Keeps everything that has arrived
     arrived = TOF_all .<= t_frame[k]
     pts[]    = Point2f.(Δeast[arrived], Δnorth[arrived])

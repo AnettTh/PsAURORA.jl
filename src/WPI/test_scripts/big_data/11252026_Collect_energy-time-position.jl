@@ -9,25 +9,24 @@ duct_enhancement = 0.0
 station = :sodankyla
 
 ## Define magnetic field
-t     = DateTime("2020-12-21T02:00:00")
-pdyn  = 2.0
-dst   = -28.0
+t = DateTime("2020-12-21T02:00:00")
+pdyn = 2.0
+dst = -28.0
 byimf = 0.0
 bzimf = 2.0
 
 magnetic_field = TsyganenkoMagneticField(t; pdyn=pdyn, dst=dst, byimf=byimf, bzimf=bzimf)
 
-## Grids with TOF(E, μ0, ω, Ψ0) = (250, 5, 3, 4)
-E_grid = range(7e3, 40e3, length=20)
-α_grid = [0.5]
+## Grids with TOF(E, μ0, ω, Ψ0) = (150, 4, 150, 3)
+E_grid = range(7e3, 40e3, length=150)
+α_grid = [0.5, 1.5, 5.0]
 μ0_grid = -cos.(deg2rad.(α_grid))
-ω_frac = [0.1, 0.3]
-Ψ0_grid = range(0, 3π/2, step=π/2)
+ω_frac = range(0.1, 0.5, length=150)
+Ψ0_grid = range(0, 2π, length=5)[1:end-1]
 
 ## Output
 TOF = fill(NaN, length(E_grid), length(μ0_grid), length(ω_frac), length(Ψ0_grid))
 FP = fill(NaN, 3, length(E_grid), length(μ0_grid), length(ω_frac), length(Ψ0_grid))
-
 
 ## Define the stations fieldline
 ref = LTPReference(:sodankyla)
@@ -102,37 +101,52 @@ E_keV = collect(E_grid) ./ 1e3
 east  = fp_enu[1, :, :, :, :] ./ 1e3      # n_E × n_μ × n_ω × n_Ψ, in km
 north = fp_enu[2, :, :, :, :] ./ 1e3
 
-# Energy of every entry, same shape as east and north
-E_all = repeat(E_keV, 1, size(east, 2), size(east, 3), size(east, 4))
+## Save the results
+outfile = "src/WPI/data/11-26-2026/energy-time-position.jld2"
+mkpath(dirname(outfile))                          # JLD2 does not create folders
 
-# Flatten and keep only precipitated cases (NaN = no resonance or bounced)
-percipitated = findall(isfinite, vec(east))
-Δeast = vec(east)[percipitated]
-Δnorth = vec(north)[percipitated]
-E = vec(E_all)[percipitated]
+params = (
+    # station and field
+    station = station,
+    time    = string(t),
+    pdyn    = pdyn,
+    dst     = dst,
+    byimf   = byimf,
+    bzimf   = bzimf,
+    ps      = magnetic_field.ps,                  # [rad]
 
-@show length(percipitated), length(east)      # number of footpoints out of the total
+    # traced line
+    r_eq  = fieldline.r_eq,                       # [m]
+    ϕ_eq  = fieldline.ϕ_eq,                       # [rad]
+    B_eq  = fieldline.B_eq,                       # [T]
+    r_max = fieldline.r_max,                      # [m]
 
-## Plot footpoints only
-fig_FP = Figure(size = (700, 350))
-ax_FP = Axis(fig_FP[1, 1];
-    xlabel = "East [km]",
-    ylabel = "North [km]",
-    title  = "Footpoints relative to $(station) at $t \n" *
-       "$(length(percipitated))/$(length(east)) precipitated",
-    aspect = DataAspect(),
+    # density and plasma
+    duct_enhancement = duct_enhancement,
+    L_Denton_bin     = density.L_Denton_bin,
+    R_max_density    = density.R_max,             # [m]
+    Ω_eq             = minimum(plasma.Ω_e),       # [rad/s]
+
+    # wave
+    chirp_ω0       = modulation.ω0,               # [rad/s]
+    chirp_ω1       = modulation.ω1,
+    chirp_duration = modulation.t_duration,       # [s]
+    Bw             = amplitude.Bw,                # [T]
+
+    axes  = "TOF: [E, α0, ω, Ψ0]; FP, fp_enu: [xyz or ENU, E, α0, ω, Ψ0]",
+    notes = "TOF [s]: NaN = no resonance, 0.0 = bounced. FP in m, SM frame at `time`. " *
+            "fp_enu in m relative to the station. α0 in degrees at the magnetic equator. " *
+            "Only n = 1 interacts in the mover.",
 )
 
-sc_FP = scatter!(
-    ax_FP,
-    Δeast,
-    Δnorth;
-    color      = E,
-    colormap   = :turbo,
-    colorrange = extrema(E_keV),
-    markersize = 6,
+jldsave(outfile;
+    TOF,
+    FP,
+    fp_enu,
+    E_grid  = collect(E_grid),                    # [eV]
+    α_grid  = collect(α_grid),                    # [°]
+    ω_frac  = collect(ω_frac),                    # fraction of Ω_eq
+    ωs      = collect(ωs),                        # [rad/s]
+    Ψ0_grid = collect(Ψ0_grid),                   # [rad]
+    params,
 )
-Colorbar(fig_FP[1, 2], sc_FP; label = "E [keV]")
-ylims!(4, 5)
-xlims!(0, 2.5)
-display(fig_FP)
